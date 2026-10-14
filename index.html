@@ -787,9 +787,10 @@ function txRow(e){
   var amt=e.type==='adjust'?(e.amount>0?'+':'−')+rp(Math.abs(e.amount)):sign+rp(e.amount);
   return '<button class="item" data-tx="'+e.id+'"><div class="ico">'+esc(e.icon)+'</div><div class="mid"><div class="t">'+esc(e.label)+'</div><div class="s">'+sub+'</div></div><div class="amt'+(sign==='+'?' green':'')+'">'+amt+'</div>'+GO+'</button>';
 }
-var planSeg='suami';
+var planSeg=null; // first view = your own side
 function renderPlan(){
   var me=S.me==='innamul';
+  if(!planSeg)planSeg=me?'suami':'istri';
   $('planSub').textContent='Siklus '+dshort(S.cycle.from)+' – '+dshort(S.cycle.to)+(S.salary?' · gaji Rp '+rp(S.salary):'');
   document.querySelectorAll('[data-seg]').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.seg===planSeg)});
   $('legend').hidden=planSeg==='berdua';
