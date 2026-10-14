@@ -216,6 +216,8 @@ body.sheet-open{overflow:hidden}
 .sheet{visibility:hidden;transition:transform .36s cubic-bezier(.32,.72,0,1),visibility 0s linear .36s}
 .sheet.on{transform:none;visibility:visible;transition:transform .36s cubic-bezier(.32,.72,0,1),visibility 0s}.sheet.stack{z-index:23}
 .grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:8px auto 0}
+.shead{position:sticky;top:0;z-index:2;background:var(--paper);padding-bottom:2px}
+.sheet>.sbar{position:sticky;top:0;z-index:2;background:var(--paper)}
 .sbar{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;padding:10px 16px}
 .sbar b{text-align:center;font-size:17px;font-weight:600}
 .sbar .round{width:auto;height:40px;padding:0 16px;border-radius:20px;font-size:15px}
@@ -454,9 +456,9 @@ body.kp-open .sheet.on{padding-bottom:330px}
 
 <!-- SHEET: kategori lengkap -->
 <div class="sheet stack" id="cats" role="dialog" aria-modal="true" aria-label="Kategori">
-  <div class="grab"></div>
+  <div class="shead"><div class="grab"></div>
   <div class="sbar"><button class="round" data-back="cats">‹ Kembali</button><b>Semua kategori</b><span></span></div>
-  <input class="search" id="search" placeholder="Cari: listrik, galon, air…" aria-label="Cari kategori">
+  <input class="search" id="search" placeholder="Cari: listrik, galon, air…" aria-label="Cari kategori"></div>
   <div id="catList"></div>
 </div>
 
