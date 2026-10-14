@@ -287,6 +287,7 @@ body.sheet-open{overflow:hidden}
 body.kp-open .sheet.on{padding-bottom:330px}
 .ico.wl{background:transparent;overflow:hidden;padding:0}.ico.wl .wlogo{width:100%;height:100%;display:block;border-radius:50%;box-shadow:0 0 0 1px var(--line)}.ico.wl .wlogo.full{box-shadow:none}
 .wc b .wlogo{width:20px;height:20px;vertical-align:-5px;border-radius:50%}
+.wdlogo{width:72px!important;height:72px!important;margin:6px auto 0;font-size:34px;display:grid;place-items:center;border-radius:50%;background:var(--card)}
 .toast{position:fixed;left:50%;bottom:calc(110px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--on-ink);padding:12px 18px;border-radius:20px;font-size:14px;font-weight:500;opacity:0;transition:.25s;z-index:40;max-width:88%;text-align:center}
 .toast.on{opacity:1;transform:translateX(-50%)}
 .toast.bad{background:var(--red);color:#fff}
@@ -531,7 +532,7 @@ body.kp-open .sheet.on{padding-bottom:330px}
 <div class="sheet short" id="walletDetail" role="dialog" aria-modal="true" aria-label="Dompet">
   <div class="grab"></div>
   <div class="sbar"><span></span><b id="wdName"></b><button class="round" data-close>Tutup</button></div>
-  <div class="amount"><p>Saldo sekarang</p><div class="show" id="wdAmt"></div></div>
+  <div class="wdlogo ico wl" id="wdLogo"></div><div class="amount"><p>Saldo sekarang</p><div class="show" id="wdAmt"></div></div>
   <div class="btns"><button class="black" id="wdTransfer">⇄ Transfer</button><button class="white" id="wdAdjust">Sesuaikan saldo</button></div>
   <div class="btns" id="wdDefaultBox"><button class="white" id="wdDefault">Jadikan dompet utama</button></div>
   <div class="sec"><h2>Terakhir</h2></div>
@@ -1049,7 +1050,7 @@ $('npSave').onclick=function(){if(!$('npName').value.trim()){toast('Isi nama tab
 $('epSave').onclick=function(){act('editPot',{id:curPot.id,name:$('epName').value.trim()||curPot.name,target:num($('epTarget').value),kept_at:$('epKept').value.trim()},'Disimpan').then(closeAll)};
 
 /* wallets */
-function openWallet(id){var w=S.wallets.filter(function(x){return x.id===id})[0];curWallet=w;$('wdName').textContent=w.name;$('wdAmt').textContent='Rp '+rp(w.balance);
+function openWallet(id){var w=S.wallets.filter(function(x){return x.id===id})[0];curWallet=w;$('wdName').textContent=w.name;$('wdLogo').innerHTML=wIcon(w);$('wdAmt').textContent='Rp '+rp(w.balance);
   $('wdDefaultBox').hidden=w.id===S.default_wallet;
   var list=(S.recent||[]).filter(function(e){return e.wallet_id===id||e.to_wallet_id===id}).slice(0,8);
   $('wdList').innerHTML=list.length?list.map(txRow).join(''):'<div class="empty">Belum ada catatan.</div>';openSheet('walletDetail')}
@@ -1255,6 +1256,55 @@ document.querySelectorAll('[data-lang-set]').forEach(function(b){b.setAttribute(
   var oc=window.closeAll;window.closeAll=function(){hide();return oc.apply(this,arguments)};
 })();
 
+/* ======================= iOS-style gestures =======================
+   • swipe from the left edge on a screen with a ‹ back button → go back
+   • drag a bottom panel (sheet) down → close it
+   Both follow the finger and snap back if not dragged far enough. */
+(function(){
+  var BACK={card:'wallet',flexi:'wallet',all:'home'};
+  var EASE='transform .3s cubic-bezier(.32,.72,0,1)';
+  function curScreen(){var s=document.querySelector('.screen.on');return s&&s.id}
+  function topSheet(){var on=[].slice.call(document.querySelectorAll('.sheet.on'));return on[on.length-1]||null}
+  var g=null;
+  document.addEventListener('touchstart',function(e){
+    if(e.touches.length!==1||e.target.closest('#kpad'))return;
+    var t=e.touches[0],sh=topSheet();
+    if(sh){ // sheet: drag down from the top part, or anywhere when the sheet is scrolled to the top
+      if(!sh.contains(e.target))return;
+      g={kind:'sheet',el:sh,x:t.clientX,y:t.clientY,t:Date.now(),d:0,locked:false,scrollTop:sh.scrollTop};return;
+    }
+    var sc=curScreen();
+    if(BACK[sc]&&t.clientX<28){g={kind:'back',el:document.getElementById(sc),x:t.clientX,y:t.clientY,t:Date.now(),d:0,locked:false}}
+  },{passive:true});
+  document.addEventListener('touchmove',function(e){
+    if(!g)return; var t=e.touches[0],dx=t.clientX-g.x,dy=t.clientY-g.y;
+    if(!g.locked){
+      if(Math.abs(dx)<8&&Math.abs(dy)<8)return;
+      if(g.kind==='sheet'){ if(dy<=0||Math.abs(dx)>Math.abs(dy)||g.el.scrollTop>0){g=null;return} }
+      else { if(dx<=0||Math.abs(dy)>Math.abs(dx)){g=null;return} }
+      g.locked=true; g.el.style.transition='none';
+    }
+    e.preventDefault();
+    if(g.kind==='sheet'){g.d=Math.max(0,dy);g.el.style.transform='translateY('+g.d+'px)'}
+    else{g.d=Math.max(0,dx);g.el.style.transform='translateX('+g.d+'px)';g.el.style.boxShadow='-12px 0 30px rgba(0,0,0,.12)'}
+  },{passive:false});
+  function end(){
+    if(!g)return; var x=g; g=null; if(!x.locked)return;
+    var v=x.d/Math.max(1,Date.now()-x.t), size=x.kind==='sheet'?x.el.offsetHeight:window.innerWidth;
+    var done=x.d>size*0.33||(v>0.5&&x.d>40);
+    x.el.style.transition=EASE;
+    if(x.kind==='sheet'){
+      if(done){x.el.style.transform='translateY(105%)';setTimeout(function(){x.el.style.transform='';x.el.style.transition='';
+          var k=document.getElementById('kpad');if(k){k.classList.remove('on');document.body.classList.remove('kp-open')}
+          if(x.el.classList.contains('stack'))x.el.classList.remove('on');else closeAll()},280)}
+      else{x.el.style.transform='';setTimeout(function(){x.el.style.transition=''},320)}
+    }else{
+      if(done){x.el.style.transform='translateX(100%)';setTimeout(function(){x.el.style.transform='';x.el.style.transition='';x.el.style.boxShadow='';go(BACK[x.el.id])},260)}
+      else{x.el.style.transform='';setTimeout(function(){x.el.style.transition='';x.el.style.boxShadow=''},320)}
+    }
+  }
+  document.addEventListener('touchend',end);document.addEventListener('touchcancel',end);
+})();
 </script>
 </body>
 </html>
