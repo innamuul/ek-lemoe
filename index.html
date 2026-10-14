@@ -620,10 +620,16 @@ function call(action,payload){
   });
 }
 /* Rarely-used actions (plan, pots, wallets, loans): save first, then show. */
+var inflight={};
 function act(action,payload,okMsg){
+  var key=action+JSON.stringify(payload||{});
+  if(inflight[key])return inflight[key]; // double-tap guard: same action already saving
+  if(payload&&!payload.cid&&(action==='saveMonthly'||action==='potMove'))payload.cid=newId();
   $('busy').classList.add('on');
-  return flush().then(function(){return call(action,payload)}).then(function(st){$('busy').classList.remove('on');if(st&&st.me){S=st;cacheState();render();if($('all').classList.contains('on'))loadHist()}if(okMsg)toast(okMsg);return st})
+  var pr=flush().then(function(){return call(action,payload)}).then(function(st){$('busy').classList.remove('on');if(st&&st.me){S=st;cacheState();render();if($('all').classList.contains('on'))loadHist()}if(okMsg)toast(okMsg);return st})
     .catch(function(e){$('busy').classList.remove('on');toast(e,true);throw e});
+  inflight[key]=pr;pr.then(done,done);function done(){delete inflight[key]}
+  return pr;
 }
 
 /* ======================= instant saving =======================
@@ -978,7 +984,7 @@ document.addEventListener('click',function(e){
   if((g=t.closest('[data-paid]'))){quickPaid(g.dataset.paid);return}
   if((g=t.closest('[data-settle]'))){quickSettle(g.dataset.settle);return}
   if((g=t.closest('[data-chk]'))){var on=g.getAttribute('aria-checked')!=='true';g.setAttribute('aria-checked',on);g.querySelector('.box').textContent=on?'✓':'';updMonthlyBtn();return}
-  if(t.closest('#saveMonthly')){var ids=[];document.querySelectorAll('[data-chk]').forEach(function(c){if(c.getAttribute('aria-checked')==='true')ids.push(c.dataset.chk)});if(!ids.length){toast('Centang minimal satu',true);return}act('saveMonthly',{pot_ids:ids},'Tabungan bertambah');return}
+  if(t.closest('#saveMonthly')){var ids=[];document.querySelectorAll('[data-chk]').forEach(function(c){if(c.getAttribute('aria-checked')==='true')ids.push(c.dataset.chk)});if(!ids.length){toast('Centang minimal satu',true);return}var sb=$('saveMonthly');if(sb.disabled)return;sb.disabled=true;sb.textContent='Menyimpan…';act('saveMonthly',{pot_ids:ids},'Tabungan bertambah').catch(function(){sb.disabled=false;updMonthlyBtn()});return}
   if((g=t.closest('[data-pot]'))){openPot(g.dataset.pot);return}
   if((g=t.closest('[data-pm]'))){openPotMove(g.dataset.pm);return}
   if((g=t.closest('[data-wd]'))){openWallet(g.dataset.wd);return}
