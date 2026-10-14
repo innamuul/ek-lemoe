@@ -276,6 +276,16 @@ body.sheet-open{overflow:hidden}
 .err{color:var(--red);font-size:14px;margin-top:10px;min-height:20px}
 
 /* toast + loading */
+.kpad{position:fixed;left:0;right:0;bottom:0;z-index:60;background:var(--card);border-top:1px solid var(--line);padding:6px 8px calc(8px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .22s ease;max-width:480px;margin:0 auto;border-radius:22px 22px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.12)}
+.kpad.on{transform:none}
+.kbar{display:flex;justify-content:flex-end;padding:2px 6px 6px}.kbar button{font-weight:600;font-size:15px;padding:6px 12px;border-radius:14px;background:var(--ink);color:var(--on-ink)}
+.kgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.kgrid button{height:54px;border-radius:16px;background:var(--paper);border:1px solid var(--line);font-size:24px;font-weight:600;text-align:center}
+.kgrid button:active{background:var(--chip)}
+.kgrid button[data-k="000"]{font-size:20px}
+body.kp-open .sheet.on{padding-bottom:330px}
+.ico.wl{background:#fff;overflow:hidden}.ico.wl .wlogo{width:90%;height:90%;object-fit:contain}.ico.wl .wlogo.sq{width:100%;height:100%;object-fit:cover}
+.wc b .wlogo{width:18px;height:18px;object-fit:contain;vertical-align:-3px;border-radius:4px;background:#fff}
 .toast{position:fixed;left:50%;bottom:calc(110px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--on-ink);padding:12px 18px;border-radius:20px;font-size:14px;font-weight:500;opacity:0;transition:.25s;z-index:40;max-width:88%;text-align:center}
 .toast.on{opacity:1;transform:translateX(-50%)}
 .toast.bad{background:var(--red);color:#fff}
@@ -387,6 +397,7 @@ body.sheet-open{overflow:hidden}
   <div class="title"><div><h1>Akun</h1><p id="accName"></p></div></div>
   <div class="sec"><h2>Pengaturan</h2></div>
   <div class="list">
+    <div class="item"><div class="ico">🌐</div><div class="mid"><div class="t">Bahasa</div></div><div class="seg inrow" style="width:168px" role="group" aria-label="Bahasa"><button data-lang-set="id">Indonesia</button><button data-lang-set="en">English</button></div></div>
     <div class="item"><div class="ico">🌗</div><div class="mid"><div class="t">Tema</div></div><div class="seg inrow" role="group" aria-label="Tampilan"><button data-theme-set="auto">Otomatis</button><button data-theme-set="light">Terang</button><button data-theme-set="dark">Gelap</button></div></div>
     <div class="item"><div class="ico">📅</div><div class="mid"><div class="t">Tanggal gajian</div><div class="s">Siklus dihitung dari tanggal ini</div></div><div class="amt" id="salDay"></div></div>
     <button class="item" data-open="planEdit"><div class="ico">📝</div><div class="mid"><div class="t">Ubah rencana</div></div><span class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg></span></button>
@@ -566,7 +577,7 @@ var S=null, TOKEN=null, curTx=null, curPot=null, curWallet=null, editId=null;
 var $=function(id){return document.getElementById(id)};
 var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
 var rp=function(n){n=Math.round(+n||0);return (n<0?'−':'')+Math.abs(n).toLocaleString('id-ID')};
-var short=function(n){var a=Math.abs(n),s=n<0?'−':'';if(a>=1e6)return s+(a/1e6).toFixed(a>=1e7?1:2).replace(/\.?0+$/,'').replace('.',',')+'jt';if(a>=1e3)return s+Math.round(a/1e3)+'rb';return s+a};
+var short=function(n){var en=(function(){try{return localStorage.getItem('ek_lang')}catch(e){}})()==='en';var a=Math.abs(n),s=n<0?'−':'';if(a>=1e6)return s+(a/1e6).toFixed(a>=1e7?1:2).replace(/\.?0+$/,'').replace('.',en?'.':',')+(en?'M':'jt');if(a>=1e3)return s+Math.round(a/1e3)+(en?'k':'rb');return s+a};
 var num=function(v){return +(String(v||'').replace(/[^\d]/g,''))||0};
 var GO='<span class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg></span>';
 var MONTHS=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
@@ -740,7 +751,7 @@ function render(){
     if(x.category_id==='uang_belanja_istri'){return '<div class="item dark"><div class="ico">💸</div><div class="mid"><div class="t">'+(me?'Uang belanja ke '+esc(partner):'Uang belanja dari suami')+'</div><div class="s">'+rp(x.amount)+' · '+dshort(x.date)+'</div></div><span class="tag">'+(me?'Terkirim':'Diterima')+'</span></div>'}
     if(x.category_id==='ganti_ke_suami'){return '<div class="item"><div class="ico">↩︎</div><div class="mid"><div class="t">'+(me?esc(partner)+' mengganti uang':'Ganti uang ke suami')+'</div><div class="s">'+rp(x.amount)+' · '+dshort(x.date)+'</div></div><span class="tag">Impas</span></div>'}
     var who=mine?('Minta ganti ke '+esc(partner)):(esc(partner)+' minta diganti');
-    return '<div class="item"><div class="ico">🧾</div><div class="mid"><div class="t">'+esc(x.label)+(mine&&x.note?' · '+esc(x.note):'')+'</div><div class="s">'+who+' · '+rp(x.amount)+'</div></div>'+(x.settled?'<span class="tag">Impas</span>':'<button class="tag warn" data-settle="'+x.id+'">Tandai impas</button>')+'</div>';
+    return '<div class="item"><div class="ico">🧾</div><div class="mid"><div class="t">'+esc(x.label)+(mine&&x.note?' · <span class="nt">'+esc(x.note)+'</span>':'')+'</div><div class="s">'+who+' · '+rp(x.amount)+'</div></div>'+(x.settled?'<span class="tag">Impas</span>':'<button class="tag warn" data-settle="'+x.id+'">Tandai impas</button>')+'</div>';
   }).join('')+'</div>':'';
   // recent
   var rec=(S.recent||[]).slice(0,8);
@@ -751,10 +762,19 @@ function render(){
   $('syncItem').hidden=!me;$('syncSub').textContent=me?((S.pending_sync||0)+' catatan menunggu · minta Claude "sinkron ke Money Lover"'):'';
 }
 function bucketIcon(p){var m={jajan:'☕',aset:'🤖',flexi:'🔁',iphone:'📱',mesincuci:'🧺',dapur:'🍳',kucing:'🐈',renang:'🏊',listrik:'⚡',wifi:'🌐',gigi:'🦷',gym:'🏋️'};return m[p.id]||'•'}
+/* wallet logos: Indonesian bank / e-wallet marks from the idn-finlogos library (CC BY-NC 4.0, github.com/hafidznoor/idn-finlogos),
+   loaded from the jsDelivr CDN. Matched by wallet name; anything unknown keeps its emoji. */
+var LOGO_CDN='https://cdn.jsdelivr.net/npm/idn-finlogos@2.5.0/dist/png/';
+var LOGO_MAP=[[/flexi/i,'jenius'],[/\bblu\b/i,'blu-bca'],[/byond/i,'byond-bsi'],[/\bbsi\b/i,'bsi'],[/jenius/i,'jenius'],[/gopay ?later/i,'gopaylater'],[/gopay/i,'gopay'],
+  [/shopee/i,'shopee-pay'],[/\bovo\b/i,'ovo'],[/\bdana\b/i,'dana'],[/\bjago\b/i,'jago'],[/tmrw|\buob\b/i,'uob-tmrw'],[/\bneo\b/i,'neobank'],[/link ?aja/i,'linkaja'],
+  [/superbank/i,'superbank'],[/\bbni\b/i,'bni'],[/\bbri\b/i,'bri'],[/\bdbs\b/i,'dbs'],[/tokopedia/i,'tokopedia'],[/paypal/i,'paypal'],[/\bbca\b/i,'bca'],[/mandiri/i,'mandiri'],[/seabank/i,'seabank']];
+function walletSlug(name){for(var i=0;i<LOGO_MAP.length;i++)if(LOGO_MAP[i][0].test(name||''))return LOGO_MAP[i][1];return ''}
+function wIcon(w){var sl=walletSlug(w.name);if(!sl)return esc(w.icon);
+  return '<img class="wlogo" src="'+LOGO_CDN+sl+'@2x.png" alt="" loading="lazy" onload="if(this.naturalWidth<this.naturalHeight*1.3)this.classList.add(\'sq\')" onerror="this.replaceWith(document.createTextNode(\''+esc(w.icon).replace(/'/g,'')+'\'))">'}
 function txRow(e){
   var sign=e.type==='income'||e.type==='collect'||e.type==='debt'?'+':(e.type==='transfer'?'':'−');
   var where=e.type==='transfer'?esc(e.wallet)+' → '+esc(e.to_wallet):(e.person&&e.type!=='expense'?esc(e.person):esc(e.wallet||'pilih dompet'));
-  var sub=(e.pending?'⏳ ':'')+(e.note&&e.type!=='transfer'?esc(e.note)+' · ':'')+where+' · '+dshort(e.date)+(e.count_date?' · dihitung '+dshort(e.count_date):'');
+  var sub=(e.pending?'⏳ ':'')+(e.note&&e.type!=='transfer'?'<span class="nt">'+esc(e.note)+'</span> · ':'')+where+' · '+dshort(e.date)+(e.count_date?' · dihitung '+dshort(e.count_date):'');
   var amt=e.type==='adjust'?(e.amount>0?'+':'−')+rp(Math.abs(e.amount)):sign+rp(e.amount);
   return '<button class="item" data-tx="'+e.id+'"><div class="ico">'+esc(e.icon)+'</div><div class="mid"><div class="t">'+esc(e.label)+'</div><div class="s">'+sub+'</div></div><div class="amt'+(sign==='+'?' green':'')+'">'+amt+'</div>'+GO+'</button>';
 }
@@ -809,7 +829,7 @@ function renderWallet(){
   var ws=S.wallets.filter(function(w){return w.type!=='credit'});
   var tot=ws.filter(function(w){return w.include_total}).reduce(function(s,w){return s+w.balance},0);
   $('walletTotal').textContent='Total uangku Rp '+rp(tot);
-  $('wlist').innerHTML=ws.length?ws.map(function(w){return '<button class="item" data-wd="'+w.id+'"><div class="ico">'+esc(w.icon)+'</div><div class="mid"><div class="t">'+esc(w.name)+'</div>'+(w.id===S.default_wallet?'<div class="s">dompet utama</div>':(!w.include_total?'<div class="s">tidak masuk total</div>':''))+'</div><div class="amt">'+rp(w.balance)+'</div>'+GO+'</button>'}).join(''):'<div class="empty">Belum ada dompet. Ketuk "+ Dompet" dan isi saldo sekarang.</div>';
+  $('wlist').innerHTML=ws.length?ws.map(function(w){return '<button class="item" data-wd="'+w.id+'"><div class="ico wl">'+wIcon(w)+'</div><div class="mid"><div class="t">'+esc(w.name)+'</div>'+(w.id===S.default_wallet?'<div class="s">dompet utama</div>':(!w.include_total?'<div class="s">tidak masuk total</div>':''))+'</div><div class="amt">'+rp(w.balance)+'</div>'+GO+'</button>'}).join(''):'<div class="empty">Belum ada dompet. Ketuk "+ Dompet" dan isi saldo sekarang.</div>';
   $('cardRow').innerHTML=S.card?'<div class="sec"><h2>Kartu kredit</h2></div><div class="list"><button class="item" data-go="card"><div class="ico">💳</div><div class="mid"><div class="t">'+esc(S.card.name)+'</div><div class="s">Tagihan berikutnya ±'+short(S.card.next_bill)+'</div></div><div class="amt red">'+short(S.card.balance)+'</div>'+GO+'</button></div>':'';
   var f=S.flexi;
   $('loanRow').innerHTML=f?'<div class="sec"><h2>Pinjaman</h2></div><div class="hint">Pinjaman untuk keluarga. Tidak dihitung sebagai uangmu.</div><div class="list"><button class="item" data-go="flexi"><div class="ico">🔁</div><div class="mid"><div class="t">Flexi Cash</div><div class="s">Cicilan '+short(f.monthly)+' · bagianmu '+short(f.my_share)+'</div></div>'+(f.short?'<span class="tag warn">kurang '+short(f.short)+'</span>':'<span class="tag">lengkap</span>')+GO+'</button></div>':'';
@@ -832,7 +852,7 @@ function renderFlexi(){
    (f.short?'<div class="item"><div class="ico">➖</div><div class="mid"><div class="t">Kurang</div><div class="s">tanyakan atau tutup dari bagianmu</div></div><div class="amt red">'+rp(f.short)+'</div></div>':'')+'</div>'+
    '<div class="btns"><button class="black" data-repay>Bayar cicilan Flexi</button><button class="white" data-open="newLoan">+ Pinjaman baru</button></div>'+
    (f.repaid?'<div class="foot">Sudah dibayar siklus ini: Rp '+rp(f.repaid)+'</div>':'')+
-   '<div class="sec"><h2>Pinjaman berjalan</h2></div><div class="plan">'+(f.loans.length?f.loans.map(function(l){return '<div class="pl"><div class="r"><b>'+esc(l.person)+' · '+short(l.principal)+'</b><span>'+(l.start_pay?'mulai bayar '+MONTHS[+l.start_pay.split('-')[1]-1]:'')+'</span></div><div class="note">Dipinjam '+dshort(l.date)+(l.monthly?' · '+rp(l.monthly)+'/bln × '+l.months:'')+(l.note?' · '+esc(l.note):'')+'</div></div>'}).join(''):'<div class="pl"><div class="note">Belum ada.</div></div>')+'</div>';
+   '<div class="sec"><h2>Pinjaman berjalan</h2></div><div class="plan">'+(f.loans.length?f.loans.map(function(l){return '<div class="pl"><div class="r"><b>'+esc(l.person)+' · '+short(l.principal)+'</b><span>'+(l.start_pay?'mulai bayar '+MONTHS[+l.start_pay.split('-')[1]-1]:'')+'</span></div><div class="note">Dipinjam '+dshort(l.date)+(l.monthly?' · '+rp(l.monthly)+'/bln × '+l.months:'')+(l.note?' · <span class="nt">'+esc(l.note)+'</span>':'')+'</div></div>'}).join(''):'<div class="pl"><div class="note">Belum ada.</div></div>')+'</div>';
 }
 
 /* ======================= navigation & sheets ======================= */
@@ -856,7 +876,7 @@ function drawTiles(){
 function walletCards(el,sel,withPartner){
   var ws=S.wallets.filter(function(w){return el!=='tTo'||w.type!=='credit'||true});
   var html=(withPartner?'<button class="wc person" aria-pressed="'+(form.toPartner)+'" data-partner><b>👤 '+esc(S.me==='innamul'?S.partnerName:'Suami')+'</b><span>'+(S.me==='innamul'?'uang belanja':'ganti uang')+'</span></button>':'')+
-    ws.map(function(w){return '<button class="wc" aria-pressed="'+(w.id===sel&&!(withPartner&&form.toPartner))+'" data-w="'+w.id+'"><b>'+esc(w.icon)+' '+esc(w.name)+'</b><span>Rp '+rp(w.balance)+'</span></button>'}).join('');
+    ws.map(function(w){return '<button class="wc" aria-pressed="'+(w.id===sel&&!(withPartner&&form.toPartner))+'" data-w="'+w.id+'"><b>'+wIcon(w)+' '+esc(w.name)+'</b><span>Rp '+rp(w.balance)+'</span></button>'}).join('');
   $(el).innerHTML=html||'<div class="empty" style="margin:0">Tambah dompet dulu di menu Dompet.</div>';
 }
 function nextRowUpd(){var w=walletOf(form.wallet);$('nextRow').hidden=!(form.type==='expense'&&w&&w.type==='credit')}
@@ -1014,7 +1034,7 @@ $('txDel').onclick=function(){act('deleteEntry',{id:curTx.id},'Catatan dihapus')
 function openPot(id){var p=S.pots.filter(function(x){return x.id===id})[0];curPot=p;$('potName').textContent=p.name;$('potAmt').textContent='Rp '+rp(p.total);
   $('potMeta').textContent=(p.monthly?'+'+short(p.monthly)+' tiap bulan dari rencana':'')+(p.kept_at?' · disimpan di '+p.kept_at:'');
   $('potBtns').innerHTML=S.pots_editable?'<button class="black" data-pm="in">+ Tabung</button><button class="white" data-pm="out">Pakai</button><button class="white" data-pm="edit" style="flex:.6">Ubah</button>':'';
-  $('potHist').innerHTML=p.history.length?p.history.map(function(h){return '<div class="item"><div class="ico">'+(h.amount>0?'⬆️':'⬇️')+'</div><div class="mid"><div class="t">'+esc(h.note)+'</div><div class="s">'+dshort(h.date)+'</div></div><div class="amt '+(h.amount>0?'green':'')+'">'+(h.amount>0?'+':'−')+rp(Math.abs(h.amount))+'</div></div>'}).join(''):'<div class="empty">Belum ada riwayat.</div>';
+  $('potHist').innerHTML=p.history.length?p.history.map(function(h){return '<div class="item"><div class="ico">'+(h.amount>0?'⬆️':'⬇️')+'</div><div class="mid"><div class="t nt">'+esc(h.note)+'</div><div class="s">'+dshort(h.date)+'</div></div><div class="amt '+(h.amount>0?'green':'')+'">'+(h.amount>0?'+':'−')+rp(Math.abs(h.amount))+'</div></div>'}).join(''):'<div class="empty">Belum ada riwayat.</div>';
   openSheet('pot')}
 var pmMode='in';
 function openPotMove(m){if(m==='edit'){$('epName').value=curPot.name;$('epTarget').value=curPot.target?rp(curPot.target):'';$('epKept').value=curPot.kept_at||'';openSheet('editPot');return}
@@ -1063,6 +1083,176 @@ var linkK=(location.hash.match(/k=([a-f0-9]{32,})/)||[])[1];
 if(linkK&&linkK!==load('ek_token')){store('ek_state',null);store('ek_queue',null);Q=[]}
 TOKEN=linkK||load('ek_token'); if(linkK)store('ek_token',linkK);
 if(TOKEN)start();else showLogin();
+/* ======================= language (Indonesia / English) =======================
+   The app is written in Indonesian; in English mode every text on screen is translated
+   here as it appears. Notes, wallet names and anything marked .nt are never touched. */
+var LANG=(function(){try{return localStorage.getItem('ek_lang')||'id'}catch(e){return 'id'}})();
+var EN={
+'Beranda':'Home','Rencana':'Plan','Tabungan':'Savings','Dompet':'Wallets','Akun':'Account','Catat':'Add','+ Catat':'+ Add',
+'Lihat rencana':'See plan','Lihat semua':'See all','Semua':'All','Semua catatan':'All entries','Hanya catatanmu sendiri':'Only your own entries',
+'Pengeluaran minggu ini':'Spending this week','Sisa di tiap pos':'Left in each pot','Terakhir dicatat':'Recently added',
+'Geser ke samping. Pos = jatah uang dari rencana bulanan.':'Swipe sideways. A pot is money set aside in the monthly plan.',
+'Ketuk untuk melihat, mengubah, atau menghapus.':'Tap to view, edit or delete.','Hari ini':'Today',
+'Sisa jatah bulan ini':'Left this month','Sisa uang belanja (pos harian)':'Household money left (daily pots)',
+'Halo,':'Hi,','Siapa kamu':'Who are you','Masuk':'In','Catatan uang Innamul & Putri':'Innamul & Putri’s money notes',
+'Sembunyikan angka':'Hide amounts','Tampilkan angka':'Show amounts',
+'Suami':'Husband','Istri':'Wife','Berdua':'Both','Bagian':'Side','Bagian suami':'Husband’s side','Bagian istri':'Wife’s side',
+'Ubah':'Edit','Ubah rencana':'Edit plan','Ubah catatan':'Edit entry','Ubah tabungan':'Edit savings',
+'aman':'on track','hampir habis':'almost used','lewat':'over','✓ sudah dibayar · ketuk untuk ubah':'✓ paid · tap to change',
+'Pos harian':'Daily pots','Tagihan tetap':'Fixed bills','🏦 Tabungan':'🏦 Savings','Harian':'Daily','Tetap':'Fixed',
+'Lunas':'Paid','Belum dibayar':'Not paid yet','Belum':'Not yet','Terbayar':'Paid','Ditabung':'Saved',
+'Pengeluaran berdua':'Spending together','Total per pos siklus ini, tanpa rincian catatan.':'Totals per pot this cycle, without entry details.',
+'Di luar rencana':'Outside the plan','Belum ada pengeluaran.':'No spending yet.',
+'Ketuk tagihan tetap untuk menandai lunas / belum. Pos harian terisi otomatis dari catatan.':'Tap a fixed bill to mark it paid / not paid. Daily pots fill in from your entries.',
+'Uang yang dikumpulkan untuk nanti':'Money put aside for later','Total semua tabungan':'All savings total','Tabungan kita':'Our savings',
+'+ Baru':'+ New','+ Tabung':'+ Save','Tabung':'Save','Pakai':'Use','Pakai tabungan':'Use savings','Tabung bulan ini':'Save this month',
+'Tabung atau pakai':'Save or use','Tabungan baru':'New savings','Terkumpul':'Collected','Target':'Target','Riwayat':'History',
+'Belum ada riwayat.':'No history yet.','Belum ada tabungan.':'No savings yet.','Sudah ditabung':'Saved',
+'Centang yang sudah dipindahkan ke rekening tabungan, lalu simpan.':'Tick what you moved to the savings account, then save.',
+'Ketuk untuk menabung, memakai, atau mengubah.':'Tap to save, use or edit.','Centang minimal satu':'Tick at least one',
+'Tabung di luar rencana':'Save outside the plan','Masuk ke Tabungan':'Goes to Savings','Tabungan bertambah':'Savings added','Tabungan dibuat':'Savings created',
+'Lebih besar dari isi tabungan':'More than what’s saved','Isi nama tabungan':'Enter a savings name',
+'Uangnya diambil dari tabungan, jadi jatah dapur dan jajan tetap aman.':'The money comes from savings, so the kitchen and spending pots stay untouched.',
+'Tidak mengurangi pos bulan ini':'Doesn’t reduce this month’s pots','Disimpan di':'Kept at','Untuk apa?':'What for?',
+'Untuk mengisi saldo awal, pakai "+ Tabung" dengan catatan "Saldo awal".':'To enter a starting balance, use "+ Save" with the note "Starting balance".',
+'Uang':'Money','+ Dompet':'+ Wallet','Dompet baru':'New wallet','Ketuk dompet untuk transfer atau menyesuaikan saldo.':'Tap a wallet to transfer or adjust its balance.',
+'Saldo sekarang':'Current balance','Masukkan ke total':'Include in total','Matikan untuk tabungan atau rekening beku':'Turn off for savings or frozen accounts',
+'Jadikan dompet utama':'Make main wallet','Jadi dompet utama':'Is main wallet','dompet utama':'main wallet','tidak masuk total':'not in total',
+'Belum ada dompet. Ketuk "+ Dompet" dan isi saldo sekarang.':'No wallets yet. Tap "+ Wallet" and enter the current balance.',
+'Tambah dompet dulu di menu Dompet.':'Add a wallet first in Wallets.','Isi nama dompet':'Enter a wallet name','Dompet ditambahkan':'Wallet added',
+'Sesuaikan saldo':'Adjust balance','Saldo sebenarnya':'Actual balance','Saldo sebenarnya sekarang':'Actual balance now','Ketik saldo sebenarnya':'Type the actual balance',
+'Cek saldo di aplikasi bank atau hitung uang tunai, lalu ketik angkanya.':'Check the balance in the bank app or count the cash, then type it.',
+'Selisih dicatat sebagai penyesuaian':'The difference is recorded as an adjustment','Saldo disesuaikan':'Balance adjusted','Uangmu tidak berubah':'Your money doesn’t change',
+'Bank':'Bank','E-wallet':'E-wallet','Tunai':'Cash','Kartu kredit':'Credit card','Nama':'Name','Jenis':'Type',
+'Cetak tgl 15 · bayar sebelum tgl 1–2':'Statement on the 15th · pay by the 1st–2nd','Bayar tagihan':'Pay bill','Cicilan berjalan':'Running installments',
+'Masuk tagihan':'On the bill','Cicilan':'Installment','Tagihan':'Bill',
+'Pinjaman':'Loans','Pinjaman bersama keluarga':'Family loan','Pinjaman untuk keluarga. Tidak dihitung sebagai uangmu.':'Loans for family. Not counted as your money.',
+'Pinjaman berjalan':'Running loans','Pinjaman baru':'New loan','+ Pinjaman baru':'+ New loan','Pinjaman dicatat':'Loan recorded','Cicilan dicatat':'Installment recorded',
+'Siapa bayar berapa':'Who pays what','Bagianku':'My share','dari pos Flexi di rencana':'from the Flexi pot in the plan','Kurang':'Short',
+'tanyakan atau tutup dari bagianmu':'ask them, or cover it from your share','Utang Flexi Cash':'Flexi Cash debt','Sisa yang harus dibayar':'Left to pay',
+'termasuk bunga':'including interest','Belum ada.':'None yet.','Jumlah pinjaman':'Loan amount','Cicilan per bulan':'Monthly installment',
+'Lama cicilan (bulan)':'Length (months)','Mulai bayar':'First payment','Untuk siapa':'For whom','Orang lain':'Someone else',
+'ketik nama jika bukan di atas':'type a name if not listed','Isi jumlah pinjaman':'Enter the loan amount','lihat di aplikasi Flexi':'see the Flexi app',
+'Uang masuk dari Flexi lalu diberikan ke saudara, jadi tidak dihitung sebagai pemasukan atau pengeluaranmu.':'Money comes in from Flexi and goes to your sister, so it isn’t counted as your income or spending.',
+'Cair ke dompet':'Paid out to wallet','Bayar cicilan Flexi':'Pay Flexi installment','Cicilan Flexi':'Flexi installment','untuk cicilan Flexi':'for the Flexi installment',
+'Pengaturan':'Settings','Tema':'Theme','Otomatis':'Auto','Terang':'Light','Gelap':'Dark','Bahasa':'Language',
+'Tanggal gajian':'Payday','Siklus dihitung dari tanggal ini':'Cycles start on this day','Sinkron Money Lover':'Money Lover sync',
+'Keluar dari perangkat ini':'Sign out on this device','Pengeluaran':'Expense','Pemasukan':'Income','Keluar':'Out','Transfer':'Transfer','⇄ Transfer':'⇄ Transfer',
+'Jumlah':'Amount','Bayar pakai':'Pay with','Masuk ke':'Into','Dari':'From','Ke':'To','Kategori':'Category','Semua kategori':'All categories',
+'Tanggal':'Date','Catatan':'Note','Masuk pos':'Pot','— tidak masuk pos —':'— no pot —','Biaya admin':'Admin fee','opsional':'optional',
+'Bareng pasangan':'Together with partner','Minta ganti':'Ask to be paid back','Hitung di siklus berikutnya':'Count in next cycle',
+'Tagihan kartu dibayar dari gaji bulan depan':'The card bill is paid from next month’s salary','Simpan':'Save','Hapus':'Delete','Hapus catatan ini':'Delete this entry',
+'Batal':'Cancel','Tutup':'Close','Kembali':'Back','‹ Kembali':'‹ Back','Detail':'Details','Lainnya':'Other','Buat':'Create','Tambah':'Add','Buka':'Open',
+'Salah kategori atau ternyata tidak perlu? Ubah kategori, pindahkan ke pos lain, atau hapus.':'Wrong category, or not needed after all? Change the category, move it to another pot, or delete it.',
+'Tersimpan':'Saved','Perubahan disimpan':'Changes saved','Catatan dihapus':'Entry deleted','Ditandai impas':'Marked as settled','Disimpan':'Saved',
+'Rencana disimpan':'Plan saved','Isi jumlahnya':'Enter the amount','Isi jumlahnya dulu':'Enter the amount first','Menyimpan…':'Saving…','Memuat…':'Loading…',
+'Gagal':'Failed','Tidak tersambung':'Not connected','Tidak ada catatan.':'No entries.','Tidak ditemukan.':'Nothing found.',
+'Belum ada catatan.':'No entries yet.','Belum ada catatan. Ketuk + untuk mulai.':'No entries yet. Tap + to start.','Belum ada pos. Buat di Rencana › Ubah.':'No pots yet. Create them in Plan › Edit.',
+'Antara kita':'Between us','Impas':'Settled','Tandai impas':'Mark settled','Terkirim':'Sent','Diterima':'Received','+ Terima':'+ Receive',
+'Uang belanja dari suami':'Household money from husband','Ganti uang ke suami':'Payback to husband','Kirim ke suami':'Send to husband',
+'Pilih dompet untuk uang belanja':'Pick a wallet for the household money','uang belanja':'household money','ganti uang':'payback',
+'Buka Dompet, ketuk dompet tempat uang belanja masuk, lalu "Jadikan dompet utama".':'Open Wallets, tap the wallet the household money goes into, then "Make main wallet".',
+'Uang belanja yang dikirim ke Putri tidak dihitung dua kali.':'Household money sent to Putri isn’t counted twice.',
+'Cari: kopi, bensin, Jenius…':'Search: coffee, fuel, Jenius…','Cari: listrik, galon, air…':'Search: electricity, water, gallon…','Cari catatan':'Search entries','Cari kategori':'Search categories',
+'Siklus sebelumnya':'Previous cycle','Siklus berikutnya':'Next cycle','Gaji':'Salary','PIN':'PIN','Belum diisi':'Not filled in','Pos':'Pot','Pos baru':'New pot',
+'+ Tambah pos':'+ Add pot','belum dibagi ke pos':'not assigned to pots','Menu utama':'Main menu','Tampilan':'Display',
+'Jenis: Harian = terpakai sedikit-sedikit (pakai bar). Tetap = dibayar sekali sebulan. Siklus yang sudah lewat tidak berubah.':'Type: Daily = spent bit by bit (with a bar). Fixed = paid once a month. Past cycles don’t change.',
+'Misal: BSI, Gopay, Cash':'e.g. BSI, Gopay, Cash','Misal: BSI':'e.g. BSI','Misal: Umrah':'e.g. Umrah','Misal: Zakir':'e.g. Zakir','Misal: bayar sewa 2027':'e.g. 2027 rent',
+'Sudah ada':'Already exists','Diatur oleh':'Managed by','Dipakai':'Used','Dipinjam':'Borrowed','Terima dari':'Received from',
+'Penyesuaian saldo':'Balance adjustment','Pinjam dari Flexi':'Borrowed from Flexi','Dipinjamkan':'Lent','Terima cicilan saudara':'Installment from sister','Bayar cicilan':'Installment paid',
+'Pilih Innamul atau Putri dulu':'Pick Innamul or Putri first','PIN salah':'Wrong PIN','Pilih dompet':'Pick a wallet','Pilih dompet asal dan tujuan yang berbeda':'Pick two different wallets',
+'Nama dompet wajib diisi':'Wallet name is required','Tidak diizinkan':'Not allowed','Tabungan diatur oleh Putri':'Savings are managed by Putri','Catatan tidak ditemukan':'Entry not found',
+'Masuk lewat link pribadimu (minta ke Innamul).':'Sign in with your personal link (ask Innamul).','untuk masuk.':'to sign in.','link pribadimu':'your personal link',
+'Kesehatan':'Health','Makan & minum':'Food & drink','Rumah':'Home','Transport':'Transport','Belanja':'Shopping','Sosial':'Social','Hiburan':'Entertainment',
+/* categories */
+'Kopi':'Coffee','Makan':'Meals','Snack & minum':'Snacks & drinks','Belanja dapur':'Groceries','Belanja rumah':'Household shopping','Galon':'Water gallon',
+'Bensin':'Fuel','Parkir':'Parking','Servis motor':'Motorbike service','Perjalanan':'Travel','Pulsa & paket':'Phone credit & data','Listrik':'Electricity',
+'Air PDAM':'Water bill','Internet / WiFi':'Internet / WiFi','Gas':'Gas','BPJS / asuransi':'BPJS / insurance','Sewa rumah':'House rent','Laundry':'Laundry',
+'Kucing':'Cat','Jasa rumah':'Home services','Perabot':'Furniture','Perawatan diri':'Self care','Pakaian':'Clothes','Elektronik':'Electronics','Makeup':'Makeup',
+'Dokter':'Doctor','Apotek':'Pharmacy','Gym & olahraga':'Gym & sports','Renang':'Swimming','Software / AI':'Software / AI','Game':'Games','Streaming':'Streaming',
+'In-app':'In-app','Sedekah':'Charity','Kondangan':'Wedding gift','Takziah':'Condolence','Vape':'Vape','Rokok':'Cigarettes','Bunga kartu':'Card interest',
+'Uang belanja ke Putri':'Household money to Putri','Penyesuaian':'Adjustment','Pemasukan lain':'Other income','Diganti Putri':'Paid back by Putri','Cashback':'Cashback',
+/* default pots */
+'Jajan suami':'Husband’s spending','Aset & AI':'Assets & AI','Flexi Cash (bagianku)':'Flexi Cash (my share)','Cicilan iPhone':'iPhone installment',
+'Cicilan mesin cuci':'Washing machine installment','Dapur':'Kitchen','Makan kucing':'Cat food','Istri renang':'Wife’s swimming','Gigi':'Dentist',
+'Suami ngegym':'Husband’s gym','Liburan':'Holiday','Qurban':'Qurban','Dana darurat':'Emergency fund',
+/* weekdays */
+'Selesai':'Done','Hapus angka':'Delete digit','Sen':'Mon','Sel':'Tue','Rab':'Wed','Kam':'Thu','Jum':'Fri','Sab':'Sat','Min':'Sun'
+};
+/* [pattern, replacement] for text built from pieces (amounts, dates, names) */
+var EN_RULES=[
+[/\bSiklus gaji\b/g,'Pay cycle'],[/\bSiklus\b/g,'Cycle'],[/\bgaji Rp\b/g,'salary Rp'],[/\(sekarang\)/g,'(current)'],
+[/^Sisa\b/,'Left'],[/\bLewat\b/,'Over'],[/\bterpakai\b/g,'used'],[/\bper hari\b/g,'a day'],[/\bhari lagi\b/g,'days left'],[/\bhari ke-(\d+)/g,'day $1'],[/^dari (.+)$/,'of $1'],[/^Masuk tagihan\b/,'On the bill'],[/\bLunas\b/g,'Paid'],[/\bDitabung\b/g,'Saved'],[/\bBelum dibayar\b/g,'Not paid yet'],[/\bTerbayar\b/g,'Paid'],
+[/ dari /g,' of '],[/ \/ bulan/g,' / month'],[/\/bln\b/g,'/mo'],[/\btiap bulan dari rencana\b/g,'a month from the plan'],[/\btiap bulan\b/g,'a month'],
+[/\bUang keluar tiap hari\b/g,'Money out each day'],[/Oranye = hari ini\./g,'Orange = today.'],
+[/\bTerakhir disinkron ke Money Lover:/g,'Last synced to Money Lover:'],[/\bcatatan menunggu\b/g,'entries waiting'],[/\bminta Claude "sinkron ke Money Lover"/g,'ask Claude to "sync to Money Lover"'],
+[/\bbelum\b/g,'not yet'],[/\bmasuk dengan PIN\b/g,'signed in with PIN'],[/\bmenunggu sinkron\b/g,'waiting to sync'],[/\btersinkron\b/g,'synced'],
+[/^Total uangku\b/,'My total'],[/^Total semua\b/,'All total'],[/^Total cicilan bulan ini\b/,'Installments this month'],[/^Total utang termasuk cicilan\b/,'Total debt incl. installments'],
+[/^Tagihan berikutnya ±/,'Next bill ±'],[/^Bayar sebelum ±/,'Pay before ±'],[/^Cicilan bulan ini · jatuh tempo ±tgl/,'This month’s installment · due around the'],
+[/^Dari saudara\b/,'From sisters'],[/× diterima siklus ini/g,'× received this cycle'],[/\bbelum ada\b/g,'none yet'],[/\bmulai bayar\b/g,'first payment'],
+[/^Dipinjam\b/,'Borrowed'],[/\bbagianmu\b/g,'your share'],[/\bkurang\b/g,'short'],[/\blengkap\b/g,'complete'],[/\blimit Rp\b/g,'limit Rp'],
+[/\blunas · sisa Rp\b/g,'paid off · left Rp'],[/\bsekarang Rp\b/g,'now Rp'],[/\bdisimpan di\b/g,'kept at'],[/\btarget Rp\b/g,'target Rp'],
+[/^Sudah ditabung · Rp/,'Saved · Rp'],[/^Sudah dibayar siklus ini: Rp/,'Paid this cycle: Rp'],[/\bdihitung\b/g,'counted'],
+[/^Uang belanja ke\b/,'Household money to'],[/^💸 Kirim uang belanja ke\b/,'💸 Send household money to'],[/^Kirim uang belanja ke\b/,'Send household money to'],
+[/^Minta ganti ke\b/,'Ask payback from'],[/ minta diganti$/,' asks to be paid back'],[/ mengganti uang$/,' paid you back'],[/^Bareng\b/,'With'],
+[/^Untukmu: pengeluaran "Uang belanja ke Putri"\. Untuk /,'For you: expense "Household money to Putri". For '],
+[/: otomatis jadi pemasukan "Uang belanja dari suami", dia tidak perlu mencatat lagi\./,': it becomes income "Household money from husband" automatically, she doesn’t need to add it.'],
+[/^Untukmu: pengeluaran "Ganti uang ke suami"\. Untuk suami: otomatis tercatat sebagai uang yang kamu ganti\./,'For you: expense "Payback to husband". For your husband: recorded automatically as money you paid back.'],
+[/^Masuk ke pos\b/,'Goes to pot'],[/\bMasuk pos\b/g,'Pot'],[/^Ada yang tidak tersimpan:/,'Something wasn’t saved:'],[/belum tersimpan/g,'not saved yet'],
+[/^⚠︎ Belum tersambung ·/,'⚠︎ Not connected ·'],[/menunggu$/,'waiting'],[/^Terlalu banyak PIN salah\. Coba lagi dalam (\d+) menit\./,'Too many wrong PINs. Try again in $1 minutes.'],
+[/^Link dibuat Innamul dari Sheet: menu/,'Innamul makes the links in the Sheet: menu'],[/^Buka$/,'Open'],[/, lebih/g,', more'],[/^(\d+) catatan menunggu/,'$1 entries waiting'],
+[/\b(Mei)\b/g,'May'],[/\b(Agu)\b/g,'Aug'],[/\b(Okt)\b/g,'Oct'],[/\b(Des)\b/g,'Dec'],
+[/^(Sen|Sel|Rab|Kam|Jum|Sab|Min), /,function(m,d){return EN[d]+', '}]
+];
+function trText(t){
+  var k=t.trim(); if(!k)return t;
+  if(EN.hasOwnProperty(k))return t.replace(k,EN[k]);
+  var o=t; EN_RULES.forEach(function(r){o=o.replace(r[0],r[1])}); return o;
+}
+function trNode(root){
+  if(LANG!=='en'||!root)return;
+  if(root.nodeType===3){var p=root.parentNode;if(p&&!(p.closest&&p.closest('.nt,script,style,textarea'))){var v=trText(root.nodeValue);if(v!==root.nodeValue)root.nodeValue=v}return}
+  if(root.nodeType!==1||root.closest('.nt,script,style'))return;
+  ['placeholder','aria-label','title'].forEach(function(a){var v=root.getAttribute&&root.getAttribute(a);if(v){var n=trText(v);if(n!==v)root.setAttribute(a,n)}});
+  if(root.querySelectorAll)root.querySelectorAll('[placeholder],[aria-label],[title]').forEach(function(el){if(el.closest('.nt'))return;['placeholder','aria-label','title'].forEach(function(a){var v=el.getAttribute(a);if(v){var n=trText(v);if(n!==v)el.setAttribute(a,n)}})});
+  var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null),n,list=[];while((n=w.nextNode()))list.push(n);list.forEach(trNode);
+}
+function setLang(l){try{l==='id'?localStorage.removeItem('ek_lang'):localStorage.setItem('ek_lang',l)}catch(e){}location.reload()}
+if(LANG==='en'){
+  document.documentElement.lang='en';
+  new MutationObserver(function(ms){ms.forEach(function(m){if(m.type==='characterData')trNode(m.target);else m.addedNodes.forEach(trNode);if(m.type==='attributes')trNode(m.target)})})
+    .observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['placeholder','aria-label','title']});
+  trNode(document.body);
+}
+document.querySelectorAll('[data-lang-set]').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.langSet===LANG);b.onclick=function(){if(b.dataset.langSet!==LANG)setLang(b.dataset.langSet)}});
+
+/* ======================= number pad with 000 =======================
+   Amount fields open this pad instead of the phone keyboard. */
+(function(){
+  var pad=document.createElement('div');pad.className='kpad';pad.id='kpad';pad.setAttribute('aria-hidden','true');
+  pad.innerHTML='<div class="kbar"><span id="kpShow"></span><button data-k="done">Selesai</button></div><div class="kgrid">'+
+    ['1','2','3','4','5','6','7','8','9','000','0','del'].map(function(k){return '<button data-k="'+k+'"'+(k==='del'?' aria-label="Hapus angka"':'')+'>'+(k==='del'?'⌫':k)+'</button>'}).join('')+'</div>';
+  document.body.appendChild(pad);
+  var cur=null;
+  function isNum(el){return el&&el.tagName==='INPUT'&&el.id!=='pin'&&(el.getAttribute('inputmode')==='numeric'||el.dataset.num)}
+  function mark(root){(root.querySelectorAll?root:document).querySelectorAll('input[inputmode="numeric"]').forEach(function(i){if(i.id==='pin')return;i.dataset.num='1';i.setAttribute('inputmode','none')})}
+  mark(document);new MutationObserver(function(ms){ms.forEach(function(m){m.addedNodes.forEach(function(n){if(n.nodeType===1)mark(n)})})}).observe(document.body,{childList:true,subtree:true});
+  function show(){$('kpShow').textContent='';document.body.classList.add('kp-open');pad.classList.add('on');setTimeout(function(){cur&&cur.scrollIntoView({block:'center',behavior:'smooth'})},60)}
+  function hide(){cur=null;document.body.classList.remove('kp-open');pad.classList.remove('on')}
+  document.addEventListener('focusin',function(e){if(isNum(e.target)){cur=e.target;show()}else if(!pad.contains(e.target))hide()});
+  document.addEventListener('click',function(e){if(cur&&!pad.contains(e.target)&&e.target!==cur&&!isNum(e.target))hide()},true);
+  pad.addEventListener('mousedown',function(e){e.preventDefault()});pad.addEventListener('touchstart',function(e){e.preventDefault();var b=e.target.closest('[data-k]');if(b)press(b.dataset.k)},{passive:false});
+  pad.addEventListener('click',function(e){var b=e.target.closest('[data-k]');if(b)press(b.dataset.k)});
+  function press(k){
+    if(k==='done'){if(cur)cur.blur();hide();return}
+    if(!cur)return; var d=String(cur.value).replace(/[^\d]/g,'');
+    if(k==='del')d=d.slice(0,-1);else if(k==='000'){if(d&&d!=='0')d+='000'}else d=(d==='0'?'':d)+k;
+    if(d.length>13)return; cur.value=d; cur.dispatchEvent(new Event('input',{bubbles:true}));
+  }
+  /* sheets close → pad closes */
+  var oc=window.closeAll;window.closeAll=function(){hide();return oc.apply(this,arguments)};
+})();
+
 </script>
 </body>
 </html>
