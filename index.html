@@ -432,6 +432,8 @@ img.fl{width:62%;height:62%;object-fit:contain;display:block;pointer-events:none
 .cols .avg{position:absolute;left:0;right:0;border-top:1.5px dashed var(--muted);opacity:.6;pointer-events:none}
 .colx{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:6px}
 .colcap{font-size:13px;color:var(--muted);margin-top:8px;min-height:18px}
+/* friend's share */
+.fsh{padding:0 18px 12px;font-size:13px;color:var(--muted)}.fsh button{margin-left:6px;font-weight:600;color:var(--accent)}
 /* hidden numbers show as **** instead of blur */
 .hide-num #home .hero .amt,.hide-num #heroPer b,.hide-num #bucketCards .big,.hide-num #bucketCards .sub,.hide-num #recent .amt,.hide-num #sharedBox .s{filter:none!important}
 .hide-num #home .hero .amt{font-size:0!important}.hide-num #home .hero .amt::after{content:'******';font-size:40px;letter-spacing:2px;vertical-align:-10px}
@@ -595,6 +597,9 @@ img.fl{width:62%;height:62%;object-fit:contain;display:block;pointer-events:none
     <label><span>Tanggal</span><input type="date" id="date" aria-label="Tanggal"></label>
     <label><span>Catatan</span><input id="note" placeholder="Misal: Zakir" autocomplete="off"></label>
     <div class="fr ppl" data-show="expense income"><span>Dengan</span><div class="pchips" id="ppl"></div></div>
+    <label data-show="expense" id="fsRow"><span>Bagian teman<br><small class="muted">dibayar pakai uang titipannya</small></span><input id="fshare" inputmode="numeric" placeholder="0"></label>
+    <div class="fsh" id="fsHint" hidden></div>
+    <div class="fr" data-show="income"><span>Uang titipan teman<br><small class="muted">dia titip, nanti kamu yang bayarkan</small></span><button class="sw" role="switch" aria-checked="false" id="titipSw" aria-label="Uang titipan teman"></button></div>
     <label data-show="expense"><span>Masuk pos</span><select id="bucket" aria-label="Pos"></select></label>
     <label data-show="transfer"><span>Biaya admin</span><input id="fee" inputmode="numeric" placeholder="0"></label>
   </div>
@@ -834,15 +839,15 @@ function applyLocal(e,sign){
   var eff=effects(e);(S.wallets||[]).forEach(function(w){if(eff[w.id])w.balance+=sign*eff[w.id]});
   var bd=String(e.count_date||e.date), inC=bd>=S.cycle.from&&bd<=S.cycle.to;
   var p=mySide().filter(function(x){return x.id===e.plan_id})[0];
-  if(p&&inC){if(e.type==='expense')p.used+=sign*e.amount;else if(e.type==='income'&&e.category_id==='reimbursement')p.used-=sign*e.amount}
-  if(e.type==='expense')(S.week||[]).forEach(function(d){if(d.date===e.date)d.total+=sign*e.amount});
+  if(p&&inC){if(e.type==='expense')p.used+=sign*(e.amount-(e.friend_share||0));else if(e.type==='income'&&e.category_id==='reimbursement')p.used-=sign*e.amount}
+  if(e.type==='expense')(S.week||[]).forEach(function(d){if(d.date===e.date)d.total+=sign*(e.amount-(e.friend_share||0))});
 }
 function nextCycleStart(ymd){var sd=+S.salaryDay||24,d=new Date(ymd+'T00:00:00'),y=d.getFullYear(),m=d.getMonth();if(d.getDate()>=sd)m+=1;
   var n=new Date(y,m,sd);return n.getFullYear()+'-'+('0'+(n.getMonth()+1)).slice(-2)+'-'+('0'+n.getDate()).slice(-2)}
 function viewOf(id,p){var c=catById(p.category_id)||{},w=walletOf(p.wallet_id)||{},t=walletOf(p.to_wallet_id)||{};
   return {id:id,date:p.date,type:p.type,amount:+p.amount,wallet:w.name||'',wallet_id:p.wallet_id||'',to_wallet:t.name||'',to_wallet_id:p.to_wallet_id||'',
     category_id:p.category_id||'',label:c.label||typeLabel(p.type),icon:c.icon||{transfer:'⇄'}[p.type]||'•',plan_id:p.plan_id||'',note:p.note||'',
-    with_partner:!!p.with_partner,ask_payback:!!p.ask_payback,settled:false,person:'',with_people:p.with_people||'',count_date:p.count_next?nextCycleStart(p.date):(p.count_next===false?'':(p.count_date||'')),pending:true}}
+    with_partner:!!p.with_partner,ask_payback:!!p.ask_payback,settled:false,person:'',with_people:p.with_people||'',friend_share:p.type==='expense'?(+p.friend_share||0):(p.type==='income'&&p.titip?+p.amount:0),count_date:p.count_next?nextCycleStart(p.date):(p.count_next===false?'':(p.count_date||'')),pending:true}}
 function putEntry(v){['recent','cycleEntries'].forEach(function(k){var L=S[k]=S[k]||[];
     if(k==='cycleEntries'&&!(v.date>=S.cycle.from&&v.date<=S.cycle.to))return;
     L.push(v);L.sort(function(a,b){return String(b.date).localeCompare(String(a.date))})})}
@@ -947,7 +952,7 @@ function wIcon(w){var src=walletLogo(w.name);if(!src)return emo(w.icon);var k=''
 function txRow(e){
   var sign=e.type==='income'||e.type==='collect'||e.type==='debt'?'+':(e.type==='transfer'?'':'−');
   var where=e.type==='transfer'?esc(e.wallet)+' → '+esc(e.to_wallet):(e.person&&e.type!=='expense'?esc(e.person):esc(e.wallet||'pilih dompet'));
-  var sub=(e.pending?'⏳ ':'')+(e.note&&e.type!=='transfer'?'<span class="nt">'+esc(e.note)+'</span> · ':'')+(e.with_people?'👥 <span class="nt">'+esc(e.with_people)+'</span> · ':'')+where+' · '+dshort(e.date)+(e.count_date?' · dihitung '+dshort(e.count_date):'');
+  var sub=(e.pending?'⏳ ':'')+(e.note&&e.type!=='transfer'?'<span class="nt">'+esc(e.note)+'</span> · ':'')+(e.with_people?'👥 <span class="nt">'+esc(e.with_people)+'</span> · ':'')+(e.friend_share?(e.type==='income'?'titipan · ':'bagian teman '+short(e.friend_share)+' · '):'')+where+' · '+dshort(e.date)+(e.count_date?' · dihitung '+dshort(e.count_date):'');
   var amt=e.type==='adjust'?(e.amount>0?'+':'−')+rp(Math.abs(e.amount)):sign+rp(e.amount);
   return '<button class="item" data-tx="'+e.id+'"><div class="ico">'+emo(e.icon)+'</div><div class="mid"><div class="t">'+esc(e.label)+'</div><div class="s">'+sub+'</div></div><div class="amt'+(sign==='+'?' green':'')+'">'+amt+'</div>'+GO+'</button>';
 }
@@ -1124,7 +1129,14 @@ function drawPeople(){var el=$('ppl');if(!el)return;var sel=form.people||[];var 
     (form.addingPerson?'<span class="pnew"><input id="pNew" placeholder="Nama" autocomplete="off" enterkeyhint="done"><button class="pchip add" data-personok>OK</button></span>':'<button class="pchip add" data-personadd>+ Tambah</button>');
   if(form.addingPerson)setTimeout(function(){var i=$('pNew');if(i){i.focus();i.onkeydown=function(ev){if(ev.key==='Enter'){ev.preventDefault();addPerson(i.value)}}}},30);
 }
-function addPerson(name){name=String(name||'').trim();form.addingPerson=false;
+function titipOpen(name){var seen={},inn=0,used=0;(S.recent||[]).concat(S.cycleEntries||[]).forEach(function(e){if(seen[e.id]||e.id===editId)return;seen[e.id]=1;
+    var pp=String(e.with_people||'').split(',').map(function(x){return x.trim()});if(pp.indexOf(name)<0||!e.friend_share)return;
+    if(e.type==='income')inn+=e.friend_share;else if(e.type==='expense')used+=e.friend_share/Math.max(1,pp.length)});return Math.max(0,Math.round(inn-used))}
+function fsHint(){var el=$('fsHint');if(!el)return;if(form.type!=='expense'){el.hidden=true;return}
+  var tips=(form.people||[]).map(function(n){return [n,titipOpen(n)]}).filter(function(x){return x[1]>0});
+  if(!tips.length){el.hidden=true;return}var tot=tips.reduce(function(s,x){return s+x[1]},0);
+  el.hidden=false;el.innerHTML='<span class="nt">'+tips.map(function(x){return esc(x[0])+' titip Rp '+rp(x[1])}).join(', ')+'</span><button data-fsuse="'+tot+'">Pakai</button>'}
+function addPerson(name){name=String(name||'').trim();form.addingPerson=false;setTimeout(fsHint,0);
   if(name){form.people=form.people||[];if(form.people.indexOf(name)<0)form.people.push(name);S.friends=S.friends||[];if(S.friends.indexOf(name)<0)S.friends.push(name)}
   drawPeople();if(name){var el=$('ppl');el.scrollLeft=0}}
 function pickContact(){ // the Contact Picker only exists on some Android browsers; iPhone falls back to typing
@@ -1137,17 +1149,18 @@ function openAdd(opts){
   if(!form.to){var o=S.wallets.filter(function(w){return w.id!==form.from&&w.type!=='credit'})[0];form.to=o&&o.id}
   $('amt').value=e?rp(e.amount):(opts.amount?rp(opts.amount):'');$('note').value=e?(e.note||''):'';$('fee').value='';
   $('date').value=e?e.date:S.today;
+  $('fshare').value=e&&e.type==='expense'&&e.friend_share?rp(e.friend_share):'';$('titipSw').setAttribute('aria-checked',!!(e&&e.type==='income'&&e.friend_share));
   $('withSw').setAttribute('aria-checked',e?!!e.with_partner:false);$('nextSw').setAttribute('aria-checked',!!(e&&e.count_date));$('askSw').setAttribute('aria-checked',e?!!e.ask_payback:false);
   var pn=S.me==='innamul'?S.partnerName:'suami';$('withLbl').textContent='Bareng '+pn;$('askLbl').textContent='Minta ganti ke '+pn;
   walletCards('wFrom',form.wallet,false);walletCards('tFrom',form.from,false);walletCards('tTo',form.to,!e);
   var c=catById(form.cat);fillBuckets(e?e.plan_id:(c?c.bucket:''));
   $('editOnly').hidden=!e;$('typeSeg').style.display=e?'none':'';
   setType(form.type); if(e)$('addTitle').textContent='Ubah catatan'; else {var c1=catById(form.cat);fillBuckets(opts.plan||(c1?c1.bucket:''));updMap();}
-  drawPeople();
+  drawPeople();fsHint();
   openSheet('add'); if(!e)setTimeout(function(){$('amt').focus()},350);
 }
 $('amt').addEventListener('input',function(){var v=num(this.value);this.value=v?'Rp '+rp(v):''});
-['fee','nwBal','npStart','npTarget','epTarget','adjReal','pmAmt','nlAmt','nlMonthly','lmAmt'].forEach(function(id){$(id).addEventListener('input',function(){var v=num(this.value);this.value=v?rp(v):''})});
+['fee','fshare','nwBal','npStart','npTarget','epTarget','adjReal','pmAmt','nlAmt','nlMonthly','lmAmt'].forEach(function(id){$(id).addEventListener('input',function(){var v=num(this.value);this.value=v?rp(v):''})});
 $('bucket').addEventListener('change',updMap);
 $('saveEntry').onclick=function(){
   var p={type:form.type,amount:num($('amt').value),date:$('date').value,note:$('note').value.trim()};
@@ -1156,6 +1169,8 @@ $('saveEntry').onclick=function(){
   else{p.wallet_id=form.wallet;p.category_id=form.cat;if(form.type==='expense'){p.plan_id=$('bucket').value;p.with_partner=$('withSw').getAttribute('aria-checked')==='true';p.ask_payback=$('askSw').getAttribute('aria-checked')==='true'}}
   if(form.addingPerson){var pi=$('pNew');if(pi&&pi.value.trim())addPerson(pi.value)}
   if(form.type!=='transfer')p.with_people=(form.people||[]).join(', ');
+  if(form.type==='expense'){p.friend_share=Math.min(p.amount,num($('fshare').value));}
+  if(form.type==='income'){p.titip=$('titipSw').getAttribute('aria-checked')==='true';if(p.titip&&!(form.people||[]).length){toast('Tag teman yang titip uangnya dulu',true);return}}
   if(form.type==='expense'){var wsel=walletOf(form.wallet);p.count_next=!!(wsel&&wsel.type==='credit'&&$('nextSw').getAttribute('aria-checked')==='true')}
   if(editId){p.id=editId;quickEdit(p)}else quickAdd(p);
   closeAll();toast(editId?'Perubahan disimpan':'Tersimpan');
@@ -1215,8 +1230,9 @@ document.addEventListener('click',function(e){
   if((g=t.closest('[data-rvcat]'))){RV.cat=RV.cat===g.dataset.rvcat?'':g.dataset.rvcat;drawReview();return}
   if((g=t.closest('[data-rvday]'))){RV.day=RV.day===g.dataset.rvday?null:g.dataset.rvday;drawReview();return}
   if(t.closest('[data-rvclear]')){RV.cat='';RV.day=null;drawReview();return}
-  if((g=t.closest('[data-person]'))){var nm=g.dataset.person;form.people=form.people||[];var ix=form.people.indexOf(nm);if(ix>=0)form.people.splice(ix,1);else form.people.push(nm);g.setAttribute('aria-pressed',ix<0);return}
+  if((g=t.closest('[data-person]'))){var nm=g.dataset.person;form.people=form.people||[];var ix=form.people.indexOf(nm);if(ix>=0)form.people.splice(ix,1);else form.people.push(nm);g.setAttribute('aria-pressed',ix<0);fsHint();return}
   if(t.closest('[data-personadd]')){pickContact();return}
+  if((g=t.closest('[data-fsuse]'))){var amt0=num($('amt').value),v=+g.dataset.fsuse;$('fshare').value=rp(amt0?Math.min(v,amt0):v);return}
   if(t.closest('[data-personok]')){addPerson(($('pNew')||{}).value);return}
   if((g=t.closest('[data-bill]'))){openBill(g.dataset.bill);return}
   if(t.closest('[data-billpay]')){payBill(billId);return}
@@ -1246,7 +1262,7 @@ function drawAll(){
   if(!HIST)return; var c=HIST.cycle;
   $('cycLbl').textContent=dshort(c.from)+' – '+dshort(c.to)+(HIST.is_current?' (sekarang)':'');
   $('cycPrev').disabled=!HIST.has_older; $('cycNext').disabled=HIST.is_current;
-  var inn=0,out=0; HIST.entries.forEach(function(e){if(e.type==='expense')out+=e.amount;if(e.type==='income')inn+=e.amount});
+  var inn=0,out=0; HIST.entries.forEach(function(e){var f=e.friend_share||0;if(e.type==='expense')out+=e.amount-f;if(e.type==='income')inn+=e.amount-f});
   $('allOut').textContent='Rp '+rp(out); $('allIn').textContent='Rp '+rp(inn);
   document.querySelectorAll('[data-af]').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.af===allF)});
   var q=$('allSearch').value.trim().toLowerCase();
@@ -1268,7 +1284,7 @@ $('allSearch').addEventListener('input',drawAll);
 function openTx(id){var e=(S.recent||[]).concat(S.cycleEntries||[],HIST?HIST.entries:[]).filter(function(x){return x.id===id})[0];if(!e)return;curTx=e;
   $('txName').textContent=e.label;$('txAmt').textContent='Rp '+rp(Math.abs(e.amount));$('txMeta').textContent=(e.type==='transfer'?e.wallet+' → '+e.to_wallet:(e.wallet||e.person||''))+' · '+dshort(e.date);
   var b=mySide().filter(function(p){return p.id===e.plan_id})[0];
-  var rows=[['Catatan',e.note||'–'],['Pos',b?b.name:'–']];if(e.with_people)rows.push(['Dengan',e.with_people]);
+  var rows=[['Catatan',e.note||'–'],['Pos',b?b.name:'–']];if(e.with_people)rows.push(['Dengan',e.with_people]);if(e.friend_share)rows.push(e.type==='income'?['Titipan teman','Ya · tidak dihitung pemasukan']:['Bagian teman','Rp '+rp(e.friend_share)+' · bagianmu Rp '+rp(e.amount-e.friend_share)]);
   if(e.with_partner)rows.push(['Bareng pasangan','Ya']); if(e.ask_payback)rows.push(['Minta ganti',e.settled?'Impas':'Belum']);
   if(S.me==='innamul')rows.push(['Money Lover',(e.ml||typeLabel(e.type))+' · '+(e.ml_synced?'tersinkron':'menunggu sinkron')]);
   $('txRows').innerHTML=rows.map(function(r){return '<div class="fr"><span>'+r[0]+'</span><span class="ml-auto muted" style="text-align:right">'+esc(r[1])+'</span></div>'}).join('');
@@ -1362,7 +1378,7 @@ var EN={
 'Tabung di luar rencana':'Save outside the plan','Masuk ke Tabungan':'Goes to Savings','Tabungan bertambah':'Savings added','Tabungan dibuat':'Savings created',
 'Lebih besar dari isi tabungan':'More than what’s saved','Isi nama tabungan':'Enter a savings name',
 'Uangnya diambil dari tabungan, jadi jatah dapur dan jajan tetap aman.':'The money comes from savings, so the kitchen and spending pots stay untouched.',
-'Ringkasan':'Summary','Ringkasan ›':'Summary ›','Keluar':'Out','Masuk':'In','Semua pos':'All pots','Semua dompet':'All wallets','Dengan siapa':'With whom','+ Uang belanja':'+ Household money','Per kategori':'By category','ketuk untuk lihat catatannya':'tap to see entries','Per hari':'By day','Ketuk batang untuk melihat harinya.':'Tap a bar to see that day.','total belanja saat bersama':'spent while together','Terbesar':'Biggest','Catatan terpilih':'Selected entries','Hapus pilihan':'Clear','Rata-rata/hari':'Average/day','Lebih hemat dari jadwal 👍':'Spending slower than planned 👍','Sedikit lebih cepat dari jadwal.':'A bit faster than planned.','Tidak ada catatan.':'No entries.','Dengan':'With','+ Tambah':'+ Add','Nama':'Name','Selesai':'Done','Belum':'Not yet','Selesai, sisanya bebas':'Done, free the rest','Tidak perlu bulan ini':'Not needed this month','Sudah dibayar di luar catatan':'Paid outside the app','Ditandai sudah dibayar di luar catatan.':'Marked as paid outside the app.','Terpakai siklus ini':'Used this cycle','Dibayar ke Jenius':'Paid to Jenius','Bagianmu':'Your share','Catatan di pos ini':'Entries in this pot','Belum ada catatan di pos ini.':'No entries in this pot yet.',
+'Bagian teman':'Friend’s share','dibayar pakai uang titipannya':'paid with money they gave you','Uang titipan teman':'Money held for a friend','dia titip, nanti kamu yang bayarkan':'they gave it, you’ll pay for them later','Pakai':'Use','Titipan teman':'Held for a friend','Tag teman yang titip uangnya dulu':'Tag the friend who gave you the money first','Ringkasan':'Summary','Ringkasan ›':'Summary ›','Keluar':'Out','Masuk':'In','Semua pos':'All pots','Semua dompet':'All wallets','Dengan siapa':'With whom','+ Uang belanja':'+ Household money','Per kategori':'By category','ketuk untuk lihat catatannya':'tap to see entries','Per hari':'By day','Ketuk batang untuk melihat harinya.':'Tap a bar to see that day.','total belanja saat bersama':'spent while together','Terbesar':'Biggest','Catatan terpilih':'Selected entries','Hapus pilihan':'Clear','Rata-rata/hari':'Average/day','Lebih hemat dari jadwal 👍':'Spending slower than planned 👍','Sedikit lebih cepat dari jadwal.':'A bit faster than planned.','Tidak ada catatan.':'No entries.','Dengan':'With','+ Tambah':'+ Add','Nama':'Name','Selesai':'Done','Belum':'Not yet','Selesai, sisanya bebas':'Done, free the rest','Tidak perlu bulan ini':'Not needed this month','Sudah dibayar di luar catatan':'Paid outside the app','Ditandai sudah dibayar di luar catatan.':'Marked as paid outside the app.','Terpakai siklus ini':'Used this cycle','Dibayar ke Jenius':'Paid to Jenius','Bagianmu':'Your share','Catatan di pos ini':'Entries in this pot','Belum ada catatan di pos ini.':'No entries in this pot yet.',
 'Buka Flexi Cash':'Open Flexi Cash','Catat pembayaran':'Record payment','Batalkan tanda selesai':'Undo done mark','Anggap selesai':'Count as done','Ditandai selesai':'Marked as done','Tanda dihapus':'Mark removed',
 'Untuk tagihan yang sudah dibayar di luar catatan (misal lewat kartu kredit), atau ternyata lebih murah.':'For bills paid outside the app (e.g. on the credit card), or that turned out cheaper.',
 'Semua pos terisi otomatis dari catatan. Ketuk tagihan tetap untuk mencatat pembayaran atau melihat rinciannya.':'All pots fill in from your entries. Tap a fixed bill to record a payment or see details.',
@@ -1436,7 +1452,7 @@ var EN={
 /* [pattern, replacement] for text built from pieces (amounts, dates, names) */
 var EN_RULES=[
 [/\bSiklus gaji\b/g,'Pay cycle'],[/\bSiklus\b/g,'Cycle'],[/\bgaji Rp\b/g,'salary Rp'],[/\(sekarang\)/g,'(current)'],
-[/^Sisa\b/,'Left'],[/^Lebih\b/,'Over'],[/^Terpakai sampai hari ini$/,'Spent so far'],[/^Terpakai siklus ini$/,'Spent this cycle'],[/^Uang masuk sampai hari ini$/,'Income so far'],[/^Uang masuk siklus ini$/,'Income this cycle'],[/ dari jatah Rp/,' of budget Rp'],[/ dibanding siklus lalu/,' vs last cycle'],[/\(hari yang sama\)/,'(same day)'],[/^Sudah lewat jatah Rp/,'Over budget by Rp'],[/^Lewat jatah Rp/,'Over budget by Rp'],[/^Sisa Rp (.+) dari jatah\.$/,'Rp $1 left of budget.'],[/^garis = rata-rata/,'line = average'],[/^Lainnya \((\d+)\)/,'Other ($1)'],[/^Selesai, sisanya bebas: tagihannya ternyata lebih murah, sisa Rp/,'Done, free the rest: the bill was cheaper, the remaining Rp'],[/^Tidak perlu bulan ini: Rp/,'Not needed this month: Rp'],[/ Sudah dibayar di luar catatan: misal cicilan lewat kartu kredit, uangnya tetap dianggap terpakai\./,' Paid outside the app: e.g. an installment on the credit card, the money still counts as used.'],[/^Ditandai selesai\. Sisa Rp/,'Marked done. Rp'],[/ kembali ke sisa jatah\./,' goes back to what’s left.'],[/^Diatur oleh\b/,'Managed by'],[/\bLewat\b/,'Over'],[/\bterpakai\b/g,'used'],[/\bper hari\b/g,'a day'],[/\bhari lagi\b/g,'days left'],[/\bhari ke-(\d+)/g,'day $1'],[/^dari (.+)$/,'of $1'],[/^Masuk tagihan\b/,'On the bill'],[/\bLunas\b/g,'Paid'],[/\bDitabung\b/g,'Saved'],[/\bBelum dibayar\b/g,'Not paid yet'],[/\bTerbayar\b/g,'Paid'],
+[/^Sisa\b/,'Left'],[/^Lebih\b/,'Over'],[/^bagian teman /,'friend’s share '],[/^titipan · $/,'held · '],[/ titip Rp/g,' gave Rp'],[/^Ya · tidak dihitung pemasukan$/,'Yes · not counted as income'],[/ · bagianmu Rp/,' · your part Rp'],[/^Terpakai sampai hari ini$/,'Spent so far'],[/^Terpakai siklus ini$/,'Spent this cycle'],[/^Uang masuk sampai hari ini$/,'Income so far'],[/^Uang masuk siklus ini$/,'Income this cycle'],[/ dari jatah Rp/,' of budget Rp'],[/ dibanding siklus lalu/,' vs last cycle'],[/\(hari yang sama\)/,'(same day)'],[/^Sudah lewat jatah Rp/,'Over budget by Rp'],[/^Lewat jatah Rp/,'Over budget by Rp'],[/^Sisa Rp (.+) dari jatah\.$/,'Rp $1 left of budget.'],[/^garis = rata-rata/,'line = average'],[/^Lainnya \((\d+)\)/,'Other ($1)'],[/^Selesai, sisanya bebas: tagihannya ternyata lebih murah, sisa Rp/,'Done, free the rest: the bill was cheaper, the remaining Rp'],[/^Tidak perlu bulan ini: Rp/,'Not needed this month: Rp'],[/ Sudah dibayar di luar catatan: misal cicilan lewat kartu kredit, uangnya tetap dianggap terpakai\./,' Paid outside the app: e.g. an installment on the credit card, the money still counts as used.'],[/^Ditandai selesai\. Sisa Rp/,'Marked done. Rp'],[/ kembali ke sisa jatah\./,' goes back to what’s left.'],[/^Diatur oleh\b/,'Managed by'],[/\bLewat\b/,'Over'],[/\bterpakai\b/g,'used'],[/\bper hari\b/g,'a day'],[/\bhari lagi\b/g,'days left'],[/\bhari ke-(\d+)/g,'day $1'],[/^dari (.+)$/,'of $1'],[/^Masuk tagihan\b/,'On the bill'],[/\bLunas\b/g,'Paid'],[/\bDitabung\b/g,'Saved'],[/\bBelum dibayar\b/g,'Not paid yet'],[/\bTerbayar\b/g,'Paid'],
 [/ dari /g,' of '],[/ \/ bulan/g,' / month'],[/\/bln\b/g,'/mo'],[/\btiap bulan dari rencana\b/g,'a month from the plan'],[/\btiap bulan\b/g,'a month'],
 [/\bUang keluar tiap hari\b/g,'Money out each day'],[/Biru = hari ini\./g,'Blue = today.'],
 [/\bTerakhir disinkron ke Money Lover:/g,'Last synced to Money Lover:'],[/\bcatatan menunggu\b/g,'entries waiting'],[/\bminta Claude "sinkron ke Money Lover"/g,'ask Claude to "sync to Money Lover"'],
@@ -1591,7 +1607,8 @@ function drawReview(){
     selBox('wallet','Semua dompet',(S.wallets||[]).map(function(w){return [w.id,w.name]}))+
     selBox('person','Dengan siapa',[['__partner','Bareng '+(me?S.partnerName:'suami')]].concat(Object.keys(people).sort().map(function(n){return [n,n]})))+
     (me&&RV.type==='expense'?'<button class="tg" data-rvhb aria-pressed="'+RV.hb+'">+ Uang belanja</button>':'');
-  var list=H.entries.filter(rvKeep), total=list.reduce(function(s,e){return s+e.amount},0);
+  function net(e){return Object.assign({},e,{amount:e.amount-(e.friend_share||0)})}
+  var list=H.entries.filter(rvKeep).map(net).filter(function(e){return e.amount>0}), total=list.reduce(function(s,e){return s+e.amount},0);
   // budget and pace
   var budget=RV.pos?(side.filter(function(p){return p.id===RV.pos})[0]||{}).amount||0:(RV.wallet||RV.person?0:side.reduce(function(s,p){return s+p.amount},0));
   var days=Math.round((new Date(c.to+'T00:00:00')-new Date(c.from+'T00:00:00'))/864e5)+1;
@@ -1599,7 +1616,7 @@ function drawReview(){
   var pct=budget?total/budget:0, dayPct=dayN/days;
   // previous cycle, same number of days in
   var prevTot=null;if(RV.prev){var pc=RV.prev.cycle,lim=cycShift({from:pc.from,to:pc.from},dayN-1);
-    prevTot=RV.prev.entries.filter(function(e){return rvKeep(e)&&(!H.is_current||bdate(e)<=lim)}).reduce(function(s,e){return s+e.amount},0)}
+    prevTot=RV.prev.entries.filter(function(e){return rvKeep(e)&&(!H.is_current||bdate(e)<=lim)}).reduce(function(s,e){return s+e.amount-(e.friend_share||0)},0)}
   var out='<div class="rvhero hero" style="margin-top:14px"><small>'+(RV.type==='expense'?'Terpakai':'Uang masuk')+(H.is_current?' sampai hari ini':' siklus ini')+'</small><div class="big">Rp '+rp(total)+'</div>';
   if(RV.type==='expense'&&budget){var bc=pct>1.001?'over':pct>dayPct+0.05?'warn':'';
     out+='<div class="bar"><i class="'+bc+'" style="width:'+Math.min(100,pct*100)+'%"></i>'+(H.is_current?'<em style="left:'+(dayPct*100)+'%"></em>':'')+'</div>'+
@@ -1609,8 +1626,8 @@ function drawReview(){
   if(prevTot!==null&&prevTot>0){var dd=(total-prevTot)/prevTot;out+='<div class="lines" style="margin-top:8px"><span>'+(dd>=0?'▲ ':'▼ ')+Math.abs(Math.round(dd*100))+'% dibanding siklus lalu'+(H.is_current?' (hari yang sama)':'')+'</span><span>Rp '+short(prevTot)+'</span></div>'}
   out+='</div>';
   // tiles
-  var inn=H.entries.filter(function(e){return e.type==='income'}).reduce(function(s,e){return s+e.amount},0);
-  var outT=H.entries.filter(function(e){return e.type==='expense'&&(RV.hb||e.category_id!=='uang_belanja_istri')}).reduce(function(s,e){return s+e.amount},0);
+  var inn=H.entries.filter(function(e){return e.type==='income'}).reduce(function(s,e){return s+e.amount-(e.friend_share||0)},0);
+  var outT=H.entries.filter(function(e){return e.type==='expense'&&(RV.hb||e.category_id!=='uang_belanja_istri')}).reduce(function(s,e){return s+e.amount-(e.friend_share||0)},0);
   out+='<div class="rvtiles"><div><small>Masuk</small><b class="green">'+short(inn)+'</b></div><div><small>Keluar</small><b>'+short(outT)+'</b></div><div><small>Rata-rata/hari</small><b>'+short(total/dayN)+'</b></div></div>';
   if(!list.length){$('rvBody').innerHTML=out+'<div class="empty" style="margin-top:14px">Tidak ada catatan.</div>';return}
   // by category
