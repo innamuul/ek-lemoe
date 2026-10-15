@@ -434,6 +434,14 @@ img.fl{width:62%;height:62%;object-fit:contain;display:block;pointer-events:none
 .colcap{font-size:13px;color:var(--muted);margin-top:8px;min-height:18px}
 /* friend's share */
 .fsh{padding:0 18px 12px;font-size:13px;color:var(--muted)}.fsh button{margin-left:6px;font-weight:600;color:var(--accent)}
+
+/* pull to refresh */
+.ptr{position:fixed;left:50%;top:calc(6px + env(safe-area-inset-top));width:40px;height:40px;margin-left:-20px;border-radius:50%;z-index:30;display:grid;place-items:center;
+  background:var(--glass-2);border:1px solid var(--glass-line);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:0 6px 16px -6px rgba(0,0,0,.3);
+  transform:translateY(-60px);opacity:0;pointer-events:none;color:var(--ink)}
+.ptr svg{width:20px;height:20px}
+.ptr.spin svg{animation:ptrspin .8s linear infinite}
+@keyframes ptrspin{to{transform:rotate(360deg)}}
 /* hidden numbers show as **** instead of blur */
 .hide-num #home .hero .amt,.hide-num #heroPer b,.hide-num #bucketCards .big,.hide-num #bucketCards .sub,.hide-num #recent .amt,.hide-num #sharedBox .s{filter:none!important}
 .hide-num #home .hero .amt{font-size:0!important}.hide-num #home .hero .amt::after{content:'******';font-size:40px;letter-spacing:2px;vertical-align:-10px}
@@ -1378,7 +1386,7 @@ var EN={
 'Tabung di luar rencana':'Save outside the plan','Masuk ke Tabungan':'Goes to Savings','Tabungan bertambah':'Savings added','Tabungan dibuat':'Savings created',
 'Lebih besar dari isi tabungan':'More than what’s saved','Isi nama tabungan':'Enter a savings name',
 'Uangnya diambil dari tabungan, jadi jatah dapur dan jajan tetap aman.':'The money comes from savings, so the kitchen and spending pots stay untouched.',
-'Bagian teman':'Friend’s share','dibayar pakai uang titipannya':'paid with money they gave you','Uang titipan teman':'Money held for a friend','dia titip, nanti kamu yang bayarkan':'they gave it, you’ll pay for them later','Pakai':'Use','Titipan teman':'Held for a friend','Tag teman yang titip uangnya dulu':'Tag the friend who gave you the money first','Ringkasan':'Summary','Ringkasan ›':'Summary ›','Keluar':'Out','Masuk':'In','Semua pos':'All pots','Semua dompet':'All wallets','Dengan siapa':'With whom','+ Uang belanja':'+ Household money','Per kategori':'By category','ketuk untuk lihat catatannya':'tap to see entries','Per hari':'By day','Ketuk batang untuk melihat harinya.':'Tap a bar to see that day.','total belanja saat bersama':'spent while together','Terbesar':'Biggest','Catatan terpilih':'Selected entries','Hapus pilihan':'Clear','Rata-rata/hari':'Average/day','Lebih hemat dari jadwal 👍':'Spending slower than planned 👍','Sedikit lebih cepat dari jadwal.':'A bit faster than planned.','Tidak ada catatan.':'No entries.','Dengan':'With','+ Tambah':'+ Add','Nama':'Name','Selesai':'Done','Belum':'Not yet','Selesai, sisanya bebas':'Done, free the rest','Tidak perlu bulan ini':'Not needed this month','Sudah dibayar di luar catatan':'Paid outside the app','Ditandai sudah dibayar di luar catatan.':'Marked as paid outside the app.','Terpakai siklus ini':'Used this cycle','Dibayar ke Jenius':'Paid to Jenius','Bagianmu':'Your share','Catatan di pos ini':'Entries in this pot','Belum ada catatan di pos ini.':'No entries in this pot yet.',
+'Bagian teman':'Friend’s share','dibayar pakai uang titipannya':'paid with money they gave you','Uang titipan teman':'Money held for a friend','dia titip, nanti kamu yang bayarkan':'they gave it, you’ll pay for them later','Pakai':'Use','Titipan teman':'Held for a friend','Tag teman yang titip uangnya dulu':'Tag the friend who gave you the money first','Diperbarui':'Updated','Ringkasan':'Summary','Ringkasan ›':'Summary ›','Keluar':'Out','Masuk':'In','Semua pos':'All pots','Semua dompet':'All wallets','Dengan siapa':'With whom','+ Uang belanja':'+ Household money','Per kategori':'By category','ketuk untuk lihat catatannya':'tap to see entries','Per hari':'By day','Ketuk batang untuk melihat harinya.':'Tap a bar to see that day.','total belanja saat bersama':'spent while together','Terbesar':'Biggest','Catatan terpilih':'Selected entries','Hapus pilihan':'Clear','Rata-rata/hari':'Average/day','Lebih hemat dari jadwal 👍':'Spending slower than planned 👍','Sedikit lebih cepat dari jadwal.':'A bit faster than planned.','Tidak ada catatan.':'No entries.','Dengan':'With','+ Tambah':'+ Add','Nama':'Name','Selesai':'Done','Belum':'Not yet','Selesai, sisanya bebas':'Done, free the rest','Tidak perlu bulan ini':'Not needed this month','Sudah dibayar di luar catatan':'Paid outside the app','Ditandai sudah dibayar di luar catatan.':'Marked as paid outside the app.','Terpakai siklus ini':'Used this cycle','Dibayar ke Jenius':'Paid to Jenius','Bagianmu':'Your share','Catatan di pos ini':'Entries in this pot','Belum ada catatan di pos ini.':'No entries in this pot yet.',
 'Buka Flexi Cash':'Open Flexi Cash','Catat pembayaran':'Record payment','Batalkan tanda selesai':'Undo done mark','Anggap selesai':'Count as done','Ditandai selesai':'Marked as done','Tanda dihapus':'Mark removed',
 'Untuk tagihan yang sudah dibayar di luar catatan (misal lewat kartu kredit), atau ternyata lebih murah.':'For bills paid outside the app (e.g. on the credit card), or that turned out cheaper.',
 'Semua pos terisi otomatis dari catatan. Ketuk tagihan tetap untuk mencatat pembayaran atau melihat rinciannya.':'All pots fill in from your entries. Tap a fixed bill to record a payment or see details.',
@@ -1659,6 +1667,52 @@ function drawReview(){
 $('rvPrev').onclick=function(){RV.date=cycShift(RV.cur.cycle,-1);RV.cat='';RV.day=null;loadReview()};
 $('rvNext').onclick=function(){RV.date=cycShift(RV.cur.cycle,1);RV.cat='';RV.day=null;loadReview()};
 document.addEventListener('change',function(e){var s=e.target.closest&&e.target.closest('[data-rvsel]');if(!s)return;RV[s.dataset.rvsel]=s.value;RV.cat='';RV.day=null;drawReview()});
+
+/* ======================= pull down to refresh + automatic update check =======================
+   Pull down at the top of a main screen: fetches the newest numbers, and if a new version of the
+   app was uploaded to GitHub it reloads into it. Opening the app also checks for a new version. */
+var BUILD='20261015-1148';
+function checkUpdate(){
+  if(IN_GOOGLE||LOCAL_DEV||!/^https:/.test(location.protocol))return Promise.resolve(false);
+  return fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
+    var m=t.match(/var BUILD='([^']+)'/); if(!m||m[1]===BUILD||m[1]==='__BUILD__')return false;
+    return flush().catch(function(){}).then(function(){location.replace(location.pathname+'?u='+Date.now()+location.hash);return true});
+  }).catch(function(){return false});
+}
+function refreshNow(){
+  return checkUpdate().then(function(reloading){if(reloading)return;
+    return flush().catch(function(){}).then(function(){return call('state')}).then(function(st){if(Q.length)return;S=st;cacheState();render();if($('review').classList.contains('on'))loadReview();toast('Diperbarui')}).catch(function(e){toast(e,true)});
+  });
+}
+document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')checkUpdate()});
+setTimeout(checkUpdate,1500);
+(function(){
+  var el=document.createElement('div');el.className='ptr';el.setAttribute('aria-hidden','true');
+  el.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v5h-5"/></svg>';
+  document.body.appendChild(el);
+  var view=$('appView'),p=null,busy=false,TH=70;
+  function setPull(d){var k=Math.min(1,d/TH);el.style.transition='none';el.style.opacity=k;el.style.transform='translateY('+(Math.min(d,TH+20)-50)+'px) rotate('+(d*3)+'deg)'}
+  function reset(){el.style.transition='transform .3s,opacity .3s';el.style.opacity=0;el.style.transform='translateY(-60px)';el.classList.remove('spin');
+    var s=document.querySelector('.screen.on');if(s){s.style.transition='transform .3s';s.style.transform='';setTimeout(function(){s.style.transition=''},320)}}
+  document.addEventListener('touchstart',function(e){
+    if(busy||e.touches.length!==1||view.hidden||view.scrollTop>0||document.querySelector('.sheet.on')||e.target.closest('#kpad,.ptr'))return;
+    if(e.touches[0].clientX<28)return; // that's the swipe-back edge
+    p={y:e.touches[0].clientY,x:e.touches[0].clientX,d:0,on:false};
+  },{passive:true});
+  document.addEventListener('touchmove',function(e){
+    if(!p)return;var dy=e.touches[0].clientY-p.y,dx=e.touches[0].clientX-p.x;
+    if(!p.on){if(Math.abs(dy)<8&&Math.abs(dx)<8)return;if(dy<=0||Math.abs(dx)>Math.abs(dy)||view.scrollTop>0){p=null;return}p.on=true}
+    e.preventDefault();p.d=Math.pow(dy,0.85);setPull(p.d);
+    var s=document.querySelector('.screen.on');if(s){s.style.transition='none';s.style.transform='translateY('+Math.min(p.d*0.5,60)+'px)'}
+  },{passive:false});
+  function end(){if(!p)return;var x=p;p=null;if(!x.on)return;
+    if(x.d>=TH){busy=true;el.style.transition='transform .2s';el.style.transform='translateY(14px)';el.style.opacity=1;el.classList.add('spin');
+      var s=document.querySelector('.screen.on');if(s){s.style.transition='transform .2s';s.style.transform='translateY(40px)'}
+      refreshNow().then(function(){busy=false;reset()},function(){busy=false;reset()});
+    } else reset();
+  }
+  document.addEventListener('touchend',end);document.addEventListener('touchcancel',end);
+})();
 /* ======================= sliding glass bubble (tab bar + segmented buttons) ======================= */
 (function(){
   function sel(box){return box.classList.contains('in')?box.querySelector('button[aria-current="page"]'):box.querySelector('button[aria-pressed="true"]')}
