@@ -442,6 +442,9 @@ img.fl{width:62%;height:62%;object-fit:contain;display:block;pointer-events:none
 .ptr svg{width:20px;height:20px}
 .ptr.spin svg{animation:ptrspin .8s linear infinite}
 @keyframes ptrspin{to{transform:rotate(360deg)}}
+/* iPhone draws rounded corners on small images as a polygon in some layers; a vector clip keeps every icon a true circle */
+.ico,.ico.wl .wlogo,.wdlogo,.wc b .wlogo,.avatar,.tile span,.hrow .ic{-webkit-clip-path:circle(50% at 50% 50%);clip-path:circle(50% at 50% 50%)}
+.ico.wl .wlogo{image-rendering:auto;-webkit-backface-visibility:hidden;backface-visibility:hidden}
 /* hidden numbers show as **** instead of blur */
 .hide-num #home .hero .amt,.hide-num #heroPer b,.hide-num #bucketCards .big,.hide-num #bucketCards .sub,.hide-num #recent .amt,.hide-num #sharedBox .s{filter:none!important}
 .hide-num #home .hero .amt{font-size:0!important}.hide-num #home .hero .amt::after{content:'******';font-size:40px;letter-spacing:2px;vertical-align:-10px}
@@ -1698,7 +1701,7 @@ document.addEventListener('change',function(e){var s=e.target.closest&&e.target.
 /* ======================= pull down to refresh + automatic update check =======================
    Pull down at the top of a main screen: fetches the newest numbers, and if a new version of the
    app was uploaded to GitHub it reloads into it. Opening the app also checks for a new version. */
-var BUILD='20261015-1223';
+var BUILD='20261015-1235';
 function checkUpdate(){
   if(IN_GOOGLE||LOCAL_DEV||!/^https:/.test(location.protocol))return Promise.resolve(false);
   return fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
