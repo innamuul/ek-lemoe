@@ -703,13 +703,13 @@ img.fl{width:62%;height:62%;object-fit:contain;display:block;pointer-events:none
    the open tab sits in a tinted glass bubble that slides between tabs (.gpill, springy); + is its own glass circle beside it.
    Glass recipe: light frosted tint + blur/saturate, a 1.5px bevel rim lit at top-left and bottom-right (conic gradient
    masked to a ring), faint top sheen, soft drop shadow. Safari can't do the lens bending of real iOS glass. */
-:root{--lg-bg:rgba(250,250,252,.5);--lg-rim:rgba(255,255,255,.95);--lg-rim2:rgba(255,255,255,.35);--lg-in:rgba(255,255,255,.45);
-  --lg-sh:0 10px 34px -10px rgba(0,0,0,.22),0 2px 6px -2px rgba(0,0,0,.08);--lg-edge:rgba(0,0,0,.07);--lg-ico:rgba(0,0,0,.78);
-  --lg-sel:rgba(250,45,72,.16);--lg-sheen:rgba(255,255,255,.22)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--lg-bg:rgba(44,44,48,.46);--lg-rim:rgba(255,255,255,.55);--lg-rim2:rgba(255,255,255,.12);
-  --lg-in:rgba(255,255,255,.08);--lg-sh:0 12px 34px -10px rgba(0,0,0,.7);--lg-edge:rgba(255,255,255,.06);--lg-ico:rgba(255,255,255,.85);--lg-sel:rgba(255,77,99,.22);--lg-sheen:rgba(255,255,255,.08)}}
-:root[data-theme="dark"]{--lg-bg:rgba(44,44,48,.46);--lg-rim:rgba(255,255,255,.55);--lg-rim2:rgba(255,255,255,.12);
-  --lg-in:rgba(255,255,255,.08);--lg-sh:0 12px 34px -10px rgba(0,0,0,.7);--lg-edge:rgba(255,255,255,.06);--lg-ico:rgba(255,255,255,.85);--lg-sel:rgba(255,77,99,.22);--lg-sheen:rgba(255,255,255,.08)}
+:root{--lg-bg:rgba(255,255,255,.78);--lg-rim:rgba(255,255,255,.95);--lg-rim2:rgba(255,255,255,.35);--lg-in:rgba(255,255,255,.45);
+  --lg-sh:0 10px 34px -10px rgba(0,0,0,.22),0 2px 6px -2px rgba(0,0,0,.08);--lg-edge:rgba(0,0,0,.07);--lg-ico:rgba(0,0,0,.92);
+  --lg-sel:rgba(120,120,128,.15);--lg-sheen:rgba(255,255,255,.22)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--lg-bg:rgba(36,36,38,.82);--lg-rim:rgba(255,255,255,.55);--lg-rim2:rgba(255,255,255,.12);
+  --lg-in:rgba(255,255,255,.08);--lg-sh:0 12px 34px -10px rgba(0,0,0,.7);--lg-edge:rgba(255,255,255,.06);--lg-ico:#fff;--lg-sel:rgba(0,0,0,.62);--lg-sheen:rgba(255,255,255,.08)}}
+:root[data-theme="dark"]{--lg-bg:rgba(36,36,38,.82);--lg-rim:rgba(255,255,255,.55);--lg-rim2:rgba(255,255,255,.12);
+  --lg-in:rgba(255,255,255,.08);--lg-sh:0 12px 34px -10px rgba(0,0,0,.7);--lg-edge:rgba(255,255,255,.06);--lg-ico:#fff;--lg-sel:rgba(0,0,0,.62);--lg-sheen:rgba(255,255,255,.08)}
 :root .nav{left:12px;right:88px;bottom:calc(10px + env(safe-area-inset-bottom));height:66px;max-width:none;margin:0;border-radius:33px}
 @media (min-width:500px){:root .nav{left:calc(50% - 228px);right:calc(50% - 152px)}}
 :root .nav,:root .nav .plus{background:var(--lg-bg);border:0;isolation:isolate;
@@ -727,8 +727,25 @@ img.fl{width:62%;height:62%;object-fit:contain;display:block;pointer-events:none
 :root .nav button[data-go] svg{width:25px;height:25px;flex:none}
 /* the sliding bubble: tinted glass with its own little rim */
 :root .nav .gpill{display:block;top:5px;bottom:5px}
-:root .nav .gpill i{border-radius:28px;background:var(--lg-sel);border:0;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.55),inset 0 -1px 0 rgba(255,255,255,.18),inset 0 0 10px rgba(255,255,255,.2)}
+:root .nav .gpill i{border-radius:28px;background:var(--lg-sel);border:0;box-shadow:none}
+/* while it moves, the bubble lifts out of the bar like Music: grows past the edges as clear glass with a lit rim, then settles */
+:root .nav .gpill.squish i{animation:lgLift .52s cubic-bezier(.3,.7,.35,1)}
+@keyframes lgLift{
+  0%{transform:scale(1)}
+  28%{transform:scale(1.14,1.24);background:rgba(255,255,255,.14);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.7),inset 0 1px 1px rgba(255,255,255,.9),0 8px 22px -6px rgba(0,0,0,.28)}
+  62%{transform:scale(1.05,1.08);background:rgba(255,255,255,.1);box-shadow:inset 0 0 0 1px rgba(255,255,255,.45),0 6px 16px -6px rgba(0,0,0,.2)}
+  100%{transform:scale(1)}}
+/* …and the whole bar swells a little at the same moment, then settles (Music does this too).
+   The bubble code re-adds .squish on every move, so :has() restarts this each switch. */
+:root .nav:has(.gpill.squish){animation:navPop .52s cubic-bezier(.3,.7,.35,1)}
+/* the bar also lightens a little while it swells (clearly visible in dark mode), then returns to its normal tint */
+:root{--lg-pop:rgba(255,255,255,.9)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--lg-pop:rgba(78,78,84,.86)}}
+:root[data-theme="dark"]{--lg-pop:rgba(78,78,84,.86)}
+@keyframes navPop{0%{transform:scale(1)}28%{transform:scale(1.04,1.07);background-color:var(--lg-pop)}62%{transform:scale(1.012,1.02)}100%{transform:scale(1)}}
+:root .nav{transform-origin:50% 100%}
+@media (prefers-reduced-motion:reduce){:root .nav .gpill.squish i,:root .nav:has(.gpill.squish){animation:none}}
 :root .nav button[data-open="add"]{position:absolute;right:-76px;top:0;width:66px;height:66px;padding:0}
 :root .nav .plus{position:relative;margin:0;width:66px;height:66px;border-radius:50%;color:var(--accent);font-size:34px;font-weight:300;line-height:1}
 /* the + is a drawn icon (a text "+" sits off-centre in most fonts) */
@@ -742,6 +759,7 @@ img.fl{width:62%;height:62%;object-fit:contain;display:block;pointer-events:none
 :root .hero small{padding-right:80px}
 /* Akun: small segmented controls size to their words so the row label ("Tema"/"Theme") isn't cut off */
 :root .seg.inrow{width:auto}
+:root #themeHint{white-space:normal;line-height:1.25}
 :root .seg.inrow button{flex:none;padding:0 11px}
 /* focused field: the whole row lights up in the accent tint, label turns accent, blinking accent caret */
 input,textarea{caret-color:var(--accent)}
@@ -881,7 +899,7 @@ input,textarea{caret-color:var(--accent)}
   <div class="sec"><h2>Pengaturan</h2></div>
   <div class="list">
     <div class="item"><div class="ico">🌐</div><div class="mid"><div class="t">Bahasa</div></div><div class="seg inrow" style="width:168px" role="group" aria-label="Bahasa"><button data-lang-set="id">Indonesia</button><button data-lang-set="en">English</button></div></div>
-    <div class="item"><div class="ico">🌗</div><div class="mid"><div class="t">Tema</div></div><div class="seg inrow" role="group" aria-label="Tampilan"><button data-theme-set="auto">Otomatis</button><button data-theme-set="light">Terang</button><button data-theme-set="dark">Gelap</button></div></div>
+    <div class="item"><div class="ico">🌗</div><div class="mid"><div class="t">Tema</div><div class="s" id="themeHint" hidden>Pilih Otomatis agar bilah atas iPhone serasi</div></div><div class="seg inrow" role="group" aria-label="Tampilan"><button data-theme-set="auto">Otomatis</button><button data-theme-set="light">Terang</button><button data-theme-set="dark">Gelap</button></div></div>
     <div class="item"><div class="ico">📅</div><div class="mid"><div class="t">Tanggal gajian</div><div class="s">Siklus dihitung dari tanggal ini</div></div><div class="amt" id="salDay"></div></div>
     <button class="item" data-open="planEdit"><div class="ico">📝</div><div class="mid"><div class="t">Ubah rencana</div></div><span class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg></span></button>
     <div class="item" id="syncItem"><div class="ico">🔄</div><div class="mid"><div class="t">Sinkron Money Lover</div><div class="s" id="syncSub"></div></div></div>
@@ -1089,7 +1107,12 @@ function applyTheme(t){
   document.querySelectorAll('[data-theme-set]').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.themeSet===t)});
   var dark=t==='dark'||(t==='auto'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches);
   var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',dark?'#000000':'#F2F2F7');
+  // iOS colours a home-screen app's status bar by the PHONE's mode, so a forced Light/Dark that differs from the phone
+  // gives a grey band at the top — say so under Tema
+  var sys=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches, h=document.getElementById('themeHint');
+  if(h)h.hidden=t==='auto'||(t==='dark')===sys;
 }
+if(window.matchMedia)try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',function(){applyTheme(load('ek_theme'))})}catch(e){}
 document.querySelectorAll('[data-theme-set]').forEach(function(b){b.onclick=function(){store('ek_theme',b.dataset.themeSet==='auto'?null:b.dataset.themeSet);applyTheme(b.dataset.themeSet)}});
 applyTheme(load('ek_theme'));
 /* hide/show amounts on Beranda, remembered on this device */
@@ -1781,7 +1804,7 @@ var EN={
 'ketik nama jika bukan di atas':'type a name if not listed','Isi jumlah pinjaman':'Enter the loan amount','lihat di aplikasi Flexi':'see the Flexi app',
 'Uang masuk dari Flexi lalu diberikan ke saudara, jadi tidak dihitung sebagai pemasukan atau pengeluaranmu.':'Money comes in from Flexi and goes to your sister, so it isn’t counted as your income or spending.',
 'Cair ke dompet':'Paid out to wallet','Bayar cicilan Flexi':'Pay Flexi installment','Cicilan Flexi':'Flexi installment','untuk cicilan Flexi':'for the Flexi installment',
-'Pengaturan':'Settings','Tema':'Theme','Otomatis':'Auto','Terang':'Light','Gelap':'Dark','Bahasa':'Language',
+'Pengaturan':'Settings','Tema':'Theme','Pilih Otomatis agar bilah atas iPhone serasi':'Choose Auto so the iPhone top bar matches','Otomatis':'Auto','Terang':'Light','Gelap':'Dark','Bahasa':'Language',
 'Tanggal gajian':'Payday','Siklus dihitung dari tanggal ini':'Cycles start on this day','Sinkron Money Lover':'Money Lover sync',
 'Keluar dari perangkat ini':'Sign out on this device','Pengeluaran':'Expense','Pemasukan':'Income','Keluar':'Out','Transfer':'Transfer','⇄ Transfer':'⇄ Transfer',
 'Jumlah':'Amount','Bayar pakai':'Pay with','Masuk ke':'Into','Dari':'From','Ke':'To','Kategori':'Category','Semua kategori':'All categories',
@@ -2050,7 +2073,7 @@ document.addEventListener('change',function(e){var s=e.target.closest&&e.target.
 /* ======================= pull down to refresh + automatic update check =======================
    Pull down at the top of a main screen: fetches the newest numbers, and if a new version of the
    app was uploaded to GitHub it reloads into it. Opening the app also checks for a new version. */
-var BUILD='20261016-1336';
+var BUILD='20261016-1424';
 function checkUpdate(){
   if(IN_GOOGLE||LOCAL_DEV||!/^https:/.test(location.protocol))return Promise.resolve(false);
   return fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
