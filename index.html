@@ -759,6 +759,20 @@ img.fl{width:62%;height:62%;object-fit:contain;display:block;pointer-events:none
 :root .hero small{padding-right:80px}
 /* Ringkasan: its cards also carry .plan, so the Rencana v2 ".plan{margin:0 16px}" ate their top spacing — restore it
    and line everything up on the same 16px edge as the rest of the app */
+/* Flexi v2: total card, due-vs-received per sister, running loans with dots (16 Oct) */
+:root .wtot.fx .fxrow{display:flex;justify-content:space-between;font-size:14px;color:var(--muted);margin-top:8px}
+:root .wtot.fx .fxrow strong{font-family:var(--f-round);color:var(--ink);font-weight:700}
+:root .wtot.fx .fxwarn{margin-top:10px;font-size:12px;color:var(--orange)}
+:root .wtot.fx .fxlim{margin-top:6px;font-size:12px;color:var(--muted)}
+:root #flexi .item .s0{font-size:13px;color:var(--muted)}
+:root #flexi .okc{color:var(--green)}:root #flexi .warnc{color:var(--orange)}
+:root #flexi .item .s{white-space:normal}
+:root .pl.fxl .nm b em{font-style:normal;font-weight:500;font-size:12px;color:var(--muted);margin-left:4px}
+:root .pl.fxl .pips{margin-top:10px}:root .pl.fxl .note{margin-top:7px;font-size:12px;color:var(--muted)}
+:root .pips i.paid{background:var(--g-bar)}:root .pips i.next{background:var(--accent)}
+:root .fxa .r{align-items:center}
+:root .fxring{width:48px;height:48px;flex:none}:root .fxring circle{fill:none;stroke:var(--g-bar);stroke-width:5;stroke-linecap:round}:root .fxring circle.tr{stroke:var(--fill)}
+:root .fxring text{font-family:var(--f-round);font-size:12px;font-weight:700;fill:var(--ink)}
 :root #review .rvcard{margin:12px 16px 0}
 :root #review .rvhero{margin:14px 16px 0}
 :root #review .rvtiles{margin:12px 16px 0}
@@ -1463,22 +1477,56 @@ function renderWallet(){
 function renderCard(){
   var c=S.card; if(!c)return; $('cardName').textContent=c.name;
   $('cardBody').innerHTML='<div class="due"><small>Tagihan berikutnya (perkiraan)</small><div class="big">Rp '+rp(c.next_bill)+'</div><div class="r"><span>Cetak '+dshort(c.statement)+'</span><span>Bayar sebelum ±'+dshort(c.due)+'</span></div></div>'+
-   '<div class="sec"><h2>Cicilan berjalan</h2></div><div class="plan">'+c.installments.map(function(i){return '<div class="pl"><div class="r"><b>'+esc(i.name)+'</b><span>'+rp(i.monthly)+'/bln</span></div><div class="note">'+i.paid+' dari '+i.total+' lunas · sisa Rp '+rp(i.remaining)+'</div><div class="pips">'+Array.from({length:i.total},function(_,k){return '<i class="'+(k<i.paid?'paid':k===i.paid?'next':'')+'"></i>'}).join('')+'</div></div>'}).join('')+'</div>'+
+   '<div class="sec"><h2>Cicilan berjalan</h2></div><div class="plan">'+c.installments.map(function(i){var end='';if(i.start){var d=new Date(i.start+'-01T00:00:00');d.setMonth(d.getMonth()+i.total-1);end=MONTHS[d.getMonth()]+' '+d.getFullYear()}var done=i.paid>=i.total;return '<div class="pl v2 fxl fxa"><div class="r">'+ringSvg(i.paid,i.total)+'<div class="nm"><b>'+esc(i.name)+'</b><small>'+(done?'Lunas':(i.next?'ke-'+i.next+' di tagihan '+dshort(c.statement):''))+(end?' · lunas '+end:'')+'</small></div>'+(done?'<span class="st ok">✓ Lunas</span>':'<strong>'+rp(i.monthly)+'</strong>')+'</div>'+(done?'':'<div class="note">Sudah dibayar Rp '+rp(i.paid*i.monthly)+' · sisa Rp '+rp(i.remaining)+'</div>')+'</div>'}).join('')+'</div>'+
    '<div class="sec"><h2>Masuk tagihan '+dshort(c.statement)+'</h2></div><div class="plan">'+c.lines.map(function(l){return '<div class="pl"><div class="r"><b>'+esc(l.name)+'</b><span>'+rp(l.amount)+'</span></div></div>'}).join('')+'</div>'+
    '<div class="btns"><button class="black" data-cardpay>Bayar tagihan</button><button class="white" data-adjcard>Sesuaikan saldo</button></div>'+
    '<div class="foot">Total utang termasuk cicilan Rp '+rp(-c.balance)+'. Bayar penuh tiap bulan supaya tidak kena bunga.</div>';
 }
+/* progress ring for running instalments (Flexi loans + card): paid/total inside, Activity-style */
+function ringSvg(paid,n){var c=2*Math.PI*20,p=n?paid/n:0;return '<svg class="fxring" viewBox="0 0 48 48"><circle cx="24" cy="24" r="20" class="tr"/><circle cx="24" cy="24" r="20" stroke-dasharray="'+c.toFixed(1)+'" stroke-dashoffset="'+(c*(1-p)).toFixed(1)+'" transform="rotate(-90 24 24)"/><text x="24" y="28" text-anchor="middle">'+paid+'/'+n+'</text></svg>'}
 function renderFlexi(){
   var f=S.flexi; if(!f)return;
-  $('flexiBody').innerHTML='<div class="due p"><small>Cicilan bulan ini · jatuh tempo ±tgl '+f.due_day+'</small><div class="big">Rp '+rp(f.monthly)+'</div><div class="r"><span>Dari saudara '+rp(f.collected)+'</span><span class="'+(f.short?'red':'')+'">'+(f.short?'kurang '+rp(f.short):'lengkap')+'</span></div></div>'+
-   (f.owed!=null?'<div class="sec"><h2>Utang Flexi Cash</h2></div><div class="list"><div class="item"><div class="ico">🏦</div><div class="mid"><div class="t">Sisa yang harus dibayar</div><div class="s">termasuk bunga'+(f.limit?' · limit Rp '+rp(f.limit):'')+'</div></div><div class="amt red">'+rp(f.owed)+'</div></div></div>':'')+
-   '<div class="sec"><h2>Siapa bayar berapa</h2></div><div class="list">'+
-   '<div class="item"><div class="ico">🙋</div><div class="mid"><div class="t">Bagianku</div><div class="s">dari pos Flexi di rencana</div></div><div class="amt">'+rp(f.my_share)+'</div></div>'+
-   f.people.map(function(p){return '<div class="item"><div class="ico">👩</div><div class="mid"><div class="t">'+esc(p.name)+'</div><div class="s">'+(p.count?p.count+'× diterima siklus ini':'belum ada')+'</div></div><div class="amt">'+rp(p.received)+'</div><button class="tag'+(p.received?'':' warn')+'" data-collect="'+esc(p.name)+'">+ Terima</button></div>'}).join('')+
-   (f.short?'<div class="item"><div class="ico">➖</div><div class="mid"><div class="t">Kurang</div><div class="s">tanyakan atau tutup dari bagianmu</div></div><div class="amt red">'+rp(f.short)+'</div></div>':'')+'</div>'+
-   '<div class="btns"><button class="black" data-repay>Bayar cicilan Flexi</button><button class="white" data-open="newLoan">+ Pinjaman baru</button></div>'+
-   (f.repaid?'<div class="foot">Sudah dibayar siklus ini: Rp '+rp(f.repaid)+'</div>':'')+
-   '<div class="sec"><h2>Pinjaman berjalan</h2></div><div class="plan">'+(f.loans.length?f.loans.map(function(l){return '<div class="pl"><div class="r"><b>'+esc(l.person)+' · '+short(l.principal)+'</b><span>'+(l.start_pay?'mulai bayar '+MONTHS[+l.start_pay.split('-')[1]-1]:'')+'</span></div><div class="note">Dipinjam '+dshort(l.date)+(l.monthly?' · '+rp(l.monthly)+'/bln × '+l.months:'')+(l.note?' · <span class="nt">'+esc(l.note)+'</span>':'')+'</div></div>'}).join(''):'<div class="pl"><div class="note">Belum ada.</div></div>')+'</div>';
+  var dd=f.due_day||8, MS=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  var ymLbl=function(ym){return MS[+ym.slice(5,7)-1]+' '+ym.slice(0,4)};
+  var dueOf=function(ym){return ym+'-'+String(dd).padStart(2,'0')};
+  var nextYm=(f.next_due||'').slice(0,7);
+  // each loan against the bank schedule: an instalment counts as paid once its auto-pay day (the 8th) has passed
+  var loans=(f.loans||[]).map(function(l){
+    var sch=l.schedule&&l.schedule.length?l.schedule:(l.start_pay&&l.months&&l.monthly?Array.from({length:l.months},function(_,k){var d=new Date(l.start_pay+'-01T00:00:00');d.setMonth(d.getMonth()+k);return [d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'),l.monthly]}):[]);
+    var paid=sch.filter(function(x){return dueOf(x[0])<S.today}),left=sch.filter(function(x){return dueOf(x[0])>=S.today});
+    var sum=function(a){return a.reduce(function(s,x){return s+(+x[1])},0)};
+    var mine=String(l.person).toLowerCase()===String(S.name).toLowerCase()||/^(aku|saya|innamul)$/i.test(l.person);
+    return {l:l,sch:sch,mine:mine,name:mine?'Bagianku':l.person,n:sch.length,paidN:paid.length,paidAmt:sum(paid),leftAmt:sum(left),
+      next:left[0]||null,end:sch.length?sch[sch.length-1][0]:'',due:sum(sch.filter(function(x){return x[0]===nextYm}))};
+  });
+  var withSch=loans.filter(function(x){return x.n}), totalLeft=withSch.reduce(function(s,x){return s+x.leftAmt},0);
+  var nextTotal=loans.reduce(function(s,x){return s+x.due},0), lastEnd=withSch.reduce(function(m,x){return x.end>m?x.end:m},'');
+  var myDue=loans.filter(function(x){return x.mine}).reduce(function(s,x){return s+x.due},0);
+  // 1 — total card: debt left (from the schedules), next auto-pay, when everything is paid off
+  var html='<div class="wtot fx"><small>Sisa utang Flexi Cash</small><b>Rp '+rp(withSch.length?totalLeft:(f.owed||0))+'</b>'+
+    '<div class="fxrow"><span>Bayar berikutnya · '+dshort(f.next_due||S.today)+'</span><strong>Rp '+rp(nextTotal||f.monthly)+'</strong></div>'+
+    (lastEnd?'<div class="fxrow"><span>Lunas semua</span><strong>'+ymLbl(lastEnd)+'</strong></div>':'')+
+    (f.owed!=null&&withSch.length&&Math.abs(f.owed-totalLeft)>1000?'<div class="fxwarn">Saldo dompet Flexi di app Rp '+rp(f.owed)+' — beda '+rp(Math.abs(f.owed-totalLeft))+' dari jadwal bank</div>':'')+
+    (f.limit?'<div class="fxlim">limit Rp '+rp(f.limit)+'</div>':'')+'</div>';
+  // 2 — who pays what for the next 8th; sisters usually round up, extra is fine
+  html+='<div class="sec"><h2>Siapa bayar berapa</h2><span class="muted" style="font-size:13px">untuk '+dshort(f.next_due||S.today)+'</span></div><div class="list">'+
+    '<div class="item"><div class="ico">🙋</div><div class="mid"><div class="t">Bagianku</div><div class="s">'+(myDue?'cicilanku bulan ini':'dari pos Flexi di rencana')+'</div></div><div class="amt">'+rp(myDue||f.my_share)+'</div></div>'+
+    f.people.map(function(p){var due=p.due_next||0,got=p.got_window||0,diff=got-due;
+      // status lives under the name (never cut off); the amount due sits on the right; '+ Terima' stays until she's paid
+      var sub=!due?(got?'<span class="okc">+ Rp '+rp(got)+' diterima</span>':'tidak ada cicilan bulan ini'):got>=due?'<span class="okc">✓ diterima Rp '+rp(got)+(diff>0?' · lebih '+rp(diff):'')+'</span>':got?'<span class="warnc">diterima Rp '+rp(got)+' · kurang '+rp(due-got)+'</span>':'belum diterima';
+      return '<div class="item"><div class="ico">👩</div><div class="mid"><div class="t">'+esc(p.name)+'</div><div class="s">'+sub+'</div></div>'+(due?'<div class="amt">'+rp(due)+'</div>':'')+
+        (due&&got>=due?'':'<button class="tag'+(due&&!got?' warn':'')+'" data-collect="'+esc(p.name)+'">+ Terima</button>')+'</div>'}).join('')+'</div>'+
+    '<div class="btns"><button class="black" data-repay>Bayar cicilan Flexi</button><button class="white" data-open="newLoan">+ Pinjaman baru</button></div>'+
+    (f.repaid?'<div class="foot">Sudah dibayar siklus ini: Rp '+rp(f.repaid)+'</div>':'');
+  // 3 — running instalments, like the Tokopedia Card: one row per loan with paid/next dots
+  html+='<div class="sec"><h2>Cicilan berjalan</h2></div><div class="plan">'+(loans.length?loans.map(function(x){var l=x.l;
+    if(!x.n)return '<div class="pl"><div class="r"><b>'+esc(x.name)+' · '+short(l.principal)+'</b><span>'+(l.start_pay?'mulai bayar '+MONTHS[+l.start_pay.split('-')[1]-1]:'')+'</span></div><div class="note">Dipinjam '+dshort(l.date)+(l.note?' · <span class="nt">'+esc(l.note)+'</span>':'')+'</div></div>';
+    var done=x.paidN>=x.n;
+    var head='<div class="nm"><b>'+esc(x.name)+(l.ref?' <em>'+esc(l.ref)+'</em>':'')+'</b><small>'+(done?'Lunas '+ymLbl(x.end):(x.next?'berikutnya '+dshort(dueOf(x.next[0])):'')+' · lunas '+ymLbl(x.end))+'</small></div>'+
+      (done?'<span class="st ok">✓ Lunas</span>':'<strong>'+(x.next?rp(+x.next[1]):'')+'</strong>');
+    return '<div class="pl v2 fxl fxa"><div class="r">'+ringSvg(x.paidN,x.n)+head+'</div>'+(done?'':'<div class="note">Sudah dibayar Rp '+rp(x.paidAmt)+' · sisa Rp '+rp(x.leftAmt)+'</div>')+'</div>'}).join(''):
+    '<div class="pl"><div class="note">Belum ada pinjaman.</div></div>')+'</div>';
+  $('flexiBody').innerHTML=html;
 }
 
 /* ======================= navigation & sheets ======================= */
@@ -2085,7 +2133,7 @@ document.addEventListener('change',function(e){var s=e.target.closest&&e.target.
 /* ======================= pull down to refresh + automatic update check =======================
    Pull down at the top of a main screen: fetches the newest numbers, and if a new version of the
    app was uploaded to GitHub it reloads into it. Opening the app also checks for a new version. */
-var BUILD='20261016-1439';
+var BUILD='20261016-1503';
 function checkUpdate(){
   if(IN_GOOGLE||LOCAL_DEV||!/^https:/.test(location.protocol))return Promise.resolve(false);
   return fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
