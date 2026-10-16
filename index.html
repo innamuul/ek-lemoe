@@ -784,9 +784,9 @@ img.fl{width:62%;height:62%;object-fit:contain;display:block;pointer-events:none
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark}}
 :root[data-theme="dark"]{color-scheme:dark}
 /* status bar (black-translucent, 16 Oct): the page runs under the clock. iOS always draws that clock WHITE, so:
-   dark = black glass behind it (seamless), light = a soft dark fade that melts into the page (like Photos). */
-.sbg{position:fixed;top:0;left:0;right:0;z-index:15;pointer-events:none;height:calc(env(safe-area-inset-top) + 18px);
-  background:linear-gradient(180deg,rgba(0,0,0,.55) 0%,rgba(0,0,0,.3) 50%,rgba(0,0,0,0) 100%)}
+   dark = black glass behind it (seamless), light = a solid Apple Music red band (Innamul's pick, 16 Oct). */
+.sbg{position:fixed;top:0;left:0;right:0;z-index:15;pointer-events:none;height:env(safe-area-inset-top);
+  background:var(--accent);box-shadow:0 6px 14px -8px rgba(250,45,72,.55)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .sbg{height:env(safe-area-inset-top);background:rgba(0,0,0,.7);-webkit-backdrop-filter:blur(14px) saturate(160%);backdrop-filter:blur(14px) saturate(160%)}}
 :root[data-theme="dark"] .sbg{height:env(safe-area-inset-top);background:rgba(0,0,0,.7);-webkit-backdrop-filter:blur(14px) saturate(160%);backdrop-filter:blur(14px) saturate(160%)}
 /* Akun: small segmented controls size to their words so the row label ("Tema"/"Theme") isn't cut off */
@@ -2135,7 +2135,7 @@ document.addEventListener('change',function(e){var s=e.target.closest&&e.target.
 /* ======================= pull down to refresh + automatic update check =======================
    Pull down at the top of a main screen: fetches the newest numbers, and if a new version of the
    app was uploaded to GitHub it reloads into it. Opening the app also checks for a new version. */
-var BUILD='20261016-1510';
+var BUILD='20261016-1522';
 function checkUpdate(){
   if(IN_GOOGLE||LOCAL_DEV||!/^https:/.test(location.protocol))return Promise.resolve(false);
   return fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
