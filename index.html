@@ -9,10 +9,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" href="icon-192.png">
-<meta name="theme-color" content="#FCFDFF">
+<meta name="theme-color" content="#F2F2F7">
 <title>Ek Lemoe</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
   --peri:#9BB9FF;--peri-2:#C9D8FF;--pink:#EA9CFD;--orange:#F28E2E;--mint:#A6E6CB;--on-color:#0A0A14;
@@ -39,7 +37,7 @@
 .seg.inrow{margin:0;flex:none;width:200px}
 .seg.inrow button{height:32px;font-size:13px}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{background:var(--paper);color:var(--ink);font-family:"Outfit",-apple-system,system-ui,sans-serif;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+html,body{background:var(--paper);color:var(--ink);font-family:-apple-system,"SF Pro Text",system-ui,sans-serif;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
 html,body{height:100%;overflow:hidden}
 body{width:100%}
 #appView{position:fixed;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
@@ -85,7 +83,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .hero .per{font-size:14px;margin-top:4px}
 .ringbox{position:absolute;top:18px;right:16px;text-align:center;width:70px}
 .ringbox svg{width:62px;height:62px}
-.ringbox text{font:600 14px Outfit,sans-serif;fill:var(--on-color)}
+.ringbox text{font:600 14px ui-rounded,-apple-system,system-ui,sans-serif;fill:var(--on-color)}
 .ringbox span{display:block;font-size:11px;line-height:1.2;margin-top:2px;opacity:.8}
 .row{display:flex;gap:8px;margin-top:16px}
 .btn-dark{height:46px;padding:0 20px;border-radius:23px;background:var(--on-color);color:#fff;font-weight:600;font-size:15px;display:inline-flex;align-items:center;justify-content:center;gap:8px}
@@ -457,6 +455,293 @@ img.fl{width:62%;height:62%;object-fit:contain;display:block;pointer-events:none
 .hide-num #recent .amt{font-size:0!important}.hide-num #recent .amt::after{content:'****';font-size:15px}
 .hide-num #sharedBox .s{font-size:0!important}.hide-num #sharedBox .s::after{content:'****';font-size:13px}
 .hide-num #week b:not(.future)::after{content:'***'}
+
+/* ======================= "Native iOS" look (16 Oct 2026) =======================
+   iOS 26 rule: content sits on solid cards (white on #F2F2F7, #1C1C1E on black); Liquid Glass only on chrome
+   (tab bar, sheet headers, keypad). SF Pro text, SF Pro Rounded (ui-rounded) for titles and money.
+   Inset grouped lists, iOS segmented control, colour only for meaning (accent / green / orange / red). */
+:root{
+  --bg:#F2F2F7;--blobs:none;--card:#FFFFFF;--card-2:#F2F2F7;--ink:#000000;--on-ink:#FFFFFF;
+  --muted:rgba(60,60,67,.6);--muted-3:rgba(60,60,67,.3);--sep:rgba(60,60,67,.18);--fill:rgba(118,118,128,.12);
+  --accent:#5468E8;--on-accent:#FFFFFF;--acc-soft:rgba(84,104,232,.12);
+  --green:#1F9D45;--g-bar:#34C759;--orange:#E07800;--o-bar:#FF9500;--red:#E0352B;--r-bar:#FF3B30;
+  --glass:var(--card);--glass-2:#FFFFFF;--glass-line:transparent;--glass-hi:transparent;--glass-sh:none;
+  --glass-nav:rgba(250,250,252,.78);--sheet:#F2F2F7;--sheet-head:rgba(242,242,247,.82);--ico-bg:var(--card-2);--track:var(--fill);
+  --paper:var(--bg);--line:var(--sep);--chip:var(--fill);--on-color:var(--ink);
+  --f-text:-apple-system,"SF Pro Text",system-ui,sans-serif;--f-round:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#000000;--card:#1C1C1E;--card-2:#2C2C2E;--ink:#FFFFFF;--on-ink:#000000;
+  --muted:rgba(235,235,245,.6);--muted-3:rgba(235,235,245,.3);--sep:rgba(84,84,88,.55);--fill:rgba(118,118,128,.24);
+  --accent:#8E9BFF;--on-accent:#000;--acc-soft:rgba(142,155,255,.18);
+  --green:#30D158;--g-bar:#30D158;--orange:#FF9F0A;--o-bar:#FF9F0A;--red:#FF453A;--r-bar:#FF453A;
+  --glass-2:#2C2C2E;--glass-nav:rgba(30,30,32,.72);--sheet:#000000;--sheet-head:rgba(18,18,20,.8);--ico-bg:var(--card-2);
+}}
+:root[data-theme="dark"]{
+  --bg:#000000;--card:#1C1C1E;--card-2:#2C2C2E;--ink:#FFFFFF;--on-ink:#000000;
+  --muted:rgba(235,235,245,.6);--muted-3:rgba(235,235,245,.3);--sep:rgba(84,84,88,.55);--fill:rgba(118,118,128,.24);
+  --accent:#8E9BFF;--on-accent:#000;--acc-soft:rgba(142,155,255,.18);
+  --green:#30D158;--g-bar:#30D158;--orange:#FF9F0A;--o-bar:#FF9F0A;--red:#FF453A;--r-bar:#FF453A;
+  --glass-2:#2C2C2E;--glass-nav:rgba(30,30,32,.72);--sheet:#000000;--sheet-head:rgba(18,18,20,.8);--ico-bg:var(--card-2);
+}
+:root{background-image:none}
+:root,:root body{font-family:var(--f-text);letter-spacing:-.2px}
+
+/* --- content = solid cards, no blur, no tint gradients, no borders --- */
+:root :is(.hero,.bcard,.pot,.days,.plan,.form,.save-now,.due,.sum2 div,.linkmsg,.diffbox,.item,.wc,.white,.search,.explain){
+  -webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none;background-image:none;border:0;background-color:var(--card)}
+:root :is(.c-peri,.c-pink,.c-orange,.c-mint,.due.p,.explain.m,.explain.p,.wc.person){background-image:none}
+:root :is(.hero,.plan,.form,.save-now,.days,.sum2 div,.explain){border-radius:22px}
+:root :is(.bcard,.pot,.due){border-radius:20px}
+
+/* --- typography: SF Pro text, SF Pro Rounded for titles + money --- */
+:root .title h1{font-family:var(--f-round);font-size:34px;font-weight:700;letter-spacing:.2px}
+:root .title p{font-size:15px;color:var(--muted)}
+:root .top h1{font-family:var(--f-round);font-size:22px;font-weight:700;letter-spacing:.1px}
+:root .top p{font-size:13px}
+:root .sec{padding:26px 20px 8px}
+:root .sec h2{font-family:var(--f-round);font-size:22px;font-weight:700;letter-spacing:.1px}
+:root .sec a,:root .sec .link{font-size:17px;color:var(--accent);text-decoration:none}
+:root .hero small{font-size:15px;color:var(--muted);opacity:1;font-weight:500}
+:root .hero .amt{font-family:var(--f-round);font-weight:700;font-size:44px;letter-spacing:-.4px}
+:root .hero .amt span{font-size:24px;color:var(--muted)}
+:root .hero .per{font-size:15px;color:var(--muted)}
+:root .hero .per b{color:var(--ink)}
+:root .ringbox text{font-family:var(--f-round);fill:var(--ink)}
+:root .ringbox span{color:var(--muted);opacity:1}
+:root :is(.bcard .big,.pot .big,.sum2 b,.big){font-family:var(--f-round);font-weight:700;letter-spacing:-.2px}
+:root .item .amt{font-family:var(--f-round);font-weight:600;font-size:17px}
+:root .item .t{font-size:17px;font-weight:500}
+:root .item .s,:root .bcard .sub{font-size:13px;color:var(--muted);opacity:1}
+
+/* --- pos cards: Health-style tiles; progress bars use status colours --- */
+:root .bcard h3{font-size:15px;font-weight:600;color:var(--muted)}
+:root .bcard .big{font-size:26px;color:var(--ink)}
+:root :is(.bcard,.pot,.hero,.pl) .bar{background:var(--fill);height:6px;border-radius:3px}
+:root :is(.bcard,.pot,.hero,.pl) .bar i{background:var(--g-bar);border-radius:3px}
+:root .bcard.warn .bar i,:root .bar.warn i{background:var(--o-bar)}
+:root .bcard .over{color:var(--red)}
+:root :is(.item .ico,.bcard .ico,.pot .ico){background:var(--card-2);box-shadow:none}
+
+/* --- lists: inset grouped (one card, hairline separators inset after the icon, grey chevron) --- */
+:root .list{gap:0;margin:0 16px;padding:0;border-radius:22px;overflow:hidden;background:var(--card)}
+:root .list>.item{border-radius:0;padding:10px 14px;background:var(--card)}
+:root .list>.item+.item{background-image:linear-gradient(var(--sep),var(--sep));background-size:calc(100% - 72px) .5px;background-position:72px 0;background-repeat:no-repeat}
+:root .item .go{width:auto;height:auto;background:none;color:var(--muted-3);border:0}
+:root .item .go svg{width:14px;height:14px;stroke-width:3}
+:root .item.dark{background:var(--card);color:var(--ink)}
+:root .item.dark .ico{background:var(--card-2);color:var(--ink)}
+
+/* --- week strip --- */
+:root .days{padding:14px 6px}
+:root .days span{font-size:12px;font-weight:600;color:var(--muted)}
+:root .days b{font-family:var(--f-round);font-size:11px;background:var(--fill);color:var(--ink)}
+:root .days b.today{background:var(--accent);color:var(--on-accent)}
+:root .days b.future{border:1.5px solid var(--sep);background:transparent}
+
+/* --- plan rows / forms: inset grouped --- */
+:root .pl,:root .form label,:root .form .fr,:root .frow2{border-top:.5px solid var(--sep)}
+:root .pl:first-child,:root .form label:first-child,:root .form .fr:first-child{border-top:0}
+:root .pl .r b{font-size:17px;font-weight:500}
+:root .pl .r span{font-family:var(--f-round);font-size:15px;color:var(--muted)}
+:root .form label,:root .form .fr{font-size:17px}
+:root .form input,:root .form select{color:var(--muted)}
+
+/* --- controls --- */
+:root .seg{background:var(--fill);border-radius:10px;padding:2px}
+:root .seg button{height:32px;border-radius:8px;font-size:14px;font-weight:600;color:var(--ink)}
+:root .seg button[aria-pressed="true"]{background:transparent;color:var(--ink)}
+:root .seg .gpill{top:2px;bottom:2px}
+:root .seg .gpill i{border-radius:8px;background:var(--glass-2);border:.5px solid rgba(0,0,0,.04);box-shadow:0 3px 8px rgba(0,0,0,.12),0 3px 1px rgba(0,0,0,.04)}
+:root :is(.black,.pillbtn,.btn-dark){background:var(--accent);color:var(--on-accent);border-radius:999px;font-weight:600;font-size:17px}
+:root .pillbtn{font-size:15px}
+:root :is(.white,.btn-light){background:var(--fill);color:var(--accent);border:0;border-radius:999px;font-weight:600}
+:root .sbar .round{background:var(--fill);border:0;color:var(--ink)}
+:root .round{background:var(--card);border:0}
+:root .tag{background:var(--acc-soft);color:var(--accent);border-radius:999px}
+:root .tag.warn{background:rgba(255,149,0,.16);color:var(--orange)}
+:root .st{border-radius:999px;font-size:13px;font-weight:600}
+:root .st.ok,:root .pl .r .st.ok{background:rgba(52,199,89,.16);color:var(--green)}
+:root .pl .r .st.part{background:var(--fill);color:var(--ink)}
+:root .pl .r .st.no{border:0;background:var(--fill);color:var(--muted)}
+:root .wc{border:0;box-shadow:none}
+:root .wc[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+:root .tile span{background:var(--card);border:0;box-shadow:none}
+:root .tile[aria-pressed="true"] span,:root .tile.on span{box-shadow:0 0 0 2.5px var(--accent)}
+:root .empty{border:0;background:var(--card);border-radius:22px}
+
+/* --- chrome keeps Liquid Glass: tab bar, sheet header, keypad --- */
+:root .nav{border:0;box-shadow:0 8px 30px -8px rgba(0,0,0,.25),inset 0 .5px 0 rgba(255,255,255,.6)}
+:root .nav button{font-size:10px;font-weight:600}
+:root .nav button[aria-current="page"]{color:var(--accent)}
+:root .gpill i{background:var(--fill);border:0;box-shadow:none}
+:root .nav .plus{background:var(--accent);color:var(--on-accent);box-shadow:0 6px 16px -4px rgba(84,104,232,.55)}
+:root .sheet{border-top:0;border-radius:28px 28px 0 0;-webkit-backdrop-filter:none;backdrop-filter:none}
+:root .shead,:root .sheet>.sbar{-webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%)}
+:root .kgrid button{background:var(--glass-2);border:0;box-shadow:0 1px 0 rgba(0,0,0,.25);border-radius:8px;font-family:var(--f-round);font-size:24px;font-weight:500}
+/* the rest of the screens */
+:root .total{background:var(--card);color:var(--ink);border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;border-radius:22px}
+:root .total b{font-family:var(--f-round)}
+:root .list:has(>.pot){background:none;border-radius:0;overflow:visible;gap:12px;margin:0 16px}
+:root .pot .pill{background:var(--fill)}
+:root .pot h3,:root .pot .t{font-weight:600}
+:root .pchip{background:var(--fill);border:0}
+:root .pchip[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+:root .pnew input{background:var(--card)}
+:root .rvf label,:root .rvf .tg{background:var(--card);border:0}
+:root .rvf label.on,:root .rvf .tg[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+:root .rvhero,:root .rvcard{background:var(--card);background-image:none;border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;border-radius:22px}
+:root .rvhero .big{font-family:var(--f-round)}
+:root .rvtiles div{background:var(--card);border:0;box-shadow:none;border-radius:18px}
+:root .rvtiles b,:root .hrow .v{font-family:var(--f-round)}
+:root .who button,:root .pin{background:var(--card);border:0;box-shadow:none}
+:root .ptr{background:var(--card);border:0}
+/* soft cross-fade when a tab opens (and when the app opens): fade in with a tiny settle, like the iPhone waking up.
+   Runs because .screen goes display:none → block; no transform left behind afterwards, so fixed/sticky children are safe. */
+@keyframes scrIn{from{opacity:0;transform:scale(.988)}to{opacity:1;transform:none}}
+.screen.on{animation:scrIn .34s cubic-bezier(.2,.8,.2,1)}
+@media (prefers-reduced-motion:reduce){.screen.on{animation:none}}
+/* ===== Beranda v2 layout (16 Oct 2026) ===== */
+/* header: date line + large title, avatar on the right (App Store / Fitness) */
+:root .top.v2{justify-content:space-between;align-items:flex-end;padding:10px 20px 2px}
+:root .top.v2 .dateln{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.2px;margin:0}
+:root .top.v2 h1{font-family:var(--f-round);font-size:32px;font-weight:800;letter-spacing:.1px;line-height:1.15}
+:root .top.v2 #cycleTxt{font-size:13px;margin-top:1px}
+:root .top.v2 .avatar{width:42px;height:42px;margin-bottom:4px}
+/* hero: Activity-style rings on the left, amount + legend on the right */
+:root .hero.v2{display:flex;align-items:center;gap:16px;padding:18px;margin:14px 16px 0}
+:root .hero.v2 .rings{flex:none;width:108px;height:108px}
+:root .hero.v2 .rings svg{width:100%;height:100%}
+:root .hero.v2 .rings circle{fill:none;stroke-width:13;stroke-linecap:round}
+:root .hero.v2 .rings circle.tr{stroke-opacity:.18}
+:root .rd{stroke:var(--accent);background:var(--accent)}:root .rg{stroke:var(--g-bar);background:var(--g-bar)}:root .ro{stroke:var(--o-bar);background:var(--o-bar)}
+:root .hero.v2 .hx{min-width:0;flex:1}
+:root .hero.v2 small{padding-right:0;font-size:13px;font-weight:600}
+:root .hero.v2 .amt{font-size:30px;padding-right:0;white-space:nowrap;margin-top:1px}
+:root .hero.v2 .amt span{font-size:18px}
+:root .hero.v2 .per{font-size:13px;margin-top:2px}
+:root .hero.v2 .legend{display:flex;flex-direction:column;gap:2px;margin:6px 0 0;padding:0;font-size:12px;color:var(--muted)}
+:root .hero.v2 .legend span{display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:root .hero.v2 .legend i{width:8px;height:8px;border-radius:50%;flex:none}
+:root .hero.v2 .eye{color:var(--muted)}
+/* week: Screen Time style bars */
+:root .wkcard{margin:0 16px;background:var(--card);border-radius:22px;padding:14px 12px 10px;cursor:pointer}
+:root .wkhead{display:flex;justify-content:space-between;align-items:baseline;padding:0 4px 6px;font-size:13px;color:var(--muted)}
+:root .wkhead b{font-family:var(--f-round);font-size:15px;color:var(--ink)}
+:root .wkbars{display:flex;align-items:flex-end;height:104px}
+:root .wkbars>div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:5px;height:100%}
+:root .wkbars em{font-style:normal;font-family:var(--f-round);font-size:10px;font-weight:600;color:var(--muted);min-height:12px}
+:root .wkbars i{display:block;width:58%;max-width:24px;border-radius:6px;background:var(--ink);opacity:.82}
+:root .wkbars .t i{background:var(--accent);opacity:1}:root .wkbars .t em,:root .wkbars .t span{color:var(--accent)}
+:root .wkbars .f i{background:var(--fill);opacity:1}
+:root .wkbars span{font-size:12px;font-weight:600;color:var(--muted)}
+.hide-num #weekTot{font-size:0}.hide-num #weekTot::after{content:'*****';font-size:15px}
+.hide-num .wkbars em{visibility:hidden}.hide-num .wkbars i{height:4px!important}
+/* pos: 2-column grid of compact tiles instead of a sideways swipe */
+:root .pgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin:0 16px}
+:root .bcard.pt{width:auto;min-height:0;padding:13px 14px 12px;gap:0;text-align:left;display:flex;flex-direction:column}
+:root .bcard.pt .ph{display:flex;align-items:center;gap:8px;min-width:0}
+:root .bcard.pt .ico{width:30px;height:30px;font-size:15px;flex:none}
+:root .bcard.pt h3{margin:0;padding:0;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:root .bcard.pt .big{font-size:21px;margin-top:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:root .bcard.pt.done .big{color:var(--green)}
+:root .bcard.pt .bar{margin-top:8px;height:5px}
+:root .bcard.pt.warn .bar i{background:var(--o-bar)}:root .bcard.pt.over .bar i{background:var(--r-bar)}
+:root .bcard.pt .sub{font-size:11.5px;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* recent: grouped by day */
+:root #recent .dayh{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;padding:12px 20px 6px}
+:root #recent .dayh:first-child{padding-top:2px}
+:root #recent .list+.dayh{padding-top:16px}
+/* ===== Rencana v2 ===== */
+:root #legend{display:none}
+:root .psum{margin:16px 16px 0;background:var(--card);border-radius:22px;padding:16px 16px 14px}
+:root .psum .ps1{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
+:root .psum small{display:block;font-size:13px;font-weight:600;color:var(--muted)}
+:root .psum b{font-family:var(--f-round);font-size:30px;font-weight:800;letter-spacing:-.3px}
+:root .psum .r{text-align:right}:root .psum .r span{font-family:var(--f-round);font-size:15px;font-weight:600}
+:root .sbar2{display:flex;gap:2px;height:10px;border-radius:5px;overflow:hidden;margin-top:12px}
+:root .sbar2 i{display:block;height:100%}
+:root .sh{background:var(--accent)}:root .st2{background:#AF52DE}:root .ss{background:#30B0C7}
+:root .used2{height:4px;border-radius:2px;background:var(--fill);margin-top:5px;overflow:hidden}:root .used2 i{display:block;height:100%;background:var(--ink);opacity:.55;border-radius:2px}
+:root .sleg{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:10px;font-size:12px;color:var(--muted)}
+:root .sleg span{display:flex;align-items:center;gap:5px}:root .sleg i{width:8px;height:8px;border-radius:2px}
+:root .grp{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;padding:22px 20px 7px}
+:root .grp em{font-style:normal;font-family:var(--f-round);text-transform:none;letter-spacing:0}
+:root .plan{margin:0 16px}
+:root .pl.v2{padding:12px 16px}
+:root .pl.v2 .r{gap:10px}
+:root .pl.v2 .nm{flex:1;min-width:0}
+:root .pl.v2 .nm b{display:block;font-size:17px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:root .pl.v2 .nm small{display:block;font-family:var(--f-round);font-size:13px;color:var(--muted);margin-top:1px}
+:root .pl.v2 strong{font-family:var(--f-round);font-size:17px;font-weight:700;white-space:nowrap}
+:root .pl.v2 .go{width:auto;height:auto;background:none;color:var(--muted-3);display:grid;place-items:center}:root .pl.v2 .go svg{width:13px;height:13px;stroke-width:3}
+:root .pl.v2 .bar{margin-top:9px}
+:root .pl.v2 .bar i.warn{background:var(--o-bar)}:root .pl.v2 .bar i.over{background:var(--r-bar)}
+/* ===== Tabungan v2: bigger total card, pots as a 2-column grid of compact tiles ===== */
+:root .total{margin:14px 16px 0;padding:18px;align-items:flex-end}
+:root .total small{font-size:13px;font-weight:600;color:var(--muted);opacity:1}
+:root .total b{font-size:32px;font-weight:800;letter-spacing:-.3px}
+:root #potMonthly{font-family:var(--f-round);font-weight:600;color:var(--accent);opacity:1!important}
+:root #pots{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin:0 16px;background:none;border-radius:0;overflow:visible}
+:root #pots .empty{grid-column:1/-1}
+:root #pots .pot{padding:13px 14px 12px;border-radius:20px;display:flex;flex-direction:column;min-height:132px}
+:root #pots .pot .r{align-items:center}
+:root #pots .pot .ico{width:34px;height:34px;font-size:16px}
+:root #pots .pot .pill{font-family:var(--f-round);font-size:11px;padding:3px 8px;background:var(--fill);color:var(--muted)}
+:root #pots .pot h3{font-size:13px;font-weight:600;color:var(--muted);margin-top:auto;padding-top:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:root #pots .pot .big{font-size:21px;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:root #pots .pot .bar{margin-top:8px;height:5px}:root #pots .pot .bar i{background:var(--accent)}
+:root #pots .pot .sub{font-size:11.5px;color:var(--muted);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* ===== Dompet v2: total card with a "where the money sits" bar ===== */
+:root #walletTotal{display:none}
+:root .wtot{margin:14px 16px 0;background:var(--card);border-radius:22px;padding:16px 16px 14px}
+:root .wtot small{display:block;font-size:13px;font-weight:600;color:var(--muted)}
+:root .wtot b{display:block;font-family:var(--f-round);font-size:32px;font-weight:800;letter-spacing:-.3px}
+:root .wtot .sbar2:empty,:root .wtot .sleg:empty{display:none}
+:root .wc1{background:var(--accent)}:root .wc2{background:#30B0C7}:root .wc3{background:#AF52DE}:root .wc4{background:#FF9F0A}:root .wc5{background:var(--muted-3)}
+/* tab bar (16 Oct 2026): floating glass pill with icons only — the open tab shows its name in a tinted capsule —
+   and + as its own round button beside the pill, at the same height (iOS 26 Music/Photos pattern) */
+:root .nav{left:12px;right:84px;bottom:calc(10px + env(safe-area-inset-bottom));height:62px;max-width:none;margin:0;border-radius:31px}
+@media (min-width:500px){:root .nav{left:calc(50% - 228px);right:calc(50% - 156px)}}
+:root .nav .in{display:flex;align-items:center;justify-content:space-between;height:100%;padding:0 9px;max-width:none}
+:root .nav .gpill{display:none}
+:root .nav button[data-go]{flex-direction:row;justify-content:center;gap:7px;height:44px;min-width:44px;padding:0 10px;border-radius:22px;
+  font-size:0;font-weight:600;color:var(--muted);transition:background .25s,color .25s,padding .25s}
+:root .nav button[data-go][aria-current="page"]{font-size:14px;padding:0 16px;color:var(--accent);background:var(--focus)}
+:root .nav button[data-go] svg{flex:none}
+/* the bar stands apart from the content: black glass in light mode, lifted grey glass in dark mode */
+:root .nav{background:rgba(22,22,24,.9);box-shadow:0 10px 30px -10px rgba(0,0,0,.45),inset 0 .5px 0 rgba(255,255,255,.12)}
+:root .nav button[data-go]{color:rgba(255,255,255,.62)}
+:root .nav button[data-go][aria-current="page"]{color:#fff;background:rgba(255,255,255,.16)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .nav{background:rgba(58,58,62,.88);box-shadow:0 10px 30px -10px rgba(0,0,0,.8),inset 0 .5px 0 rgba(255,255,255,.18)}}
+:root[data-theme="dark"] .nav{background:rgba(58,58,62,.88);box-shadow:0 10px 30px -10px rgba(0,0,0,.8),inset 0 .5px 0 rgba(255,255,255,.18)}
+:root .nav button[data-open="add"]{position:absolute;right:-72px;top:0;width:62px;height:62px;padding:0}
+:root .nav .plus{margin:0;width:62px;height:62px;font-size:32px;line-height:1;border-radius:50%}
+:root .hero small{padding-right:80px}
+/* Akun: small segmented controls size to their words so the row label ("Tema"/"Theme") isn't cut off */
+:root .seg.inrow{width:auto}
+:root .seg.inrow button{flex:none;padding:0 11px}
+/* focused field: the whole row lights up in the accent tint, label turns accent, blinking accent caret */
+input,textarea{caret-color:var(--accent)}
+:root .form input:focus,:root .form input:focus-visible,:root .form select:focus-visible{outline:none}
+:root{--focus:rgba(84,104,232,.13)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--focus:rgba(142,155,255,.28)}}
+:root[data-theme="dark"]{--focus:rgba(142,155,255,.28)}
+:root .form label:focus-within,:root .form .fr:focus-within{background:var(--focus);box-shadow:inset 3px 0 0 var(--accent);transition:background .2s}
+:root .form label:focus-within>span{color:var(--accent);font-weight:600}
+:root .search:focus,:root .search:focus-visible{outline:none;background:var(--card);box-shadow:0 0 0 2px var(--accent)}
+/* fixes after first look */
+:root .hero .amt{font-size:38px;padding-right:80px}
+:root .hero .amt span{font-size:22px}
+:root .ringbox svg{color:var(--accent)}
+:root .ringbox svg circle:first-child{stroke:var(--fill);stroke-opacity:1}
+:root .ringbox text{font-size:13px;font-weight:700}
+:root .sec{align-items:center}
+:root .sec h2{font-size:20px;white-space:nowrap}
+:root .sec a,:root .sec .link{font-size:15px;white-space:nowrap}
+:root .sec+p,:root .hint{font-size:13px;color:var(--muted)}
+:root .st{font-size:12px;padding:4px 9px}
+:root .pl .r span{font-size:14px;letter-spacing:-.3px}
 </style>
 </head>
 <body>
@@ -481,27 +766,30 @@ img.fl{width:62%;height:62%;object-fit:contain;display:block;pointer-events:none
 
 <!-- BERANDA -->
 <section class="screen on" id="home">
-  <div class="top">
+  <div class="top v2">
+    <div class="tx"><p class="dateln" id="dateLn"></p><h1>Halo, <span id="hi"></span></h1><p id="cycleTxt"></p><span class="syncchip" id="syncChip" hidden></span></div>
     <button class="avatar" data-go="me" id="av" aria-label="Akun"></button>
-    <div><h1>Halo, <span id="hi"></span></h1><p id="cycleTxt"></p><span class="syncchip" id="syncChip" hidden></span></div>
   </div>
-  <div class="hero">
-    <div class="ringbox" id="ring"></div>
-    <small><span id="heroCap"></span><button class="eye" id="eyeBtn" aria-label="Sembunyikan angka" aria-pressed="false"></button></small>
-    <div class="amt"><span>Rp</span><em id="heroAmt" style="font-style:normal"></em></div>
-    <div class="per" id="heroPer"></div>
+  <div class="hero v2">
+    <div class="rings" id="ring"></div>
+    <div class="hx">
+      <small><span id="heroCap"></span><button class="eye" id="eyeBtn" aria-label="Sembunyikan angka" aria-pressed="false"></button></small>
+      <div class="amt"><span>Rp</span><em id="heroAmt" style="font-style:normal"></em></div>
+      <div class="per" id="heroPer"></div>
+      <div class="legend" id="heroLeg"></div>
+    </div>
   </div>
   <div id="assignWallet"></div>
-  <div class="sec"><h2>Pengeluaran minggu ini</h2><button class="link" data-review>Ringkasan ›</button></div>
-  <div class="hint" id="weekHint"></div>
-  <div class="days" id="week" data-review role="button" aria-label="Buka ringkasan bulan"></div>
-  <div class="sec"><h2>Sisa di tiap pos</h2><button class="link" data-go="plan">Semua</button></div>
-  <div class="hint">Geser ke samping. Pos = jatah uang dari rencana bulanan.</div>
-  <div class="cards" id="bucketCards"></div>
+  <div class="sec"><h2>Minggu ini</h2><button class="link" data-review>Ringkasan ›</button></div>
+  <div class="wkcard" id="weekCard" data-review role="button" aria-label="Buka ringkasan bulan">
+    <div class="wkhead"><span id="weekHint"></span><b id="weekTot"></b></div>
+    <div class="wkbars" id="week"></div>
+  </div>
+  <div class="sec"><h2>Pos bulan ini</h2><button class="link" data-go="plan">Semua</button></div>
+  <div class="pgrid" id="bucketCards"></div>
   <div id="sharedBox"></div>
   <div class="sec"><h2>Terakhir dicatat</h2><button class="link" data-all>Lihat semua</button></div>
-  <div class="hint">Ketuk untuk melihat, mengubah, atau menghapus.</div>
-  <div class="list" id="recent"></div>
+  <div id="recent"></div>
   <div class="foot" id="syncNote"></div>
 </section>
 
@@ -545,6 +833,7 @@ img.fl{width:62%;height:62%;object-fit:contain;display:block;pointer-events:none
 <!-- DOMPET -->
 <section class="screen" id="wallet">
   <div class="title"><div><h1>Dompet</h1><p id="walletTotal"></p></div><button class="pillbtn ml-auto" data-open="newWallet">+ Dompet</button></div>
+  <div class="wtot" id="wtCard"></div>
   <div class="sec"><h2>Uang</h2></div>
   <div class="hint">Ketuk dompet untuk transfer atau menyesuaikan saldo.</div>
   <div class="list" id="wlist"></div>
@@ -777,7 +1066,7 @@ function applyTheme(t){
   if(t==='auto')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',t);
   document.querySelectorAll('[data-theme-set]').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.themeSet===t)});
   var dark=t==='dark'||(t==='auto'&&window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches);
-  var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',dark?'#111217':'#EEF0F4');
+  var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',dark?'#000000':'#F2F2F7');
 }
 document.querySelectorAll('[data-theme-set]').forEach(function(b){b.onclick=function(){store('ek_theme',b.dataset.themeSet==='auto'?null:b.dataset.themeSet);applyTheme(b.dataset.themeSet)}});
 applyTheme(load('ek_theme'));
@@ -902,9 +1191,11 @@ $('pin').addEventListener('keydown',function(e){if(e.key==='Enter')$('loginBtn')
 function start(){
   // open instantly from what this phone saw last time, then refresh quietly
   var cached=null;try{cached=JSON.parse(load('ek_state')||'null')}catch(e){}
-  if(cached&&cached.me){S=cached;$('loginView').hidden=true;$('appView').hidden=false;render()}
+  if(cached&&cached.me){S=cached;$('loginView').hidden=true;$('appView').hidden=false;render();reopen()}
   if(Q.length){flush();return}
-  call('state').then(function(st){if(Q.length)return;S=st;cacheState();$('loginView').hidden=true;$('appView').hidden=false;render()}).catch(function(e){if(e!=='LOGIN'&&!cached)toast(e,true)})}
+  call('state').then(function(st){if(Q.length)return;S=st;cacheState();$('loginView').hidden=true;$('appView').hidden=false;render();reopen()}).catch(function(e){if(e!=='LOGIN'&&!cached)toast(e,true)})}
+// after a language switch (page reload) go straight back to Akun instead of Beranda
+function reopen(){var s=null;try{s=sessionStorage.getItem('ek_reopen');sessionStorage.removeItem('ek_reopen')}catch(e){}if(s)go(s)}
 
 /* ======================= render ======================= */
 var BUCKET_COLORS=['c-pink','c-orange','c-peri','c-mint'];
@@ -920,22 +1211,31 @@ function render(){
   $('heroCap').textContent=me?'Sisa jatah bulan ini':'Sisa uang belanja (pos harian)';
   $('heroAmt').textContent=rp(rem);
   $('heroPer').innerHTML='≈ <b>Rp '+short(Math.max(0,rem)/daysLeft)+' per hari</b> · '+daysLeft+' hari lagi';
-  var C=2*Math.PI*26, off=C*(1-day/total);
-  $('ring').innerHTML='<svg viewBox="0 0 62 62" aria-hidden="true"><circle cx="31" cy="31" r="26" fill="none" stroke="currentColor" stroke-opacity=".15" stroke-width="5"/><circle cx="31" cy="31" r="26" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'" transform="rotate(-90 31 31)"/><text x="31" y="36" text-anchor="middle">'+day+'/'+total+'</text></svg><span>hari ke-'+day+'<br>dari '+total+'</span>';
+  // two Activity-style rings: outer = days of the cycle gone, inner = share of the day-to-day pos already used
+  var hBud=0,hUsed=0;side.forEach(function(p){if(p.kind==='harian'){hBud+=p.amount;hUsed+=p.used}});
+  var usedPct=hBud?hUsed/hBud:0, dayPct=day/total, fast=usedPct>dayPct+0.02;
+  var rg=function(r,pct,cls){var c=2*Math.PI*r;return '<circle class="tr '+cls+'" cx="60" cy="60" r="'+r+'"/><circle class="'+cls+'" cx="60" cy="60" r="'+r+'" stroke-dasharray="'+c.toFixed(1)+'" stroke-dashoffset="'+(c*(1-Math.min(1,Math.max(0,pct)))).toFixed(1)+'" transform="rotate(-90 60 60)"/>'};
+  $('ring').innerHTML='<svg viewBox="0 0 120 120" aria-hidden="true">'+rg(51,dayPct,'rd')+rg(35,usedPct,fast?'ro':'rg')+'</svg>';
+  $('heroLeg').innerHTML='<span><i class="rd"></i>Hari ke-'+day+' dari '+total+'</span><span><i class="'+(fast?'ro':'rg')+'"></i>Terpakai '+Math.round(usedPct*100)+'% pos harian</span>';
+  var DL=new Date(S.today+'T00:00:00');try{$('dateLn').textContent=DL.toLocaleDateString(LANG==='en'?'en-GB':'id-ID',{weekday:'long',day:'numeric',month:'long'})}catch(e){$('dateLn').textContent=dshort(S.today)}
   // partner income waiting for a wallet
   var unassigned=(S.recent||[]).filter(function(e){return e.type==='income'&&!e.wallet_id});
   $('assignWallet').innerHTML=unassigned.length?'<div class="explain p" style="margin-top:16px"><b>Pilih dompet untuk uang belanja</b>'+(S.wallets.length?'Buka Dompet, ketuk dompet tempat uang belanja masuk, lalu "Jadikan dompet utama".':'Tambahkan dompetmu dulu (Dompet › + Dompet) dengan saldo sekarang.')+'</div>':'';
   // week
-  var wk=S.week; $('weekHint').textContent='Uang keluar tiap hari ('+dshort(wk[0].date)+' – '+dshort(wk[6].date)+'). Biru = hari ini.';
-  var DN=['Sen','Sel','Rab','Kam','Jum','Sab','Min'];
-  $('week').innerHTML=wk.map(function(d,i){var cls=d.today?'today':d.future?'future':(d.total?'':'zero');return '<div class="'+(d.today?'t':'')+'"><span>'+(d.today?'Hari ini':DN[i])+'</span><b class="'+cls+'">'+(d.future?'':short(d.total))+'</b></div>'}).join('');
+  var wk=S.week; $('weekHint').textContent=dshort(wk[0].date)+' – '+dshort(wk[6].date)+' · uang keluar';
+  var wtot=0,wmax=1;wk.forEach(function(d){wtot+=d.total;if(d.total>wmax)wmax=d.total});$('weekTot').textContent='Rp '+rp(wtot);
+  var DN=LANG==='en'?['M','T','W','T','F','S','S']:['S','S','R','K','J','S','M'];
+  // Screen Time style bars: height = that day's spending, today in the accent colour, future days as flat stubs
+  $('week').innerHTML=wk.map(function(d,i){var h=d.future?0:Math.round(64*d.total/wmax);return '<div class="'+(d.today?'t':d.future?'f':'')+'"><em>'+(d.total&&!d.future?short(d.total):'')+'</em><i style="height:'+Math.max(4,h)+'px"></i><span>'+DN[i]+'</span></div>'}).join('');
   // bucket cards
   var harian=side.filter(function(p){return p.kind==='harian'}), tetap=side.filter(function(p){return p.kind==='tetap'});
   $('bucketCards').innerHTML=harian.concat(tetap).map(function(p,i){
     var left=p.amount-p.used, over=left<0, pct=Math.min(100,p.amount?p.used/p.amount*100:0);
     var bst=billStatus(p);var big=p.kind==='tetap'?(bst.k==='over'?'<span class="over">'+bst.t+'</span>':bst.t):(over?'<span class="over">Lewat '+short(-left)+'</span>':'Sisa '+short(left));
     var sub='terpakai '+short(p.used)+' dari '+short(p.amount);
-    return '<button class="bcard '+BUCKET_COLORS[i%4]+'" '+(p.kind==='tetap'?'data-bill="'+p.id+'"':'data-go="plan"')+'><div class="ico">'+emo(bucketIcon(p))+'</div><h3>'+esc(p.name)+'</h3><div class="big">'+big+'</div>'+'<div class="bar"><i style="width:'+(p.kind==='tetap'&&p.done&&!p.used?100:pct)+'%"></i></div>'+'<div class="sub">'+sub+'</div></button>';
+    // bar colour = status: green ok, orange >85% used, red over budget; finished bills read green
+    var st=over||bst.k==='over'?'over':(p.kind==='harian'&&pct>85?'warn':'');var done=p.kind==='tetap'&&bst.k==='ok';
+    return '<button class="bcard pt '+st+(done?' done':'')+'" '+(p.kind==='tetap'?'data-bill="'+p.id+'"':'data-go="plan"')+'><div class="ph"><div class="ico">'+emo(bucketIcon(p))+'</div><h3>'+esc(p.name)+'</h3></div><div class="big">'+(done?'✓ ':'')+big+'</div>'+'<div class="bar"><i style="width:'+(p.kind==='tetap'&&p.done&&!p.used?100:pct)+'%"></i></div>'+'<div class="sub">'+sub+'</div></button>';
   }).join('')||'<div class="empty">Belum ada pos. Buat di Rencana › Ubah.</div>';
   // shared
   var sh=S.shared||[];
@@ -948,7 +1248,10 @@ function render(){
   }).join('')+'</div>':'';
   // recent
   var rec=(S.recent||[]).slice(0,8);
-  $('recent').innerHTML=rec.length?rec.map(txRow).join(''):'<div class="empty">Belum ada catatan. Ketuk + untuk mulai.</div>';
+  // grouped by day under small headers (Hari ini / Kemarin / 8 Okt), each day its own inset-grouped card
+  var yest=(function(){var x=new Date(S.today+'T00:00:00');x.setDate(x.getDate()-1);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0')})();
+  var days=[],byDay={};rec.forEach(function(e){if(!byDay[e.date]){byDay[e.date]=[];days.push(e.date)}byDay[e.date].push(e)});
+  $('recent').innerHTML=rec.length?days.map(function(d){return '<div class="dayh">'+(d===S.today?'Hari ini':d===yest?'Kemarin':dshort(d))+'</div><div class="list">'+byDay[d].map(txRow).join('')+'</div>'}).join(''):'<div class="empty">Belum ada catatan. Ketuk + untuk mulai.</div>';
   $('syncNote').textContent=me?('Terakhir disinkron ke Money Lover: '+(S.last_sync?dshort(S.last_sync):'belum')+(S.pending_sync?' · '+S.pending_sync+' catatan menunggu':'')):'';
   renderPlan(); renderSave(); renderWallet(); renderCard(); renderFlexi();
   $('accName').textContent=S.name+' · masuk dengan PIN';$('salDay').textContent=S.salaryDay;
@@ -1046,18 +1349,25 @@ function renderPlan(){
   var items=S.plan[planSeg]||[];
   var used=items.reduce(function(s,p){return s+p.used},0), amt=items.reduce(function(s,p){return s+p.amount},0);
   var canSend=me&&planSeg==='istri';
-  function harianRow(p){var r=p.amount?p.used/p.amount:0;var c=r>1.001?'over':r>=.8?'warn':'';return '<div class="pl"><div class="r"><b>'+esc(p.name)+'</b><span class="'+(c==='over'?'red':'')+'">'+rp(p.used)+' / '+rp(p.amount)+'</span></div><div class="bar"><i class="'+c+'" style="width:'+Math.min(100,r*100)+'%"></i></div></div>'}
+  // v2 rows: name + small "used of budget" line on the left, the one number that matters on the right, thin bar under
+  function harianRow(p){var r=p.amount?p.used/p.amount:0;var c=r>1.001?'over':r>=.8?'warn':'';var left=p.amount-p.used;
+    return '<div class="pl v2"><div class="r"><div class="nm"><b>'+esc(p.name)+'</b><small>'+short(p.used)+' dari '+short(p.amount)+'</small></div><strong class="'+(c==='over'?'red':'')+'">'+(left<0?'Lewat '+short(-left):'Sisa '+short(left))+'</strong></div><div class="bar"><i class="'+c+'" style="width:'+Math.min(100,r*100)+'%"></i></div></div>'}
   function billRow(p){var st=billStatus(p),r=p.amount?p.used/p.amount:0,bc=st.k==='over'?'over':st.k==='ok'?'':'warn';
-    return '<button class="pl" data-bill="'+p.id+'"><div class="r"><b>'+esc(p.name)+'</b><em>'+rp(p.used)+' / '+rp(p.amount)+'</em><span class="st '+st.k+'">'+(st.k==='ok'?'✓ ':'')+st.t+'</span></div>'+
+    return '<button class="pl v2" data-bill="'+p.id+'"><div class="r"><div class="nm"><b>'+esc(p.name)+'</b><small>'+(p.used?short(p.used)+' dari '+short(p.amount):'Rp '+rp(p.amount))+'</small></div><span class="st '+st.k+'">'+(st.k==='ok'?'✓ ':'')+st.t+'</span>'+GO+'</div>'+
       (p.used||p.done?'<div class="bar"><i class="'+bc+'" style="width:'+(p.done&&!p.used?100:Math.min(100,r*100))+'%"></i></div>':'')+'</button>'}
-  function savRow(p){var ok=p.used>=p.amount*0.99;return '<button class="pl" data-go="save"><div class="r"><b>'+esc(p.name)+'</b><em>'+rp(p.amount)+'</em>'+(ok?'<span class="st ok">✓ Ditabung</span>':'<span class="st no">Belum ditabung</span>')+'</div><div class="note">Masuk ke Tabungan</div></button>'}
+  function savRow(p){var ok=p.used>=p.amount*0.99;return '<button class="pl v2" data-go="save"><div class="r"><div class="nm"><b>'+esc(p.name)+'</b><small>Rp '+rp(p.amount)+' · masuk ke Tabungan</small></div>'+(ok?'<span class="st ok">✓ Ditabung</span>':'<span class="st no">Belum ditabung</span>')+GO+'</div></button>'}
+  var sumK=function(a){return a.reduce(function(x,p){return x+p.amount},0)};
   function fixRow(p,word){var over=p.used>p.amount*1.001;return '<button class="pl" data-paid="'+p.id+'"><div class="r"><b>'+esc(p.name)+'</b><em>'+rp(p.amount)+'</em>'+(p.paid?'<span class="st ok">✓ '+word+'</span>':'<span class="st no">Belum '+(word==='Lunas'?'dibayar':'ditabung')+'</span>')+'</div>'+(over?'<div class="note red">Terbayar '+rp(p.used)+', lebih '+short(p.used-p.amount)+'</div>':'')+(p.pot_id?'<div class="note">Masuk ke Tabungan</div>':'')+'</button>'}
   var h=items.filter(function(p){return p.kind==='harian'}), t=items.filter(function(p){return p.kind==='tetap'}), s=items.filter(function(p){return p.kind==='tabungan'});
   $('planBody').innerHTML=(canSend?'<div class="btns" style="padding-top:14px"><button class="black" data-send>💸 Kirim uang belanja ke '+esc(S.partnerName)+'</button></div>':'')+
-    '<div class="sec"><h2>Rp '+short(used)+' terpakai</h2><span class="muted" style="font-size:14px">dari '+short(amt)+'</span></div>'+
-    (h.length?'<div class="grp">Pos harian</div><div class="plan">'+h.map(harianRow).join('')+'</div>':'')+
-    (t.length?'<div class="grp">Tagihan tetap</div><div class="plan">'+t.map(billRow).join('')+'</div>':'')+
-    (s.length?'<div class="grp">🏦 Tabungan</div><div class="plan">'+s.map(savRow).join('')+'</div>':'')+
+    // summary card: iPhone-Storage style bar — how the month's plan splits into daily pots, bills and savings, and how much is used
+    (function(){var hA=sumK(h),tA=sumK(t),sA=sumK(s),tot=hA+tA+sA||1;var seg=function(a,c){return a?'<i class="'+c+'" style="width:'+(a/tot*100)+'%"></i>':''};
+      return '<div class="psum"><div class="ps1"><div><small>Sisa rencana</small><b>Rp '+short(Math.max(0,amt-used))+'</b></div><div class="r"><small>Terpakai</small><span>'+short(used)+' dari '+short(amt)+'</span></div></div>'+
+        '<div class="sbar2">'+seg(hA,'sh')+seg(tA,'st2')+seg(sA,'ss')+'</div><div class="used2"><i style="width:'+Math.min(100,used/tot*100)+'%"></i></div>'+
+        '<div class="sleg">'+(hA?'<span><i class="sh"></i>Harian '+short(hA)+'</span>':'')+(tA?'<span><i class="st2"></i>Tagihan '+short(tA)+'</span>':'')+(sA?'<span><i class="ss"></i>Tabungan '+short(sA)+'</span>':'')+'</div></div>'})()+
+    (h.length?'<div class="grp"><span>Pos harian</span><em>'+short(sumK(h))+'</em></div><div class="plan">'+h.map(harianRow).join('')+'</div>':'')+
+    (t.length?'<div class="grp"><span>Tagihan tetap</span><em>'+short(sumK(t))+'</em></div><div class="plan">'+t.map(billRow).join('')+'</div>':'')+
+    (s.length?'<div class="grp"><span>Tabungan</span><em>'+short(sumK(s))+'</em></div><div class="plan">'+s.map(savRow).join('')+'</div>':'')+
     '<div class="foot">Semua pos terisi otomatis dari catatan. Ketuk tagihan tetap untuk mencatat pembayaran atau melihat rinciannya.</div>';
 }
 function renderSave(){
@@ -1082,6 +1392,11 @@ function renderWallet(){
   var all=S.wallets.filter(function(w){return w.type!=='credit'}),ws=all.filter(function(w){return !isFx(w)}),fx=all.filter(isFx);
   var tot=ws.filter(function(w){return w.include_total}).reduce(function(s,w){return s+w.balance},0);
   $('walletTotal').textContent='Total uangku Rp '+rp(tot);loadFx();
+  // total card: big total + a bar showing where the money sits (top wallets, the rest grouped)
+  var inT=ws.filter(function(w){return w.include_total&&w.balance>0}).sort(function(a,b){return b.balance-a.balance}),pos=inT.reduce(function(s,w){return s+w.balance},0)||1;
+  var top=inT.slice(0,4),restV=inT.slice(4).reduce(function(s,w){return s+w.balance},0),WC=['wc1','wc2','wc3','wc4'];
+  $('wtCard').innerHTML='<small>Total uangku</small><b>Rp '+rp(tot)+'</b><div class="sbar2">'+top.map(function(w,i){return '<i class="'+WC[i]+'" style="width:'+(w.balance/pos*100)+'%"></i>'}).join('')+(restV?'<i class="wc5" style="width:'+(restV/pos*100)+'%"></i>':'')+'</div>'+
+    '<div class="sleg">'+top.map(function(w,i){return '<span><i class="'+WC[i]+'"></i>'+esc(w.name)+' '+Math.round(w.balance/pos*100)+'%</span>'}).join('')+(restV?'<span><i class="wc5"></i>Lainnya '+Math.round(restV/pos*100)+'%</span>':'')+'</div>';
   $('wlist').innerHTML=ws.length?ws.map(function(w){return '<button class="item" data-wd="'+w.id+'"><div class="ico wl">'+wIcon(w)+'</div><div class="mid"><div class="t">'+esc(w.name)+'</div>'+(w.id===S.default_wallet?'<div class="s">dompet utama</div>':(!w.include_total?'<div class="s">tidak masuk total</div>':''))+'</div><div class="amt">'+rp(w.balance)+'</div>'+GO+'</button>'}).join('')+(fx.length?'<div class="dayh" style="padding-left:4px">Mata uang asing<span>tidak masuk total</span></div>'+fx.map(function(w){var idr=toIdr(w.balance,w.currency);
     return '<button class="item" data-wd="'+w.id+'"><div class="ico wl">'+wIcon(w)+'</div><div class="mid"><div class="t">'+esc(w.name)+'</div><div class="s">'+(idr===null?esc(CUR_NAME[w.currency]||w.currency):'≈ Rp '+rp(idr))+'</div></div><div class="amt">'+fxAmt(w.balance,w.currency)+'</div>'+GO+'</button>'}).join(''):''):'<div class="empty">Belum ada dompet. Ketuk "+ Dompet" dan isi saldo sekarang.</div>';
   $('cardRow').innerHTML=S.card?'<div class="sec"><h2>Kartu kredit</h2></div><div class="list"><button class="item" data-go="card"><div class="ico wl">'+wIcon({name:S.card.name,icon:'💳'})+'</div><div class="mid"><div class="t">'+esc(S.card.name)+'</div><div class="s">Tagihan berikutnya ±'+short(S.card.next_bill)+'</div></div><div class="amt red">'+short(S.card.balance)+'</div>'+GO+'</button></div>':'';
@@ -1394,7 +1709,7 @@ var LANG=(function(){try{return localStorage.getItem('ek_lang')||'id'}catch(e){r
 var EN={
 'Beranda':'Home','Rencana':'Plan','Tabungan':'Savings','Dompet':'Wallets','Akun':'Account','Catat':'Add','+ Catat':'+ Add',
 'Lihat rencana':'See plan','Lihat semua':'See all','Semua':'All','Semua catatan':'All entries','Hanya catatanmu sendiri':'Only your own entries',
-'Pengeluaran minggu ini':'Spending this week','Sisa di tiap pos':'Left in each pot','Terakhir dicatat':'Recently added',
+'Pengeluaran minggu ini':'Spending this week','Minggu ini':'This week','Pos bulan ini':'Pots this month','Kemarin':'Yesterday','Sisa di tiap pos':'Left in each pot','Terakhir dicatat':'Recently added',
 'Geser ke samping. Pos = jatah uang dari rencana bulanan.':'Swipe sideways. A pot is money set aside in the monthly plan.',
 'Ketuk untuk melihat, mengubah, atau menghapus.':'Tap to view, edit or delete.','Hari ini':'Today',
 'Sisa jatah bulan ini':'Left this month','Sisa uang belanja (pos harian)':'Household money left (daily pots)',
@@ -1490,6 +1805,7 @@ var EN={
 };
 /* [pattern, replacement] for text built from pieces (amounts, dates, names) */
 var EN_RULES=[
+[/ · uang keluar$/,' · money out'],[/^Sisa rencana$/,'Plan left'],[/^✓ Selesai$/,'✓ Done'],[/^✓ Ditabung$/,'✓ Saved'],[/^Lainnya (?=\d)/,'Others '],[/^Terpakai$/,'Used'],[/^Lewat\b/,'Over'],[/^Harian (?=\d)/,'Daily '],[/^Tagihan (?=\d)/,'Bills '],[/^Tabungan (?=\d)/,'Savings '],[/ · masuk ke Tabungan$/,' · goes to Savings'],[/^Hari ke-(\d+) dari (\d+)$/,'Day $1 of $2'],[/^Terpakai (\d+)% pos harian$/,'$1% of daily pots used'],
 [/\bSiklus gaji\b/g,'Pay cycle'],[/\bSiklus\b/g,'Cycle'],[/\bgaji Rp\b/g,'salary Rp'],[/\(sekarang\)/g,'(current)'],
 [/^Sisa\b/,'Left'],[/^Lebih\b/,'Over'],[/^bagian teman /,'friend’s share '],[/^titipan · $/,'held · '],[/ titip Rp/g,' gave Rp'],[/^Ya · tidak dihitung pemasukan$/,'Yes · not counted as income'],[/ · bagianmu Rp/,' · your part Rp'],[/^Terpakai sampai hari ini$/,'Spent so far'],[/^Terpakai siklus ini$/,'Spent this cycle'],[/^Uang masuk sampai hari ini$/,'Income so far'],[/^Uang masuk siklus ini$/,'Income this cycle'],[/ dari jatah Rp/,' of budget Rp'],[/ dibanding siklus lalu/,' vs last cycle'],[/\(hari yang sama\)/,'(same day)'],[/^Sudah lewat jatah Rp/,'Over budget by Rp'],[/^Lewat jatah Rp/,'Over budget by Rp'],[/^Sisa Rp (.+) dari jatah\.$/,'Rp $1 left of budget.'],[/^garis = rata-rata/,'line = average'],[/^Lainnya \((\d+)\)/,'Other ($1)'],[/^Selesai, sisanya bebas: tagihannya ternyata lebih murah, sisa Rp/,'Done, free the rest: the bill was cheaper, the remaining Rp'],[/^Tidak perlu bulan ini: Rp/,'Not needed this month: Rp'],[/ Sudah dibayar di luar catatan: misal cicilan lewat kartu kredit, uangnya tetap dianggap terpakai\./,' Paid outside the app: e.g. an installment on the credit card, the money still counts as used.'],[/^Ditandai selesai\. Sisa Rp/,'Marked done. Rp'],[/ kembali ke sisa jatah\./,' goes back to what’s left.'],[/^Diatur oleh\b/,'Managed by'],[/\bLewat\b/,'Over'],[/\bterpakai\b/g,'used'],[/\bper hari\b/g,'a day'],[/\bhari lagi\b/g,'days left'],[/\bhari ke-(\d+)/g,'day $1'],[/^dari (.+)$/,'of $1'],[/^Masuk tagihan\b/,'On the bill'],[/\bLunas\b/g,'Paid'],[/\bDitabung\b/g,'Saved'],[/\bBelum dibayar\b/g,'Not paid yet'],[/\bTerbayar\b/g,'Paid'],
 [/ dari /g,' of '],[/ \/ bulan/g,' / month'],[/\/bln\b/g,'/mo'],[/\btiap bulan dari rencana\b/g,'a month from the plan'],[/\btiap bulan\b/g,'a month'],
@@ -1526,7 +1842,7 @@ function trNode(root){
   if(root.querySelectorAll)root.querySelectorAll('[placeholder],[aria-label],[title]').forEach(function(el){if(el.closest('.nt'))return;['placeholder','aria-label','title'].forEach(function(a){var v=el.getAttribute(a);if(v){var n=trText(v);if(n!==v)el.setAttribute(a,n)}})});
   var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null),n,list=[];while((n=w.nextNode()))list.push(n);list.forEach(trNode);
 }
-function setLang(l){try{l==='id'?localStorage.removeItem('ek_lang'):localStorage.setItem('ek_lang',l)}catch(e){}location.reload()}
+function setLang(l){try{l==='id'?localStorage.removeItem('ek_lang'):localStorage.setItem('ek_lang',l);sessionStorage.setItem('ek_reopen','me')}catch(e){}location.reload()}
 if(LANG==='en'){
   document.documentElement.lang='en';
   new MutationObserver(function(ms){ms.forEach(function(m){if(m.type==='characterData')trNode(m.target);else m.addedNodes.forEach(trNode);if(m.type==='attributes')trNode(m.target)})})
@@ -1548,11 +1864,16 @@ document.querySelectorAll('[data-lang-set]').forEach(function(b){b.setAttribute(
   mark(document);new MutationObserver(function(ms){ms.forEach(function(m){m.addedNodes.forEach(function(n){if(n.nodeType===1)mark(n)})})}).observe(document.body,{childList:true,subtree:true});
   function show(){$('kpShow').textContent='';var k0=pad.querySelector('[data-k="000"]');if(k0)k0.textContent=cur&&cur.dataset.dec?',':'000';document.body.classList.add('kp-open');pad.classList.add('on');setTimeout(function(){cur&&cur.scrollIntoView({block:'center',behavior:'smooth'})},60)}
   function hide(){cur=null;document.body.classList.remove('kp-open');pad.classList.remove('on')}
-  document.addEventListener('focusin',function(e){if(isNum(e.target)){cur=e.target;show()}else if(!pad.contains(e.target))hide()});
+  // closing the pad mid-tap drops the sheet ~330px, so the finger lifts on something else (e.g. Batal → the dim layer):
+  // while a finger/mouse is down, wait for the tap to finish (the click handler below hides it; pointerup is the fallback)
+  var pressing=false,pend=false;
+  document.addEventListener('focusin',function(e){if(isNum(e.target)){pend=false;cur=e.target;show()}else if(!pad.contains(e.target)){if(pressing)pend=true;else hide()}});
   // opening the pad pushes short sheets up, so the tap that focused the field can end on something else → judge by where it started
-  var downOn=null;document.addEventListener('pointerdown',function(e){downOn=e.target},true);
+  var downOn=null;document.addEventListener('pointerdown',function(e){downOn=e.target;pressing=true},true);
+  function lift(){pressing=false;if(pend)setTimeout(function(){if(pend){pend=false;if(!isNum(document.activeElement))hide()}},350)}
+  document.addEventListener('pointerup',lift,true);document.addEventListener('pointercancel',lift,true);
   function startedOnCur(){var l=downOn&&downOn.closest&&downOn.closest('label');return downOn===cur||!!(l&&l.contains(cur))}
-  document.addEventListener('click',function(e){if(cur&&!startedOnCur()&&!pad.contains(e.target)&&e.target!==cur&&!isNum(e.target))hide()},true);
+  document.addEventListener('click',function(e){if(cur&&!startedOnCur()&&!pad.contains(e.target)&&e.target!==cur&&!isNum(e.target)){pend=false;hide()}},true);
   pad.addEventListener('mousedown',function(e){e.preventDefault()});pad.addEventListener('touchstart',function(e){e.preventDefault();var b=e.target.closest('[data-k]');if(b)press(b.dataset.k)},{passive:false});
   pad.addEventListener('click',function(e){var b=e.target.closest('[data-k]');if(b)press(b.dataset.k)});
   function press(k){
@@ -1707,7 +2028,7 @@ document.addEventListener('change',function(e){var s=e.target.closest&&e.target.
 /* ======================= pull down to refresh + automatic update check =======================
    Pull down at the top of a main screen: fetches the newest numbers, and if a new version of the
    app was uploaded to GitHub it reloads into it. Opening the app also checks for a new version. */
-var BUILD='20261016-1101';
+var BUILD='20261016-1139';
 function checkUpdate(){
   if(IN_GOOGLE||LOCAL_DEV||!/^https:/.test(location.protocol))return Promise.resolve(false);
   return fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
