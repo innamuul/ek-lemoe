@@ -567,7 +567,13 @@ img.fl{width:62%;height:62%;object-fit:contain;display:block;pointer-events:none
 :root .wc{border:0;box-shadow:none}
 :root .wc[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
 :root .tile span{background:var(--card);border:0;box-shadow:none}
-:root .tile[aria-pressed="true"] span,:root .tile.on span{box-shadow:0 0 0 2.5px var(--accent)}
+/* selected category: the icon is masked to a circle (iPhone smoothing), which also clips any ring drawn on it — so the ring
+   lives on the tile itself; the icon gets an accent tint and the name turns accent */
+:root .tile{position:relative}
+:root .tile[aria-pressed="true"]::before{content:"";position:absolute;top:-4px;left:50%;width:64px;height:64px;margin-left:-32px;border-radius:50%;
+  box-shadow:0 0 0 2.5px var(--accent);pointer-events:none}
+:root .tile[aria-pressed="true"] span{background:var(--focus);transform:scale(1.04);transition:transform .2s}
+:root .tile[aria-pressed="true"]{color:var(--accent);font-weight:700}
 :root .empty{border:0;background:var(--card);border-radius:22px}
 
 /* --- chrome keeps Liquid Glass: tab bar, sheet header, keypad --- */
@@ -711,7 +717,7 @@ img.fl{width:62%;height:62%;object-fit:contain;display:block;pointer-events:none
 :root[data-theme="dark"]{--lg-bg:rgba(36,36,38,.82);--lg-rim:rgba(255,255,255,.55);--lg-rim2:rgba(255,255,255,.12);
   --lg-in:rgba(255,255,255,.08);--lg-sh:0 12px 34px -10px rgba(0,0,0,.7);--lg-edge:rgba(255,255,255,.06);--lg-ico:#fff;--lg-sel:rgba(0,0,0,.62);--lg-sheen:rgba(255,255,255,.08)}
 /* sits in the home-indicator area like Apple Music (~17pt from the edge), not above it */
-:root .nav{left:12px;right:88px;bottom:max(10px,calc(env(safe-area-inset-bottom) - 16px));height:66px;max-width:none;margin:0;border-radius:33px}
+:root .nav{left:12px;right:88px;bottom:calc(max(10px,calc(env(safe-area-inset-bottom) - 16px)) - var(--vgap,0px));height:66px;max-width:none;margin:0;border-radius:33px}
 @media (min-width:500px){:root .nav{left:calc(50% - 228px);right:calc(50% - 152px)}}
 :root .nav,:root .nav .plus{background:var(--lg-bg);border:0;isolation:isolate;
   -webkit-backdrop-filter:blur(10px) saturate(210%) brightness(1.04);backdrop-filter:blur(10px) saturate(210%) brightness(1.04);
@@ -792,6 +798,13 @@ img.fl{width:62%;height:62%;object-fit:contain;display:block;pointer-events:none
 :root[data-theme="dark"] .sbg{height:env(safe-area-inset-top);background:rgba(0,0,0,.7);-webkit-backdrop-filter:blur(14px) saturate(160%);backdrop-filter:blur(14px) saturate(160%)}
 :root .pwcard{display:block;width:calc(100% - 32px);text-align:left;margin:16px 16px 0}
 :root #pickWallet .pwhint{font-size:13px;color:var(--muted);padding:2px 20px 12px;line-height:1.35}
+/* iPhone home-screen quirk (17 Oct): with black-translucent iOS can make the page shorter than the screen (a strip at the
+   bottom, everything pinned to the bottom sits too high). fitScreen() measures screen − page height into --vgap and
+   everything bottom-pinned stretches/moves down by it. 0 on normal screens = no change. */
+:root{--vgap:0px}
+#appView{bottom:calc(0px - var(--vgap))}
+.sheet,.kpad,.dim{bottom:calc(0px - var(--vgap))}
+#scrInfo{font-size:11px;color:var(--muted-3);margin-top:2px}
 /* Akun: small segmented controls size to their words so the row label ("Tema"/"Theme") isn't cut off */
 :root .seg.inrow{width:auto}
 :root .seg.inrow button{flex:none;padding:0 11px}
@@ -930,7 +943,7 @@ input,textarea{caret-color:var(--accent)}
 
 <!-- AKUN -->
 <section class="screen" id="me">
-  <div class="title"><div><h1>Akun</h1><p id="accName"></p></div></div>
+  <div class="title"><div><h1>Akun</h1><p id="accName"></p><p id="scrInfo"></p></div></div>
   <div class="sec"><h2>Pengaturan</h2></div>
   <div class="list">
     <div class="item"><div class="ico">🌐</div><div class="mid"><div class="t">Bahasa</div></div><div class="seg inrow" style="width:168px" role="group" aria-label="Bahasa"><button data-lang-set="id">Indonesia</button><button data-lang-set="en">English</button></div></div>
@@ -1011,7 +1024,7 @@ input,textarea{caret-color:var(--accent)}
   <div class="sbar"><span></span><b id="txName"></b><button class="round" data-close>Tutup</button></div>
   <div class="amount"><p id="txMeta"></p><div class="show" id="txAmt"></div></div>
   <div class="form" id="txRows"></div>
-  <div class="btns"><button class="black" id="txEdit">Ubah</button><button class="white danger" id="txDel">Hapus</button></div>
+  <div class="btns"><button class="black" id="txMove" hidden>Pindah dompet</button><button class="black" id="txEdit">Ubah</button><button class="white danger" id="txDel">Hapus</button></div>
   <div class="foot">Salah kategori atau ternyata tidak perlu? Ubah kategori, pindahkan ke pos lain, atau hapus.</div>
 </div>
 
@@ -1089,8 +1102,8 @@ input,textarea{caret-color:var(--accent)}
 <!-- SHEET: pick the wallet household money goes into (partner income without a wallet) -->
 <div class="sheet short" id="pickWallet" role="dialog" aria-modal="true" aria-label="Pilih dompet">
   <div class="grab"></div>
-  <div class="sbar"><button class="round" data-close>Batal</button><b>Uang belanja masuk ke…</b><span></span></div>
-  <p class="pwhint">Pilih dompet tempat uang belanja masuk. Dompet ini jadi dompet utama, jadi uang belanja berikutnya otomatis masuk ke sini.</p>
+  <div class="sbar"><button class="round" data-close>Batal</button><b id="pwTitle">Uang belanja masuk ke…</b><span></span></div>
+  <p class="pwhint" id="pwHint">Pilih dompet tempat uang belanja masuk. Dompet ini jadi dompet utama, jadi uang belanja berikutnya otomatis masuk ke sini.</p>
   <div class="list" id="pwList"></div>
   <div class="btns"><button class="white" data-open="newWallet">+ Dompet baru</button></div>
 </div>
@@ -1657,9 +1670,16 @@ $('peAdd').onclick=function(){peItems[peSide].push({name:'Pos baru',amount:0,kin
 $('peSave').onclick=function(){var items=[];['suami','istri'].forEach(function(sd){peItems[sd].forEach(function(p){items.push({id:p.id,side:sd,name:p.name,amount:p.amount,kind:p.kind,pot_id:p.pot_id,removed:!!p.removed})})});
   act('savePlan',{items:items},'Rencana disimpan').then(closeAll)};
 
+/* stretch the app over the bottom strip iOS sometimes leaves in home-screen mode (see --vgap in CSS) */
+function fitScreen(){var g=0,full=0,ih=window.innerHeight;if(window.navigator.standalone){var portrait=ih>=window.innerWidth;full=portrait?Math.max(screen.height,screen.width):Math.min(screen.height,screen.width);g=Math.round(full-ih);if(g<0||g>140)g=0}
+  document.documentElement.style.setProperty('--vgap',g+'px');var el=document.getElementById('scrInfo');if(el)el.textContent=window.navigator.standalone?('Layar '+full+' · app '+ih+' · selisih '+g):''}
+fitScreen();window.addEventListener('resize',fitScreen);window.addEventListener('orientationchange',function(){setTimeout(fitScreen,300)});setTimeout(fitScreen,500);
 /* household money without a wallet: pick one = make it the main wallet (server also moves the waiting income into it) */
 function myIdrWallets(){return (S.wallets||[]).filter(function(w){return w.type!=='credit'&&!isFx(w)})}
-function openPickWallet(){var ws=myIdrWallets();if(!ws.length){closeAll();document.querySelector('[data-open="newWallet"]').click();return}
+var pwMove=null;
+function openPickWallet(moveTx){var ws=myIdrWallets();pwMove=moveTx||null;
+  $('pwTitle').textContent=pwMove?'Pindahkan ke…':'Uang belanja masuk ke…';
+  $('pwHint').textContent=pwMove?'Hanya catatan ini yang pindah dompet. Dompet utama tidak berubah.':'Pilih dompet tempat uang belanja masuk. Dompet ini jadi dompet utama, jadi uang belanja berikutnya otomatis masuk ke sini.';if(!ws.length){closeAll();document.querySelector('[data-open="newWallet"]').click();return}
   $('pwList').innerHTML=ws.map(function(w){return '<button class="item" data-pickw="'+w.id+'"><div class="ico wl">'+wIcon(w)+'</div><div class="mid"><div class="t">'+esc(w.name)+'</div>'+(w.id===S.default_wallet?'<div class="s">dompet utama</div>':'')+'</div><div class="amt">'+rp(w.balance)+'</div>'+GO+'</button>'}).join('');
   openSheet('pickWallet')}
 /* ======================= clicks ======================= */
@@ -1668,7 +1688,10 @@ document.addEventListener('click',function(e){
   if((g=t.closest('[data-go]'))){e.preventDefault();closeAll();go(g.dataset.go);return}
   if((g=t.closest('[data-close]'))){closeAll();return}
   if((g=t.closest('[data-pickwallet]'))){openPickWallet();return}
-  if((g=t.closest('[data-pickw]'))){var w=myIdrWallets().filter(function(x){return x.id===g.dataset.pickw})[0];act('setDefaultWallet',{wallet_id:g.dataset.pickw},'Uang belanja masuk ke '+(w?w.name:'dompet')).then(closeAll);return}
+  if((g=t.closest('[data-pickw]'))){var w=myIdrWallets().filter(function(x){return x.id===g.dataset.pickw})[0],wn=w?w.name:'dompet';
+    if(pwMove){var m=pwMove;pwMove=null; // keep every other field as it is, only the wallet changes
+      act('editEntry',{id:m.id,type:m.type,amount:m.amount,date:m.date,wallet_id:g.dataset.pickw,category_id:m.category_id,plan_id:m.plan_id||'',note:m.note||'',with_partner:m.with_partner,ask_payback:m.ask_payback,with_people:m.with_people||''},'Dipindah ke '+wn).then(closeAll);return}
+    act('setDefaultWallet',{wallet_id:g.dataset.pickw},'Uang belanja masuk ke '+wn).then(closeAll);return}
   if((g=t.closest('[data-back]'))){$(g.dataset.back).classList.remove('on');return}
   if((g=t.closest('[data-open]'))){var id=g.dataset.open;
     if(id==='add'){openAdd();return} if(id==='planEdit'){openPlanEdit();return}
@@ -1760,9 +1783,11 @@ function openTx(id){var e=(S.recent||[]).concat(S.cycleEntries||[],HIST?HIST.ent
   $('txRows').innerHTML=rows.map(function(r){return '<div class="fr"><span>'+r[0]+'</span><span class="ml-auto muted" style="text-align:right">'+esc(r[1])+'</span></div>'}).join('');
   var editable=['expense','income','transfer'].indexOf(e.type)>=0&&!(e.link_id&&e.type==='income');
   $('txEdit').hidden=!editable;
+  $('txMove').hidden=!(e.type==='income'&&e.link_id); // uang belanja from the partner: locked, but its wallet can move
   openSheet('tx')}
 function typeLabel(t){return {transfer:'Transfer',adjust:'Adjustments',debt:'Debt',lend:'Loan',collect:'Debt Collection',repay:'Repayment'}[t]||t}
 $('txEdit').onclick=function(){openAdd({edit:curTx})};
+$('txMove').onclick=function(){openPickWallet(curTx)};
 $('txDel').onclick=function(){act('deleteEntry',{id:curTx.id},'Catatan dihapus').then(closeAll)};
 
 /* pots */
@@ -1836,7 +1861,7 @@ var LANG=(function(){try{return localStorage.getItem('ek_lang')||'id'}catch(e){r
 var EN={
 'Beranda':'Home','Rencana':'Plan','Tabungan':'Savings','Dompet':'Wallets','Akun':'Account','Catat':'Add','+ Catat':'+ Add',
 'Lihat rencana':'See plan','Lihat semua':'See all','Semua':'All','Semua catatan':'All entries','Hanya catatanmu sendiri':'Only your own entries',
-'Pengeluaran minggu ini':'Spending this week','Minggu ini':'This week','+ Dompet baru':'+ New wallet','Uang belanja masuk ke…':'Household money goes to…','Pilih dompet tempat uang belanja masuk. Dompet ini jadi dompet utama, jadi uang belanja berikutnya otomatis masuk ke sini.':'Pick the wallet the household money goes into. It becomes your main wallet, so the next household money lands there automatically.','Pilih dompet untuk uang belanja ›':'Pick a wallet for the household money ›','Ketuk di sini, lalu pilih dompet tempat uang belanja masuk.':'Tap here, then pick the wallet it goes into.','Ketuk di sini untuk menambah dompetmu dulu, dengan saldo sekarang.':'Tap here to add your wallet first, with its current balance.','Pos bulan ini':'Pots this month','Kemarin':'Yesterday','Sisa di tiap pos':'Left in each pot','Terakhir dicatat':'Recently added',
+'Pengeluaran minggu ini':'Spending this week','Minggu ini':'This week','+ Dompet baru':'+ New wallet','Uang belanja masuk ke…':'Household money goes to…','Pindah dompet':'Move wallet','Pindahkan ke…':'Move to…','Hanya catatan ini yang pindah dompet. Dompet utama tidak berubah.':'Only this entry moves. Your main wallet stays the same.','Pilih dompet tempat uang belanja masuk. Dompet ini jadi dompet utama, jadi uang belanja berikutnya otomatis masuk ke sini.':'Pick the wallet the household money goes into. It becomes your main wallet, so the next household money lands there automatically.','Pilih dompet untuk uang belanja ›':'Pick a wallet for the household money ›','Ketuk di sini, lalu pilih dompet tempat uang belanja masuk.':'Tap here, then pick the wallet it goes into.','Ketuk di sini untuk menambah dompetmu dulu, dengan saldo sekarang.':'Tap here to add your wallet first, with its current balance.','Pos bulan ini':'Pots this month','Kemarin':'Yesterday','Sisa di tiap pos':'Left in each pot','Terakhir dicatat':'Recently added',
 'Geser ke samping. Pos = jatah uang dari rencana bulanan.':'Swipe sideways. A pot is money set aside in the monthly plan.',
 'Ketuk untuk melihat, mengubah, atau menghapus.':'Tap to view, edit or delete.','Hari ini':'Today',
 'Sisa jatah bulan ini':'Left this month','Sisa uang belanja (pos harian)':'Household money left (daily pots)',
@@ -1932,7 +1957,7 @@ var EN={
 };
 /* [pattern, replacement] for text built from pieces (amounts, dates, names) */
 var EN_RULES=[
-[/ · uang keluar$/,' · money out'],[/^Uang belanja masuk ke (?!…)/,'Household money now goes to '],[/^Sisa rencana$/,'Plan left'],[/^✓ Selesai$/,'✓ Done'],[/^✓ Ditabung$/,'✓ Saved'],[/^Lainnya (?=\d)/,'Others '],[/^Terpakai$/,'Used'],[/^Lewat\b/,'Over'],[/^Harian (?=\d)/,'Daily '],[/^Tagihan (?=\d)/,'Bills '],[/^Tabungan (?=\d)/,'Savings '],[/ · masuk ke Tabungan$/,' · goes to Savings'],[/^Hari ke-(\d+) dari (\d+)$/,'Day $1 of $2'],[/^Terpakai (\d+)% pos harian$/,'$1% of daily pots used'],
+[/ · uang keluar$/,' · money out'],[/^Uang belanja masuk ke (?!…)/,'Household money now goes to '],[/^Dipindah ke /,'Moved to '],[/^Sisa rencana$/,'Plan left'],[/^✓ Selesai$/,'✓ Done'],[/^✓ Ditabung$/,'✓ Saved'],[/^Lainnya (?=\d)/,'Others '],[/^Terpakai$/,'Used'],[/^Lewat\b/,'Over'],[/^Harian (?=\d)/,'Daily '],[/^Tagihan (?=\d)/,'Bills '],[/^Tabungan (?=\d)/,'Savings '],[/ · masuk ke Tabungan$/,' · goes to Savings'],[/^Hari ke-(\d+) dari (\d+)$/,'Day $1 of $2'],[/^Terpakai (\d+)% pos harian$/,'$1% of daily pots used'],
 [/\bSiklus gaji\b/g,'Pay cycle'],[/\bSiklus\b/g,'Cycle'],[/\bgaji Rp\b/g,'salary Rp'],[/\(sekarang\)/g,'(current)'],
 [/^Sisa\b/,'Left'],[/^Lebih\b/,'Over'],[/^bagian teman /,'friend’s share '],[/^titipan · $/,'held · '],[/ titip Rp/g,' gave Rp'],[/^Ya · tidak dihitung pemasukan$/,'Yes · not counted as income'],[/ · bagianmu Rp/,' · your part Rp'],[/^Terpakai sampai hari ini$/,'Spent so far'],[/^Terpakai siklus ini$/,'Spent this cycle'],[/^Uang masuk sampai hari ini$/,'Income so far'],[/^Uang masuk siklus ini$/,'Income this cycle'],[/ dari jatah Rp/,' of budget Rp'],[/ dibanding siklus lalu/,' vs last cycle'],[/\(hari yang sama\)/,'(same day)'],[/^Sudah lewat jatah Rp/,'Over budget by Rp'],[/^Lewat jatah Rp/,'Over budget by Rp'],[/^Sisa Rp (.+) dari jatah\.$/,'Rp $1 left of budget.'],[/^garis = rata-rata/,'line = average'],[/^Lainnya \((\d+)\)/,'Other ($1)'],[/^Selesai, sisanya bebas: tagihannya ternyata lebih murah, sisa Rp/,'Done, free the rest: the bill was cheaper, the remaining Rp'],[/^Tidak perlu bulan ini: Rp/,'Not needed this month: Rp'],[/ Sudah dibayar di luar catatan: misal cicilan lewat kartu kredit, uangnya tetap dianggap terpakai\./,' Paid outside the app: e.g. an installment on the credit card, the money still counts as used.'],[/^Ditandai selesai\. Sisa Rp/,'Marked done. Rp'],[/ kembali ke sisa jatah\./,' goes back to what’s left.'],[/^Diatur oleh\b/,'Managed by'],[/\bLewat\b/,'Over'],[/\bterpakai\b/g,'used'],[/\bper hari\b/g,'a day'],[/\bhari lagi\b/g,'days left'],[/\bhari ke-(\d+)/g,'day $1'],[/^dari (.+)$/,'of $1'],[/^Masuk tagihan\b/,'On the bill'],[/\bLunas\b/g,'Paid'],[/\bDitabung\b/g,'Saved'],[/\bBelum dibayar\b/g,'Not paid yet'],[/\bTerbayar\b/g,'Paid'],
 [/ dari /g,' of '],[/ \/ bulan/g,' / month'],[/\/bln\b/g,'/mo'],[/\btiap bulan dari rencana\b/g,'a month from the plan'],[/\btiap bulan\b/g,'a month'],
@@ -2155,7 +2180,7 @@ document.addEventListener('change',function(e){var s=e.target.closest&&e.target.
 /* ======================= pull down to refresh + automatic update check =======================
    Pull down at the top of a main screen: fetches the newest numbers, and if a new version of the
    app was uploaded to GitHub it reloads into it. Opening the app also checks for a new version. */
-var BUILD='20261017-1420';
+var BUILD='20261017-1437';
 function checkUpdate(){
   if(IN_GOOGLE||LOCAL_DEV||!/^https:/.test(location.protocol))return Promise.resolve(false);
   return fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
