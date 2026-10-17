@@ -805,6 +805,40 @@ img.fl{width:62%;height:62%;object-fit:contain;display:block;pointer-events:none
 #appView{bottom:calc(0px - var(--vgap))}
 .sheet,.kpad,.dim{bottom:calc(0px - var(--vgap))}
 #scrInfo{font-size:11px;color:var(--muted-3);margin-top:2px}
+/* "Masuk pos" looks like a button (17 Oct): accent pill with ▾, grey when no pos is picked */
+:root .form .posrow{position:relative}
+:root .form .posrow select{position:absolute;inset:0;width:100%;height:100%;opacity:0;margin:0;cursor:pointer}
+.pospill{margin-left:auto;display:inline-flex;align-items:center;gap:6px;background:var(--focus);color:var(--accent);font-weight:600;font-size:15px;border-radius:999px;padding:6px 12px 6px 14px;white-space:nowrap;max-width:62%;overflow:hidden;text-overflow:ellipsis}
+.pospill::after{content:"";width:11px;height:8px;flex:none;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center/contain;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center/contain}
+.pospill.none{background:var(--fill);color:var(--muted)}
+@keyframes nudge{0%,100%{transform:none}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+#tiles.nudge{animation:nudge .4s ease}
+@media (prefers-reduced-motion:reduce){#tiles.nudge{animation:none}}
+/* tappable cards (17 Oct): grey › in the corner + a small press-in, like iOS. Cards without › can't be tapped. */
+:root .tapcard,:root .bcard.pt,:root .pot{position:relative;cursor:pointer;transition:transform .18s cubic-bezier(.3,1.4,.5,1)}
+:root .tapcard:active,:root .bcard.pt:active,:root .pot:active{transform:scale(.975);transition-duration:.08s}
+:root .tapcard:has(.eye:active){transform:none}
+.chev{position:absolute;top:10px;right:13px;font-style:normal;font-size:20px;line-height:1;color:var(--muted-3);font-weight:500;pointer-events:none}
+.chev.in{position:static;margin-left:6px;font-size:17px;vertical-align:-1px}
+:root .bcard.pt .ph{padding-right:12px}
+:root .bcard.pt .chev{top:12px;right:11px;font-size:17px}
+:root #save .total{padding-right:34px}
+/* detail sheet */
+#detail .dsec{font-size:13px;font-weight:600;color:var(--muted);text-transform:none;margin:18px 22px 6px}
+#detail .mbar{height:5px;border-radius:3px;background:var(--fill);margin-top:6px;overflow:hidden}
+#detail .mbar i{display:block;height:100%;border-radius:3px;background:var(--g-bar)}
+#detail .mbar i.warn{background:var(--o-bar)}#detail .mbar i.over{background:var(--r-bar)}#detail .mbar i.acc{background:var(--accent)}
+#detail .item .mid{min-width:0;flex:1}
+#detail .fc{margin:12px 16px 0}
+#detail .dtwo{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 16px 0}
+#detail .dtwo div{background:var(--card);border-radius:16px;padding:12px 14px}
+#detail .dtwo small{display:block;font-size:12px;color:var(--muted)}
+#detail .dtwo b{font-family:var(--f-round);font-size:19px}
+#detail .foot{margin-top:14px}
+.form input[type="date"],.form input[type="month"]{text-align:right}
+/* "Dengan" chips sit on the right like other row values; auto margin collapses when the row scrolls */
+:root .pchips>:first-child{margin-left:auto}
+.form input[type="date"]::-webkit-date-and-time-value,.form input[type="month"]::-webkit-date-and-time-value{text-align:right}
 .save-now .snfrom{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:14px;color:var(--muted)}
 .save-now .snfrom select{margin-left:auto;font:inherit;font-weight:600;color:var(--accent);background:var(--fill);border:0;border-radius:10px;padding:6px 10px;max-width:60%}
 .chk .cn{display:flex;flex-direction:column;min-width:0}
@@ -831,7 +865,12 @@ body.add-open .nav .plus svg{transform:rotate(135deg)}
 @keyframes fadeUp{from{opacity:0;transform:translateY(4px)}}
 .tick{position:fixed;left:50%;top:42%;width:112px;height:112px;margin:-56px 0 0 -56px;border-radius:26px;z-index:60;pointer-events:none;
   display:grid;place-items:center;background:var(--card);box-shadow:0 18px 50px -12px rgba(0,0,0,.35),0 0 0 .5px var(--sep);opacity:0;visibility:hidden}
-.tick svg{width:58px;height:58px;fill:none;stroke:var(--green);stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+.tick{width:128px;height:128px;margin:-64px 0 0 -64px;grid-template-rows:auto auto;align-content:center;gap:6px}
+.tick small{display:block;font-size:12px;color:var(--muted);text-align:center;padding:0 10px;line-height:1.3;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tick small:empty{display:none}
+.tick.sub{width:184px;height:150px;margin:-75px 0 0 -92px}
+.tick b{font-size:15px;font-weight:600;color:var(--ink);font-family:var(--f-round);text-align:center;padding:0 8px}
+.tick svg{justify-self:center;width:58px;height:58px;fill:none;stroke:var(--green);stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
 .tick path{stroke-dasharray:40;stroke-dashoffset:40}
 .tick.on{visibility:visible;animation:tickPop 1.15s cubic-bezier(.3,1.4,.5,1) both}
 .tick.on path{animation:tickDraw .35s ease-out .12s forwards}
@@ -868,7 +907,7 @@ input,textarea{caret-color:var(--accent)}
 </style>
 </head>
 <body>
-<div class="sbg" aria-hidden="true"></div><div class="tick" id="tick" aria-hidden="true"><svg viewBox="0 0 64 64"><path d="M17 33l10 10 20-22"/></svg></div>
+<div class="sbg" aria-hidden="true"></div><div class="tick" id="tick" aria-hidden="true"><svg viewBox="0 0 64 64"><path d="M17 33l10 10 20-22"/></svg><b id="tickTx"></b><small id="tickSub"></small></div>
 <div id="loginView" class="login" hidden>
   <div class="logo"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJAAAACQCAMAAADQmBKKAAAAkFBMVEX7gJL7dn77bG76bG78ZF38XlX6XVT5XVT6W1LzYl3UYl3bUkbPUETUTkHSTkLSTkHSTkDPTkHVS0DHSjy6Rja0QjKyQzKyQjKyQjGxQjGxQjCxQTGvQTCnQTLxODa0Kx6hLReTNSeAJhlyJRpNJR9cGQ85EAsxEAsqJiUrJSQpJSUpJSQpJSMmJSQmHhwqDAhUj9B4AAAa+klEQVR42s2bi2KiyrKGvUAAGxTsBi/QUUCNZqK+/9udv6qbm5qZWfuclbNrrZgxGvmoqq5bd0a32/nXf5OMysP18l8F5Kjbb4AuPw47cvXvbHa9/jyQPFy+NdrX5XD5+lkljTzP+daLztcyu/ywi43efBdAry96uZbFjwP5vltfLp/fAekfB4rFmydv16+v/xagRLiu+CYY/X8B+Z5Tvlz7Q6DLjwSl0SISvuf+DdDPBKVRtEgApA9/NtnX4fD1ExpaJJ7ru8ErXxks+88vXV4/Lz8AtBDijYDOr4CyHlD5U0CJ8N6CVzY7X2vYsolRPwnkul6gX2T9z8tB143qfg4ojgQyGoCeffZ6yUoD9PXr+mNAbDSUIS/izPVSWKBfX7dS/xRQlPjumwgPz37dAp2vB304/EhgJIkpODovgbQBulxr9SPFrgGCG3m+d3jyovP1ohDEPwno8G8BXawMgBaR53qyvD5d8nKoSwpF/x7QtZE+UAQgz3fEUzC6XG4Hefj3gL4uZ6ufA76+ehpKqtTxvaB8DEYNyL8DdLleb3UgggBf+sZL2AJFSV1K7w1lyAWlGki/zqZk+xeBPj+xdMtauW+ui68QRVkPSFZ1LVyqi74gF3rE1c//ItAZt35TDpKES0KrnMxDQBFcKKmqWjiekJfrTevb9VLWt0843JmX+/n/HOiLrhOGCMhCSRIlXKG/TPkhZRyThiRe9g6Hg0SrhpRxIE+zAfF8/r8FgnoOB0GK8eYFi5Zg+zpfASSqUoikqqu6dBwvzTI5F/VNb7LLRUGLn9DY13moIXKy/w3c+Xq7lY7nQQHrYrtZQzZF4YW3KypGqaqqLMsKNqtAmupSRpEuCyXLMi1rLAQk1evn9ZB1QNfPz+vnf26u861WOnS9N9cXsFZabCDrrZT6cAVQAWvVdcWPda3h90glIlWRUrnKYDitESNM6mjlC5H18h8OIxB62JkhIomiSK03TKQVFtVIyC1UQziVlboq53ESx3CuYltorT0PD1Dx4XY2MfWwP3zt6ytw/pO6/3w7BJ7vY7F70TxaxIuFNCoqGKgo1mUJGn6oGacu5zYW0NvSdSRiKLMUuj6wXI7742FfHYCDJ7/+mZLw/lpT3PGEL2K+zjxRaQdUlyrVYIlStho8W1UENI/mcwLK8xVUmRQq0544Gqn31XG/3x+uX/X+8knmu/wDe91CdmdBRmgyqSrWLVBVaQKS5NwSaipTnUeLhVIqSYpNJuW2UG6i803hN0DHGl/VHubd76uaNMWm+xv7wZ9Dj6wlEPwWL4HgxwU+OolEWQo4eJlugJJsi0LCtikMDCChsk3hCbz52ELtjVTHA3s5AsHlD33bF8LHQUM/KL/mrXqegCq9zUoAxfM557Qszwu5QHSAufI0BpDEHaUA8oqsaIGqfSP89HL9dYQNf2c8ZPbbJUCS8AvZ188QCM6cQhWlkvNFPI+SUmdAUYpX4iZPk0SmCjW3BdLHZ6KqwjM4Ox5gvc9fSDnfVT618nwXsQerfdEHQjBqgBTiThQhOKl4gcWewDaQomiBECdyLTxlNVQfv9MRCVc115dOfoa5EH98z1PpEIfLnxYoL4pcRUmSrddwYhmZsAkl4Q3FioAWaVEIF+/z/WKTF2Vt5djyVB3kEfGJ4tRz6Xm9yYDaLZGu0ieeuAPabLIilckSJlES/5uoydqB3RhIqiIRcG4GQjbhPIMQ8RqoOl44SH0+ZC8EMiRT5IqCvONBorgHRBaSEUCKHApoeTYFltoGQHGUQIuuKDwLJKUJ66+BEJ8OeLhcH0phm0yhbhnFcRw/aWjVA9qkavMoq4Li0CqVizkWWuoJ3Jkn4UVaJohXnYaKRyBGHUxT8AS1DeKPUIVE2oBET0C58DugTfEKKFYpsCOE9jUBFRSxV0BEyOI0Y4Cy/f6Fp8NmF+T1s0nBhxrL/c3DDaEQQ97wvSEQlvIm99we0OYFkJwjPgCI4kTqWCAESCy8kvOxuXiWbVX1TATnRtFCE+fL100be+XQNMCgqWToQhSHCvFHoChGhCKgBcDyzAJtlIxoqbVAmyIryycg2PRwPaCeoqJTUPEDf6bJDwKjEPELIJ+Gr98DwdPjOIpS1pAs6grL0EsQFdZFOtQQ3qs2L6LTvrygy0R8rh3w+J7SBcp2AlpGRhY2IFkgrhgHDBlJu+w3Cssz4XtBzY0knOYIkCssT/hQQhl53QCt9QugkqW+wY2pC03TFWsK4hnxY/PpDIQ4F1JNPdAJCjFdrNqn6Xxh7wFdCZJwVgjUahmCU1nFEtEobYB6KaXe73b4KT8QUHUgCvQzCMDSAhkh04m5BcpV4gGINbTK1lxmZ5o+QKNY4qcw0bxLNjAQA1WlygtOxqK0QFtotku66F4kfhqpVkfC9d9QzKeUpN8GQkVjwkCbInbcBkib3yuhNv4nfhWyxX1jhcfNutSoJQmITIc3wr0KEEIQ6nFt3S00FcndfrmUjdk0VQuKVok35HnDc0/EEQMlbgtkeUpdGCBdoDpDVQk/U9bIKPtzqnMBRKbLszSm4hw48DkGUt0601Ls9ni99SPt+SLdrgHUJ4ITvSFI0oLrA62zdVqUQ9ECK0DS1fLM1i1xVFCJmzhkujTfMBCB5HgPfU87oLqM1DZZLhgop3vcohCmZesOXAgizA0bIEfczpcR+XELQpohOiqg0NAqmKPJhKZdKlcwXVluOqA9dGSA2nKyLmW6jpdzelVvGWjLi4Sc2u97tCB7NUCOrr9+XUYDzcyjSCj6l6IQESUptNd4ts0XTgLTwUwt0L4BggItUKWLNGGgXZp2QGsse89azXsT8RKVsvnsudrmMbVZtE0+EIDgXbDWmnQZU4RGnW+RqNuuPAnTEVCczOUAiPKtBarKNFeCX+wBgShVno1EEdEYd4AaVIrMwjPOFsi0/DAVFdawHNcH6LNhQ2kTYVHikh7VHvAbWhtyZ1MHHtcaKiprA4ROAfbBqzsG0l2kSyMTijw2GA/vFjT7SJFaAPT11QLNOZY35mlqzDk5d2L9Wkgs7UDWxzpbpfxDseM4tKL4vkYbZZIsA222qFQMUJF2sTfVicNW45mQ9WhoQjHQVwMExmTxWuLGzlhoCgqoqKRHN5lBb3G0M5E6J5tkMGULpKgKpiCV55oK9NVqvVqt6IeoqkhH1CpGbISUisUUxf/hAm0yUB49V91dJu6FazYJfaHdJaB5aiK1SYR9II3yk3IjJQKl8tUKcPnK9A/oynidCUTdJFEF6VcFjlMfCGi93iZRvPgriUUTbMo0mdtauGiqcACp0hS3eOylRKo8c3JT/hEtXId1BJNFi3VOrDqfTqdheYPJ8nyr5CL6p0CNIWMKVhaI50nNBKUHhJLXRLeMU+TGJlkXmVUiAOViBoGGygNa31GapkW6+EsR2oYa3ZZ8Qha94qWsXgFR5WlSk+33NI3FsfLnqkizNJhMJxPXDxCHAERxJ4n+lmghH4GiDghes9VV/RJImyFdVRU2HsFegroZmEqmK1Sv2nSXIym/ceh4IH2/xjrTIn4GIiUVr4AimIaAKD3nax4FpcgaUoZhCGspakSb7bGRqZkHHUCSzOfzcB6GeDRCT0kWy1joo5QEFLVAWQe07oDSHhBMYIBQTJmCHQV6VKjJeJrTXNMCmYMEDwFoHgmx3O12x4Pt1u33HUk0nyNuJOqYenHS7AHINH8Cqih7tEAC9SKbTDfaBEU4DWZKSlrzK2o4GqChweJkqTTnpo/7QD64KpVyGdOUspaOaONTpIpeq9IAIVjnLRBCDgGBMecfrpRUYRDMrJNTJSrK2/kMo42G1hJiV90/vhGrpATuJVA+yBdA69dACDm6rLXCkk6hkI2ejcdEs8rY01AFBJcb+rjb9TIaWguB7fgdzwdiNGkJzb5AVeMFIpk/Am2wvOtnILwby89mTQTGmQhDLIbtioeY6GJ8z7x2uI761pJhTdaBnEgegfBaBR0tE4Fa3XcmAvXJ/AFoo56AcgC5Xmnn4FQIyEmojbGgogxpEZGbMojO6kvrQ3Mh3ncGAhfm2c+pMx68mp+dyLmXaD8JaBpE5No9ICSw9AGooDXtu55JKFS7FUGQZsZYKMp1iEg0nUx5UHkpFeLQnKLMUua4h/bqPF7tqegEINbZqYLVlm8MNAli6qs6oEwh6g+BkFkLn4FMr1sWKpyJoolaiESzSRA4k+BiRvIlxaEwisIYzny3GjG9Zz107juY4F6nO+nItUDLYBJRWUkFSL7FR6nCVI61BUKTIPtApSrCMdYxYFYreM9sPJlMRPT2Ji5XngbeRvh4k5+sPu7cC9en45MLncyb2GqwAoCmAXQdxNSYp8igqKkYqLbz7gKISURAbwwEe+kMwSe1ppwFwXRKdSNWoT2dczkT0NFEmpPx5ppHYvcXi//Idvsgz146LoBYGGhFXQhFqCKl5WTm3SlVvwikDRBV2lkgNGLhKkVNiKQ6DeAwqGpp49AMuAzQiRVwgkFOPEm5318GI2M1KHEnKEH3gPIUPQrVlKjCUBfNF0lVbiQNUeNF1ACRpaAZbndz+v1AIksmic97vc1BAklAdPt882yv4+F8Pn8HZKwmxy3QNGCT8Zwb+TJdraidAhCMyEBxD2hbbLcFJdTZlH+VRNAZONT3Zko6CiUD4Vow2on9+XSezc6374BYR5qWaiMSmX1tknS0QLWfKZqWlGKRbKlhARCqH+54s5R69GDSk+kExT5piAZJvCu9jAiFLnQ/al5f+jw7vzbZh3X/e/XeAqGe6YDsADyiLQoUBNwoA8iNqO3VqZ5NG7E05hPGIWLijc9VjBZxCKCjAVLs0OfvgD4aoI/jPmi8aAgU0xLCkktKHS1MZRz7b26s4dIaCXUyFLaZE2iqfg/14RdqarQOHVDG8Ycs9geg+2kAlA6A1utCLtJ2uGSBEIIkvbvTD4Ug2hD3w9vtAnuqkkZ6SBoHA3SH1/0J6NS40alz6gnNSRqgRUJtH0rU5nlM7TyA6hJRcDwajek/ixSICBWfT2OYC+9Vak6uYW184wPdnwGCfFuDNEDhbNoCraTKGwAEQqU22zy1E4EYDYbnJrrSIXCsWD0F1E57jhPSJjPkYoCS3f7OGipTA/Rx/xant9DKduUrNQ6LDkijDyuypsS1QIjLo56MJ+Px2Dr1dDJDHYQ1xsdNSEO7PZuiA/qdtEB10ADNZpMOaJ7Ao6GxR6BZpx8z8YEfL42KnZm2u0dnBpoDiC70CuhkCqNeedQBRUHnnGGxUXM7DePJ/3oItFCtbkajvclV93pvLEencqCh5rQwcknBMebjGYgLMlRJ9GhL2w5IRKJZZwBK05WMep1L1+1SWJy26tlV7b3hH3SgwKVpo7jY5DESIhEr84ZvgERViRdAh1KK1moA2hQ9oEW7pxpTYTBt7DXTyNsnK3RXitya2vzSHskboVgXq/tvgJao4UbiCYjyh5BNNAppU0ZGL+cBaJJb/ZT35iOaeCYjiVz3xgc7P/mPBKAutef8+hpIjBA+XgF9rEQyAEq+AWrdeXw4nFqak6n1dhI6QkHg2XOUI5rTLN9rC7R7AKqhIYpmaB3rV0CzaQe0fTn06gGN1f2jBQLRx3G3pxI9nlOF4gleagAiOgOEyj8frrI7+fN4TJ79EIcYCBUQA40JaP3clZszmw2QzQjtDs0JK+3EOnLZZF9nA0TjtR1V9Ic6WxUPceiEVmy53FVtRTsAigloOglCrvNfAc3jJgBN5eGjMdbJHNWoqyPS9I682nOFCUYjM4F837GHZTmAHpoxNvTx/pDLSBCSLZDp2QdAdk8CQM0Cq06ntnZvOq0jl58ubTK4Tk2xaMRjWs8XaLtQfqCrfGylKQq1TWO97wGdjvPEAJkBSJs9qExMzZMe0N2UUvf23shuFaKuQuSh402BpL0OxUAUB6jpKrO0fOw37lVrxTvpuWlQsEoi1lAQmj7LAkUSXX+yfQCaadO1IHE3xaipl5EhpOCVbzZfdMKDbN+hYHSv0Dao4/2xhe5WHRVwp9aaYTzHMlN61Qeap3RyIR8CjXkv/eN+m3W1DXcUCCfVzmFPdsPbFw2sEJjIqxAHaFUW6er0TXq9GyX3gMRiPglUOwhSzU4KKuc8VRSXWg1V5M13KkbPPW+oKMycatcAebOadqVpbkxb105JvlHqTX36rvTYD4BONfrwINR5CyTjZjJf8PS1BRrPjAMRzyDOkRfdj7xH5FH4MWc/FGU4WC1EXLjXUpUv+jIafQxb7HtVlkrQyKc/vWMN8cSci30LJCse8wDodjejMP7EDz4dcTrauXVI8yGaeqmE/rQDIXtFDUitUZHXD3Y71fZoRbPEoGie9HJls9ogUG+3Kz6oRFufWtNwE81atAwpEMk96/XO9uJpBFwai4WPZsByCa8soZp9e9wL7Vr7TkndYrnRatOfENE/m+MBaG75+cfR7PvxGUizlbSiwxDoRHWZlSVvLXArrQmoOnXrgydxp/qdwz/d4/2u6VwR10UjO/JOU1p7vifwO7haqbTW9ckOGE/dyaUPjvft/hqNEI7HWvEMWqcA4HKQ96QyC1SMKcv3/BIJbDbaSW6aP0wKWTl8ZNj3gnbfnvYfBY3WqhJvONKEsqz75994AnakBHOse0C8HcMjaDReOjVbpKQ8BoLNZDGbmrKj0TiAgtEyIKD6Xlf7GqGIt8+E57q9gwRFkSJiOo5zZL87ound94SL/ztViu0ebbvNyrOxx53kbAu/ziM6dtjUQcZsrCHydB68HGm4UdPOvMbi8vonG9a4P0mzkTAMpS2ke3K/H7LVKuv2jCtjsCNvopXPwgmFolQa1j0gLBBk+NFUgYfmGwSkAzp6RjOa4dkP3uSkkxpuUJupeU+gCBHLOB04ULOn+QpIF2vaJ8PHbmsyF9dAJkLvdlNb81mgCZ0apus/nI5Z05hWw3QOiRd1Mp8LMY+6Hf48TRsFNWdonyU3s9YtKtFTNznFwqh2zVyqAUJdpTT6uZfHdRA/kiSiXfVlu/vC+8Eq141gIVE9c2yWGg18h/rB23HbvL2X7ctTOxM0I+/d3hYiBoi6zmA2k8UIKz574Fnn7GGodnhLKGGhg2i0Z25lZaatdb1Js2Z7fAiUCj4hlNLnZ7rk9q4lun80NfqpA+LKc4QLpnzyZMgE701Tc+3USDY4ppbzSYa6pIMy1nCD/f+5uQ26JXw+nbt5qCFsDKD0CkMyEPd31LlKpdIXhsvz9nue5/nDi3yesdQpbSU8AWmkENHszC+k4tME5asqgmIulprRkAWipk4VdMm1kd45tKyT9Tp7AKIRHW+2PAJpMadugw+b0KcnKwDJyfF+egl0fAQitUo+rG+kHwWG0jdqgUK62JoD/SY22n2yElVIEvm0P8PHcRI01lidyhH6sYigISu11lXI/d10bIHMUYZIWUH4Y8ky8zcgrah188qaTjut2+0oINXN5kqFihRL1HPtmRyfjnKnezi5K5pI1CvQKprf2TEzFcO97Skz+qapnNUHhfKBiJ6u1rTny0BkOrvkjKhIciNhj8HAbvPdjo9+OarqF8TGgU73gzVYgBJh9LjziwQrWnk8odW+0Oz8wocqVBrtfj1jJZ7w+7/mC29JQGniCpmVx8a5T8eKssm9DJsJHxb7AIhOc7z1VTLE8drXnChXaUq221Sl2g6Aqqo7tWTPLr0577s9H/1C97XcH21y5MiN7zOjoKmQqwegOf3Fa3PI0PO8xzNs7Us80bF2hZqLogVCaHqH+L27wb8c2lbmA3soVlF0BTvTg/CWYGCGOgGVTvkTkM8t0l+I63Pkk+jpt/bkJ2/R7eU7E/l+8z6S93cDxD0hZLmzJwvK3dKZTngAirWORvXJh3j/8q+IzJ+FpTQRdnK7W19X760Yo7u+eWaAiInP6Tqu04jZUYziOW/ePAAl82c7fSPWdrh9Ogd9NAravX8nsJk9Q4jVK/zGGclYjmdPfNJe4NCp56KJH38trAYAmdPDy98B5W1pJyO7WnlrwWv/CCaS6ah3kiqO6VjfKw35qNl8r/vC/29epynfLU98jOn9d7LzxXMNt+WasDtQFVkghFaoPphOx+MpH1Ef4HT27qRjffOD8Syk5PEnIM+ckunXlJTVKTvI2Ebl3h/eur7DXa9HG1huG2fJItNnCeCZLiso8GjoS93Qn4Aofg2IsjVtFPMOI6/ZFijxXfMHaF4zMB2znmCZyW/EgfHaAatC4OXrUszbvfIh8gcWgejFZac93shHlfGl0HlbDdn44/vumMXuj8A0TxTd7hJen05n3Qgai2xnhqP35+W22y1pu9xEAlO9JfLhiHsqk3jUnF0if3bZJ0iauSCXcR1JA9TuJo5GRdjqiI/omdx5Pz3xvDuPMcz12Fi9Cgyt+AjtRCyMWhwDQw7N4coabzrcIg2UCpvveBklSjv2nX0HBMUFgd8tFpuAKI37CZ+BttVyofmohbBW4uUTODwaoZ3QARBtIfNeUlEo+13i5VAV3WC8QgdyoG2TU/0AJKcTjxen2z/eTfYTSqrCuBRyYjkqiyjh0Ue3P4J7cdrNSGM4CzAA0gw0mu3H/Z2wkaKUWQ5xjKXpo3wb0nhAZaO1049Po1J5xp+btT0eQV2cXsyG8XjcB+LuacYam82mxlBDoJnWu2HEXpJm2QZQ95jsYEiSpkRVoWr7PQIydYZ1IKOpcd9r7LZfmsq+Nw0x+uI/+HOAW+r0P+YYRtK2wYUTNT1XNqLZSdEY1jelgNHPtMMZLvd/BLRb0ocN3mw3FEvRq7y85u+26HBuLltPcyi0mOs1Mv0mKn4PFPSJlmIy5BnP+O+e0T8EjrUe4oDXHD8kIM9pD8p7rS/19muHcfHPQGOnB0S/MR34WFXqKGg/lfI050tR0PFmBkJ38dY4kTceN6YeGx+fPqtoOhFK8cxpJuXsCQhO0ujIf7IXlkxoTupMqPygj0NRSRNPc8x3ZDpN3/VMEg+soUbdIY1pP1JTNJrS/pjZ9p49bH83Om2AaH1Nn0wKEPIEscT647MWDv2taaxocmtOnFfSbeIQFzt+j+NBOWjaAgYKJ98B8W9ae02m0+lL4xJQHNORMVBNHZgs4aPZRkOzaasUU3c5zoOlaFMsFAyUBxyMggl76Gz8EmhqDMYB6LWjjUk5U9TSEdnNmQSJVI3JMvMep0s2vjd5BLIR2gDZzPpaWqD36WQy/c75zfIF0CIwNxxHCYD+B/jdWHXNU9jbAAAAAElFTkSuQmCC" alt=""></div>
   <h1>Ek Lemoe</h1>
@@ -894,7 +933,7 @@ input,textarea{caret-color:var(--accent)}
     <div class="tx"><p class="dateln" id="dateLn"></p><h1>Halo, <span id="hi"></span></h1><p id="cycleTxt"></p><span class="syncchip" id="syncChip" hidden></span></div>
     <button class="avatar" data-go="me" id="av" aria-label="Akun"></button>
   </div>
-  <div class="hero v2">
+  <div class="hero v2 tapcard" data-detail="hero" role="button" aria-label="Rincian sisa jatah"><i class="chev" aria-hidden="true">›</i>
     <div class="rings" id="ring"></div>
     <div class="hx">
       <small><span id="heroCap"></span><button class="eye" id="eyeBtn" aria-label="Sembunyikan angka" aria-pressed="false"></button></small>
@@ -905,7 +944,7 @@ input,textarea{caret-color:var(--accent)}
   </div>
   <div id="assignWallet"></div>
   <div class="sec"><h2>Minggu ini</h2><button class="link" data-review>Ringkasan ›</button></div>
-  <div class="wkcard" id="weekCard" data-review role="button" aria-label="Buka ringkasan bulan">
+  <div class="wkcard tapcard" id="weekCard" data-review role="button" aria-label="Buka ringkasan bulan">
     <div class="wkhead"><span id="weekHint"></span><b id="weekTot"></b></div>
     <div class="wkbars" id="week"></div>
   </div>
@@ -947,7 +986,7 @@ input,textarea{caret-color:var(--accent)}
 <!-- TABUNGAN -->
 <section class="screen" id="save">
   <div class="title"><div><h1>Tabungan</h1><p>Uang yang dikumpulkan untuk nanti</p></div><button class="pillbtn ml-auto" data-open="newPot" id="newPotBtn">+ Baru</button></div>
-  <div class="total"><div><small>Total semua tabungan</small><b id="potTotal"></b></div><span style="font-size:13px;opacity:.8;text-align:right" id="potMonthly"></span></div>
+  <div class="total tapcard" data-detail="pots" role="button" aria-label="Rincian tabungan"><i class="chev" aria-hidden="true">›</i><div><small>Total semua tabungan</small><b id="potTotal"></b></div><span style="font-size:13px;opacity:.8;text-align:right" id="potMonthly"></span></div>
   <div id="saveNow"></div>
   <div class="sec"><h2>Tabungan kita</h2></div>
   <div class="hint" id="potHint"></div>
@@ -957,7 +996,7 @@ input,textarea{caret-color:var(--accent)}
 <!-- DOMPET -->
 <section class="screen" id="wallet">
   <div class="title"><div><h1>Dompet</h1><p id="walletTotal"></p></div><button class="pillbtn ml-auto" data-open="newWallet">+ Dompet</button></div>
-  <div class="wtot" id="wtCard"></div>
+  <div class="wtot tapcard" id="wtCard" data-detail="wt" role="button" aria-label="Rincian total uangku"></div>
   <div class="sec"><h2>Uang</h2></div>
   <div class="hint">Ketuk dompet untuk transfer atau menyesuaikan saldo.</div>
   <div class="list" id="wlist"></div>
@@ -1027,7 +1066,7 @@ input,textarea{caret-color:var(--accent)}
     <label data-show="expense" id="fsRow"><span>Bagian teman<br><small class="muted">dibayar pakai uang titipannya</small></span><input id="fshare" inputmode="numeric" placeholder="0"></label>
     <div class="fsh" id="fsHint" hidden></div>
     <div class="fr" data-show="income"><span>Uang titipan teman<br><small class="muted">dia titip, nanti kamu yang bayarkan</small></span><button class="sw" role="switch" aria-checked="false" id="titipSw" aria-label="Uang titipan teman"></button></div>
-    <label data-show="expense"><span>Masuk pos</span><select id="bucket" aria-label="Pos"></select></label>
+    <label data-show="expense" class="posrow"><span>Masuk pos</span><b id="bucketPill" class="pospill" aria-hidden="true"></b><select id="bucket" aria-label="Pos"></select></label>
     <label data-show="transfer"><span>Biaya admin</span><input id="fee" inputmode="numeric" placeholder="0"></label>
   </div>
   <div class="form" data-show="expense">
@@ -1062,6 +1101,13 @@ input,textarea{caret-color:var(--accent)}
   <div class="form" id="txRows"></div>
   <div class="btns"><button class="black" id="txMove" hidden>Pindah dompet</button><button class="black" id="txEdit">Ubah</button><button class="white danger" id="txDel">Hapus</button></div>
   <div class="foot">Salah kategori atau ternyata tidak perlu? Ubah kategori, pindahkan ke pos lain, atau hapus.</div>
+</div>
+
+<!-- SHEET: card details (17 Oct) - one sheet, filled by openDetail() -->
+<div class="sheet short" id="detail" role="dialog" aria-modal="true" aria-label="Rincian">
+  <div class="grab"></div>
+  <div class="sbar"><span></span><b id="dtTitle"></b><button class="round" data-close>Tutup</button></div>
+  <div id="dtBody"></div>
 </div>
 
 <!-- SHEET: tabungan -->
@@ -1357,7 +1403,7 @@ function render(){
   $('assignWallet').innerHTML=unassigned.length?'<button class="explain p pwcard" data-pickwallet><b>Pilih dompet untuk uang belanja ›</b>'+(myIdrWallets().length?'Ketuk di sini, lalu pilih dompet tempat uang belanja masuk.':'Ketuk di sini untuk menambah dompetmu dulu, dengan saldo sekarang.')+'</button>':'';
   // week
   var wk=S.week; $('weekHint').textContent=dshort(wk[0].date)+' – '+dshort(wk[6].date)+' · uang keluar';
-  var wtot=0,wmax=1;wk.forEach(function(d){wtot+=d.total;if(d.total>wmax)wmax=d.total});$('weekTot').textContent='Rp '+rp(wtot);
+  var wtot=0,wmax=1;wk.forEach(function(d){wtot+=d.total;if(d.total>wmax)wmax=d.total});$('weekTot').innerHTML='Rp '+rp(wtot)+'<i class="chev in" aria-hidden="true">›</i>';
   var DN=LANG==='en'?['M','T','W','T','F','S','S']:['S','S','R','K','J','S','M'];
   // Screen Time style bars: height = that day's spending, today in the accent colour, future days as flat stubs
   $('week').innerHTML=wk.map(function(d,i){var h=d.future?0:Math.round(64*d.total/wmax);return '<div class="'+(d.today?'t':d.future?'f':'')+'"><em>'+(d.total&&!d.future?short(d.total):'')+'</em><i style="height:'+Math.max(4,h)+'px"></i><span>'+DN[i]+'</span></div>'}).join('');
@@ -1369,7 +1415,7 @@ function render(){
     var sub='terpakai '+short(p.used)+' dari '+short(p.amount);
     // bar colour = status: green ok, orange >85% used, red over budget; finished bills read green
     var st=over||bst.k==='over'?'over':(p.kind==='harian'&&pct>85?'warn':'');var done=p.kind==='tetap'&&bst.k==='ok';
-    return '<button class="bcard pt '+st+(done?' done':'')+'" data-pid="'+esc(p.id)+'" '+(p.kind==='tetap'?'data-bill="'+p.id+'"':'data-go="plan"')+'><div class="ph"><div class="ico">'+emo(bucketIcon(p))+'</div><h3>'+esc(p.name)+'</h3></div><div class="big">'+(done?'✓ ':'')+big+'</div>'+'<div class="bar"><i style="width:'+(p.kind==='tetap'&&p.done&&!p.used?100:pct)+'%"></i></div>'+'<div class="sub">'+sub+'</div></button>';
+    return '<button class="bcard pt '+st+(done?' done':'')+'" data-pid="'+esc(p.id)+'" '+(p.kind==='tetap'?'data-bill="'+p.id+'"':'data-posd="'+esc(p.id)+'"')+'><i class="chev" aria-hidden="true">›</i><div class="ph"><div class="ico">'+emo(bucketIcon(p))+'</div><h3>'+esc(p.name)+'</h3></div><div class="big">'+(done?'✓ ':'')+big+'</div>'+'<div class="bar"><i style="width:'+(p.kind==='tetap'&&p.done&&!p.used?100:pct)+'%"></i></div>'+'<div class="sub">'+sub+'</div></button>';
   }).join('')||'<div class="empty">Belum ada pos. Buat di Rencana › Ubah.</div>';
   slideBars();
   // shared
@@ -1532,7 +1578,7 @@ function renderWallet(){
   // total card: big total + a bar showing where the money sits (top wallets, the rest grouped)
   var inT=ws.filter(function(w){return w.include_total&&w.balance>0}).sort(function(a,b){return b.balance-a.balance}),pos=inT.reduce(function(s,w){return s+w.balance},0)||1;
   var top=inT.slice(0,4),restV=inT.slice(4).reduce(function(s,w){return s+w.balance},0),WC=['wc1','wc2','wc3','wc4'];
-  $('wtCard').innerHTML='<small>Total uangku</small><b>Rp '+rp(tot)+'</b><div class="sbar2">'+top.map(function(w,i){return '<i class="'+WC[i]+'" style="width:'+(w.balance/pos*100)+'%"></i>'}).join('')+(restV?'<i class="wc5" style="width:'+(restV/pos*100)+'%"></i>':'')+'</div>'+
+  $('wtCard').innerHTML='<i class="chev" aria-hidden="true">›</i><small>Total uangku</small><b>Rp '+rp(tot)+'</b><div class="sbar2">'+top.map(function(w,i){return '<i class="'+WC[i]+'" style="width:'+(w.balance/pos*100)+'%"></i>'}).join('')+(restV?'<i class="wc5" style="width:'+(restV/pos*100)+'%"></i>':'')+'</div>'+
     '<div class="sleg">'+top.map(function(w,i){return '<span><i class="'+WC[i]+'"></i>'+esc(w.name)+' '+Math.round(w.balance/pos*100)+'%</span>'}).join('')+(restV?'<span><i class="wc5"></i>Lainnya '+Math.round(restV/pos*100)+'%</span>':'')+'</div>';
   $('wlist').innerHTML=ws.length?ws.map(function(w){return '<button class="item" data-wd="'+w.id+'"><div class="ico wl">'+wIcon(w)+'</div><div class="mid"><div class="t">'+esc(w.name)+'</div>'+(w.id===S.default_wallet?'<div class="s">dompet utama</div>':(!w.include_total?'<div class="s">tidak masuk total</div>':''))+'</div><div class="amt">'+rp(w.balance)+'</div>'+GO+'</button>'}).join('')+(fx.length?'<div class="dayh" style="padding-left:4px">Mata uang asing<span>tidak masuk total</span></div>'+fx.map(function(w){var idr=toIdr(w.balance,w.currency);
     return '<button class="item" data-wd="'+w.id+'"><div class="ico wl">'+wIcon(w)+'</div><div class="mid"><div class="t">'+esc(w.name)+'</div><div class="s">'+(idr===null?esc(CUR_NAME[w.currency]||w.currency):'≈ Rp '+rp(idr))+'</div></div><div class="amt">'+fxAmt(w.balance,w.currency)+'</div>'+GO+'</button>'}).join(''):''):'<div class="empty">Belum ada dompet. Ketuk "+ Dompet" dan isi saldo sekarang.</div>';
@@ -1608,7 +1654,6 @@ function catById(id){return S.categories.filter(function(c){return c.id===id})[0
 function drawTiles(){
   var list=catsFor(form.type==='income'?'income':'expense'); var quick=list.filter(function(c){return c.quick}).slice(0,7);
   if(form.cat&&!quick.some(function(c){return c.id===form.cat}))quick=quick.slice(0,6).concat([catById(form.cat)]);
-  if(!form.cat&&quick[0])form.cat=quick[0].id;
   if(form.type==='income'&&!quick.length)quick=list.slice(0,7);
   $('tiles').innerHTML=quick.map(function(c){return '<button class="tile" aria-pressed="'+(c.id===form.cat)+'" data-cat="'+c.id+'"><span>'+emo(c.icon)+'</span>'+esc(c.label)+'</button>'}).join('')+'<button class="tile" aria-pressed="false" data-more><span>•••</span>Lainnya</button>';
   updMap();
@@ -1627,7 +1672,8 @@ function setType(t){form.type=t;document.querySelectorAll('#typeSeg button').for
   if(t!=='transfer'){var cur=catById(form.cat);if(!cur||cur.kind!==(t==='income'?'income':'expense'))form.cat=null;drawTiles()}
   personNote();updMap();nextRowUpd();
 }
-function fillBuckets(sel){var side=mySide();$('bucket').innerHTML='<option value="">— tidak masuk pos —</option>'+side.map(function(p){return '<option value="'+p.id+'"'+(p.id===sel?' selected':'')+'>'+esc(p.name)+'</option>'}).join('')}
+function fillBuckets(sel){var side=mySide();$('bucket').innerHTML='<option value="">Tanpa pos</option>'+side.map(function(p){return '<option value="'+p.id+'"'+(p.id===sel?' selected':'')+'>'+esc(p.name)+'</option>'}).join('');bucketLook()}
+function bucketLook(){var b=$('bucket'),pl=$('bucketPill');pl.classList.toggle('none',!b.value);pl.textContent=b.selectedOptions[0]?b.selectedOptions[0].text:'Tanpa pos'}
 function personNote(){var n=$('personNote');var on=form.type==='transfer'&&form.toPartner;n.hidden=!on;if(!on)return;
   n.innerHTML=S.me==='innamul'?'<b>Kirim uang belanja ke '+esc(S.partnerName)+'</b>Untukmu: pengeluaran "Uang belanja ke '+esc(S.partnerName)+'". Untuk '+esc(S.partnerName)+': otomatis jadi pemasukan "Uang belanja dari suami", dia tidak perlu mencatat lagi.':'<b>Kirim ke suami</b>Untukmu: pengeluaran "Ganti uang ke suami". Untuk suami: otomatis tercatat sebagai uang yang kamu ganti.'}
 function updMap(){
@@ -1675,10 +1721,11 @@ function openAdd(opts){
 }
 $('amt').addEventListener('input',function(){var v=num(this.value);this.value=v?'Rp '+rp(v):''});
 ['fee','fshare','nwBal','npStart','npTarget','epTarget','adjReal','pmAmt','nlAmt','nlMonthly','lmAmt'].forEach(function(id){$(id).addEventListener('input',function(){if(this.dataset.dec)return;var v=num(this.value);this.value=v?rp(v):''})});
-$('bucket').addEventListener('change',updMap);
+$('bucket').addEventListener('change',function(){bucketLook();updMap()});
 $('saveEntry').onclick=function(){
   var p={type:form.type,amount:num($('amt').value),date:$('date').value,note:$('note').value.trim()};
   if(!p.amount){toast('Isi jumlahnya dulu',true);return}
+  if(form.type!=='transfer'&&!form.cat){toast('Pilih kategori dulu',true);var tl=$('tiles');tl.classList.remove('nudge');void tl.offsetWidth;tl.classList.add('nudge');return}
   if(form.type==='transfer'){p.wallet_id=form.from;if(form.toPartner)p.to_partner=true;else p.to_wallet_id=form.to;p.fee=num($('fee').value)}
   else{p.wallet_id=form.wallet;p.category_id=form.cat;if(form.type==='expense'){p.plan_id=$('bucket').value;p.with_partner=$('withSw').getAttribute('aria-checked')==='true';p.ask_payback=$('askSw').getAttribute('aria-checked')==='true'}}
   if(form.addingPerson){var pi=$('pNew');if(pi&&pi.value.trim())addPerson(pi.value)}
@@ -1687,7 +1734,7 @@ $('saveEntry').onclick=function(){
   if(form.type==='income'){p.titip=$('titipSw').getAttribute('aria-checked')==='true';if(p.titip&&!(form.people||[]).length){toast('Tag teman yang titip uangnya dulu',true);return}}
   if(form.type==='expense'){var wsel=walletOf(form.wallet);p.count_next=!!(wsel&&wsel.type==='credit'&&$('nextSw').getAttribute('aria-checked')==='true')}
   if(editId){p.id=editId;quickEdit(p)}else quickAdd(p);
-  closeAll();if(editId)toast('Perubahan disimpan');else showTick();
+  closeAll();showTick(editId?'Diubah':'Tersimpan',entrySub(p));
 };
 $('delEntry').onclick=function(){if(!editId)return;quickDelete(editId);closeAll();toast('Catatan dihapus')};
 function drawCats(q){q=(q||'').toLowerCase();var kind=form.type==='income'?'income':'expense';var list=catsFor(kind);var groups={};
@@ -1729,7 +1776,63 @@ function playIntro(){if(RM)return;var h=$('home');h.classList.remove('intro');vo
   slideBars(true);countUp()}
 function openingFx(){if(openedFx)return;openedFx=1;if($('home').classList.contains('on'))playIntro();if(RM)return;
   var b=document.querySelector('.nav button[data-open="add"]');setTimeout(function(){b.classList.add('hello');setTimeout(function(){b.classList.remove('hello')},2700)},900)}
-function showTick(){var t=$('tick');t.classList.remove('on');void t.offsetWidth;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('on')},1200)}
+function showTick(msg,sub){$('tickTx').textContent=msg||'Tersimpan';$('tickSub').textContent=sub||'';var t=$('tick');t.classList.toggle('sub',!!sub);t.classList.remove('on');void t.offsetWidth;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('on')},1200)}
+/* the line under "Tersimpan": amount + what it was */
+function entrySub(p){var a='Rp '+rp(p.amount);if(p.type==='transfer'){var f=walletOf(p.wallet_id),t=p.to_partner?{name:S.partnerName}:walletOf(p.to_wallet_id);return a+' · '+(f?f.name:'')+' → '+(t?t.name:'')}
+  var c=catById(p.category_id);return a+(c?' · '+c.label:'')}
+/* ===== card details (17 Oct): hero, daily pos, wallet total, savings total ===== */
+function dtOpen(title,html){$('dtTitle').textContent=title;$('dtBody').innerHTML=html;$('detail').scrollTop=0;openSheet('detail')}
+function mrow(icon,t,s,amt,pct,cls,attr){var wl=icon.indexOf('<span class="wl">')===0;if(wl)icon=icon.slice(17,-7);return '<'+(attr?'button':'div')+' class="item"'+(attr||'')+'><div class="ico'+(wl?' wl':'')+'">'+icon+'</div><div class="mid"><div class="t">'+t+'</div>'+(s?'<div class="s">'+s+'</div>':'')+
+  (pct!=null?'<div class="mbar"><i class="'+(cls||'')+'" style="width:'+Math.max(0,Math.min(100,pct))+'%"></i></div>':'')+'</div><div class="amt">'+amt+'</div>'+(attr?GO:'')+'</'+(attr?'button':'div')+'>'}
+function cycDays(){var DAY=864e5,f=new Date(S.cycle.from+'T00:00:00'),t=new Date(S.cycle.to+'T00:00:00'),n=new Date(S.today+'T00:00:00');
+  var total=Math.round((t-f)/DAY)+1,left=Math.max(1,Math.round((t-n)/DAY)+1);return {total:total,left:left,day:total-left+1}}
+function openHeroDetail(){var side=mySide(),c=cycDays(),h=side.filter(function(p){return p.kind==='harian'});
+  var bud=0,used=0;h.forEach(function(p){bud+=p.amount;used+=p.used});
+  var over=0,free=0;side.forEach(function(p){if(p.kind!=='harian'&&p.used>p.amount)over+=p.used-p.amount;else if(p.kind==='tetap'&&p.free)free+=p.amount-p.used});
+  var rem=bud-used-over+free,proj=c.day?used/c.day*c.total:used,end=bud-proj;
+  var html='<div class="amount"><p>'+(S.me==='innamul'?'Sisa jatah bulan ini':'Sisa uang belanja')+'</p><div class="show">Rp '+rp(rem)+'</div><p>Hari ke-'+c.day+' dari '+c.total+' · '+c.left+' hari lagi</p></div>'+
+    '<div class="dtwo"><div><small>Aman per hari</small><b>Rp '+short(Math.max(0,rem)/c.left)+'</b></div><div><small>Rata-rata keluar per hari</small><b>Rp '+short(c.day?used/c.day:0)+'</b></div></div>'+
+    '<div class="explain m fc"><b>'+(end>=0?'Kalau terus seperti ini, sisa ±Rp '+short(end)+' di akhir siklus':'Kalau terus seperti ini, lewat ±Rp '+short(-end)+' di akhir siklus')+'</b>'+
+      (end>=0?'Pengeluaran harian masih di bawah jatah. Pertahankan.':'Coba kurangi jadi ±Rp '+short(Math.max(0,bud-used)/c.left)+' per hari supaya pas sampai tanggal '+(+S.cycle.to.slice(8))+'.')+'</div>'+
+    '<div class="dsec">Pos harian</div><div class="list">'+h.map(function(p){var l=p.amount-p.used,pct=p.amount?p.used/p.amount*100:0;
+      return mrow(emo(bucketIcon(p)),esc(p.name),(l>=0?'sisa '+short(l)+' · ±'+short(l/c.left)+'/hari':'lewat '+short(-l)),short(p.used)+' / '+short(p.amount),pct,pct>100?'over':(pct>85?'warn':''),' data-posd="'+esc(p.id)+'"')}).join('')+'</div>'+
+    ((over||free)?'<div class="dsec">Tagihan tetap</div><div class="list">'+(over?mrow('⚠️','Tagihan lewat budget','mengurangi sisa jatah','−'+short(over)):'')+(free?mrow('✅','Sisa tagihan dibebaskan','"Selesai, sisanya bebas"','+'+short(free)):'')+'</div>':'')+
+    '<div class="foot">Sisa jatah = pos harian yang belum terpakai, dikurangi tagihan yang lewat budget, ditambah sisa tagihan yang dibebaskan.</div>';
+  dtOpen('Sisa jatah',html)}
+function openPosDetail(id){var p=mySide().filter(function(x){return x.id===id})[0];if(!p)return;var c=cycDays(),l=p.amount-p.used,pct=p.amount?p.used/p.amount*100:0;
+  var es=(S.cycleEntries||[]).filter(function(e){return e.plan_id===id&&(e.type==='expense'||(e.type==='income'&&e.category_id==='reimbursement'))}).sort(function(a,b){return String(b.date).localeCompare(String(a.date))});
+  // spending per week of the salary cycle
+  var DAY=864e5,f=new Date(S.cycle.from+'T00:00:00'),wk=[],nw=Math.ceil(c.total/7);for(var i=0;i<nw;i++)wk.push(0);
+  es.forEach(function(e){var k=Math.floor((new Date(e.date+'T00:00:00')-f)/DAY/7);if(k>=0&&k<nw)wk[k]+=e.type==='expense'?e.amount-(e.friend_share||0):-e.amount});
+  var wmax=Math.max.apply(null,wk.concat([1])),nowW=Math.floor((c.day-1)/7);
+  var html='<div class="amount"><p>'+esc(p.name)+'</p><div class="show">'+(l>=0?'Sisa Rp '+rp(l):'Lewat Rp '+rp(-l))+'</div><p>terpakai '+short(p.used)+' dari '+short(p.amount)+'</p></div>'+
+    '<div class="dtwo"><div><small>Aman per hari</small><b>Rp '+short(Math.max(0,l)/c.left)+'</b></div><div><small>Terpakai</small><b>'+Math.round(pct)+'%</b></div></div>'+
+    '<div class="dsec">Per minggu</div><div class="list">'+wk.map(function(v,i){var a=new Date(f.getTime()+i*7*DAY),b=new Date(Math.min(f.getTime()+(i*7+6)*DAY,new Date(S.cycle.to+'T00:00:00').getTime()));
+      var ymd=function(d){return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)};
+      return mrow(i===nowW?'📍':'🗓️','Minggu '+(i+1)+(i===nowW?' (sekarang)':''),dshort(ymd(a))+' – '+dshort(ymd(b)),i>nowW?'–':short(v),i>nowW?0:v/wmax*100,i===nowW?'acc':'')}).join('')+'</div>'+
+    '<div class="dsec">Catatan di pos ini</div>'+(es.length?'<div class="list">'+es.map(txRow).join('')+'</div>':'<div class="empty">Belum ada catatan bulan ini.</div>')+
+    '<div class="btns" style="margin-top:14px"><button class="white" data-go="plan">Buka di Rencana</button></div>';
+  dtOpen(p.name,html)}
+function openWalletTotal(){var ws=(S.wallets||[]).filter(function(w){return w.type!=='credit'&&!isFx(w)}),inT=ws.filter(function(w){return w.include_total}).sort(function(a,b){return b.balance-a.balance}),out=ws.filter(function(w){return !w.include_total&&!w.hidden});
+  var tot=inT.reduce(function(s,w){return s+w.balance},0),pos=inT.reduce(function(s,w){return s+Math.max(0,w.balance)},0)||1,ids={};inT.forEach(function(w){ids[w.id]=1});
+  var inc=0,exp=0;(S.cycleEntries||[]).forEach(function(e){if(!ids[e.wallet_id])return;if(e.type==='income'&&!(e.friend_share>0))inc+=e.amount;else if(e.type==='expense')exp+=e.amount});
+  var html='<div class="amount"><p>Total uangku</p><div class="show">Rp '+rp(tot)+'</div><p>'+inT.length+' dompet · tanpa kartu kredit dan mata uang asing</p></div>'+
+    '<div class="dtwo"><div><small>Masuk siklus ini</small><b class="green">+'+short(inc)+'</b></div><div><small>Keluar siklus ini</small><b>−'+short(exp)+'</b></div></div>'+
+    '<div class="dsec">Di mana uangnya</div><div class="list">'+inT.map(function(w){return mrow('<span class="wl">'+wIcon(w)+'</span>',esc(w.name),Math.round(Math.max(0,w.balance)/pos*100)+'% dari total','Rp '+rp(w.balance),Math.max(0,w.balance)/pos*100,'acc',' data-wd="'+w.id+'"')}).join('')+'</div>'+
+    (out.length?'<div class="dsec">Tidak masuk total</div><div class="list">'+out.map(function(w){return mrow('<span class="wl">'+wIcon(w)+'</span>',esc(w.name),'','Rp '+rp(w.balance),null,'',' data-wd="'+w.id+'"')}).join('')+'</div>':'')+
+    '<div class="foot">Masuk/keluar dihitung dari catatanmu di siklus gaji ini (transfer antar dompet tidak dihitung).</div>';
+  dtOpen('Total uangku',html)}
+function openPotTotal(){var pots=S.pots||[],tot=pots.reduce(function(s,p){return s+p.total},0),mon=pots.reduce(function(s,p){return s+p.monthly},0),by={};
+  pots.forEach(function(p){(p.history||[]).forEach(function(h){var k=String(h.date).slice(0,7);by[k]=(by[k]||0)+h.amount})});
+  var ks=Object.keys(by).sort().reverse().slice(0,6),bmax=Math.max.apply(null,ks.map(function(k){return Math.abs(by[k])}).concat([1]));
+  var MN=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  var eta=function(p){if(!p.target)return 'tanpa target';if(p.total>=p.target)return '✓ target tercapai';if(!p.monthly)return 'kurang Rp '+short(p.target-p.total);
+    var m=Math.ceil((p.target-p.total)/p.monthly),d=new Date(S.today+'T00:00:00');d.setMonth(d.getMonth()+m);return 'tercapai ±'+MN[d.getMonth()]+' '+d.getFullYear()+' ('+m+' bln lagi)'};
+  var html='<div class="amount"><p>Total semua tabungan</p><div class="show">Rp '+rp(tot)+'</div><p>'+(mon?'+'+short(mon)+' tiap bulan dari rencana':'belum ada tabungan bulanan')+'</p></div>'+
+    '<div class="dsec">Per tabungan</div><div class="list">'+pots.map(function(p){return mrow(emo(p.icon),esc(p.name),eta(p)+(potWName(p)?' · di '+esc(potWName(p)):''),'Rp '+short(p.total),p.target?p.total/p.target*100:null,'acc',' data-pot="'+p.id+'"')}).join('')+'</div>'+
+    (ks.length?'<div class="dsec">Per bulan</div><div class="list">'+ks.map(function(k){var v=by[k];return mrow(v>=0?'⬆️':'⬇️',MN[+k.slice(5)-1]+' '+k.slice(0,4),v>=0?'ditabung':'dipakai',(v>=0?'+':'−')+short(Math.abs(v)),Math.abs(v)/bmax*100,v>=0?'':'over')}).join('')+'</div>':'')+
+    '<div class="foot">Per bulan dihitung dari riwayat terbaru tiap tabungan.</div>';
+  dtOpen('Tabungan',html)}
 /* household money without a wallet: pick one = make it the main wallet (server also moves the waiting income into it) */
 function myIdrWallets(){return (S.wallets||[]).filter(function(w){return w.type!=='credit'&&!isFx(w)})}
 var pwMove=null;
@@ -1741,6 +1844,8 @@ function openPickWallet(moveTx){var ws=myIdrWallets();pwMove=moveTx||null;
 /* ======================= clicks ======================= */
 document.addEventListener('click',function(e){
   var t=e.target, g;
+  if(!t.closest('.eye')&&(g=t.closest('[data-detail]'))){var dk=g.dataset.detail;if(dk==='hero')openHeroDetail();else if(dk==='wt')openWalletTotal();else if(dk==='pots')openPotTotal();return}
+  if((g=t.closest('[data-posd]'))){openPosDetail(g.dataset.posd);return}
   if((g=t.closest('[data-go]'))){e.preventDefault();closeAll();go(g.dataset.go);return}
   if((g=t.closest('[data-close]'))){closeAll();return}
   if((g=t.closest('[data-pickwallet]'))){openPickWallet();return}
@@ -1788,7 +1893,9 @@ document.addEventListener('click',function(e){
   if((g=t.closest('[data-billdone]'))){var dv=g.dataset.billdone;setBillDone(billId,dv==='free'?'free':dv==='1');return}
   if((g=t.closest('[data-settle]'))){quickSettle(g.dataset.settle);return}
   if((g=t.closest('[data-chk]'))){var on=g.getAttribute('aria-checked')!=='true';g.setAttribute('aria-checked',on);g.querySelector('.box').textContent=on?'✓':'';updMonthlyBtn();return}
-  if(t.closest('#saveMonthly')){var ids=[];document.querySelectorAll('[data-chk]').forEach(function(c){if(c.getAttribute('aria-checked')==='true')ids.push(c.dataset.chk)});if(!ids.length){toast('Centang minimal satu',true);return}var sb=$('saveMonthly');if(sb.disabled)return;sb.disabled=true;sb.textContent='Menyimpan…';act('saveMonthly',{pot_ids:ids,from_wallet:$('snFrom')?$('snFrom').value:''},'Tabungan bertambah').catch(function(){sb.disabled=false;updMonthlyBtn()});return}
+  if(t.closest('#saveMonthly')){var ids=[];document.querySelectorAll('[data-chk]').forEach(function(c){if(c.getAttribute('aria-checked')==='true')ids.push(c.dataset.chk)});if(!ids.length){toast('Centang minimal satu',true);return}var sb=$('saveMonthly');if(sb.disabled)return;sb.disabled=true;var fw=$('snFrom')?$('snFrom').value:'';
+    var tot=0;ids.forEach(function(id){var pot=potOf(id);if(pot&&!pot.saved_this_cycle)tot+=pot.monthly;if(pot&&!pot.saved_this_cycle){potLocal(pot,pot.monthly,'Dari rencana bulan ini',fw,false);pot.saved_this_cycle=true}});
+    enqueue('saveMonthly',{pot_ids:ids,from_wallet:fw});render();showTick('Ditabung','Rp '+rp(tot)+' · '+ids.length+' tabungan');return}
   if((g=t.closest('[data-pot]'))){openPot(g.dataset.pot);return}
   if((g=t.closest('[data-pm]'))){openPotMove(g.dataset.pm);return}
   if((g=t.closest('[data-wd]'))){openWallet(g.dataset.wd);return}
@@ -1859,9 +1966,16 @@ function openPotMove(m){if(m==='edit'){$('epName').value=curPot.name;$('epTarget
   $('pmExplain').innerHTML=m==='in'?'<b>Tabung di luar rencana</b>Misal ada uang lebih, atau untuk mengisi saldo awal (tulis "Saldo awal").':'<b>Tidak mengurangi pos bulan ini</b>Uangnya diambil dari tabungan, jadi jatah dapur dan jajan tetap aman.';
   $('potMove').classList.add('on')}
 $('pmSave').onclick=function(){var a=num($('pmAmt').value);if(!a){toast('Isi jumlahnya dulu',true);return}if(pmMode==='out'&&a>curPot.total){toast('Lebih besar dari isi tabungan',true);return}
-  act('potMove',{pot_id:curPot.id,amount:a,mode:pmMode,other_wallet:curPot.wallet_id?$('pmWallet').value:'',note:$('pmNote').value.trim()||(pmMode==='in'?'Tabung':'Dipakai')},pmMode==='in'?'Ditabung':'Dipakai').then(closeAll)};
+  var pl={cid:newId(),pot_id:curPot.id,amount:a,mode:pmMode,other_wallet:curPot.wallet_id?$('pmWallet').value:'',note:$('pmNote').value.trim()||(pmMode==='in'?'Tabung':'Dipakai')};
+  var pot=potOf(curPot.id);if(pot)potLocal(pot,a,pl.note,pl.other_wallet,pmMode==='out');enqueue('potMove',pl);render();closeAll();showTick(pmMode==='in'?'Ditabung':'Dipakai','Rp '+rp(a)+' · '+curPot.name)};
 $('npSave').onclick=function(){if(!$('npName').value.trim()){toast('Isi nama tabungan',true);return}var w=walletOf($('npWallet').value);act('addPot',{name:$('npName').value.trim(),start:num($('npStart').value),target:num($('npTarget').value),wallet_id:w?w.id:'',kept_at:w?w.name:''},'Tabungan dibuat').then(closeAll)};
-$('epSave').onclick=function(){var w=walletOf($('epWallet').value);act('editPot',{id:curPot.id,name:$('epName').value.trim()||curPot.name,target:num($('epTarget').value),wallet_id:w?w.id:'',kept_at:w?w.name:(curPot.wallet_id?'':curPot.kept_at||'')},'Disimpan').then(closeAll)};
+$('epSave').onclick=function(){var w=walletOf($('epWallet').value);var pl={id:curPot.id,name:$('epName').value.trim()||curPot.name,target:num($('epTarget').value),wallet_id:w?w.id:'',kept_at:w?w.name:(curPot.wallet_id?'':curPot.kept_at||'')};
+  /* instant like entries (17 Oct): change on screen now, queue for the Sheet */
+  var pot=potOf(curPot.id);if(pot){pot.name=pl.name;pot.target=pl.target;pot.wallet_id=pl.wallet_id;pot.kept_at=pl.kept_at}enqueue('editPot',pl);render();closeAll();showTick('Diubah',pl.name+(pl.kept_at?' · di '+pl.kept_at:''))};
+function potOf(id){return (S.pots||[]).filter(function(x){return x.id===id})[0]}
+/* what a pot move does on screen before the Sheet answers: pot total, its history, and the wallet transfer */
+function potLocal(pot,amt,note,other,out){pot.total+=out?-amt:amt;pot.history=[{date:S.today,amount:out?-amt:amt,note:note}].concat(pot.history||[]).slice(0,12);
+  var from=out?pot.wallet_id:other,to=out?other:pot.wallet_id;if(from&&to&&from!==to&&walletOf(from)&&walletOf(to)){walletOf(from).balance-=amt;walletOf(to).balance+=amt}}
 /* savings pots live in a real wallet (17 Oct): saving = transfer main wallet → pot wallet, using = pot wallet → chosen wallet */
 function potWalletOpts(sel,cur){var ws=myIdrWallets();$(sel).innerHTML='<option value="">Belum dipilih</option>'+ws.map(function(w){return '<option value="'+w.id+'"'+(w.id===cur?' selected':'')+'>'+esc(w.name)+'</option>'}).join('')}
 function potWName(p){var w=p.wallet_id&&walletOf(p.wallet_id);return w?w.name:(p.kept_at||'')}
@@ -1938,7 +2052,7 @@ var EN={
 'Di luar rencana':'Outside the plan','Belum ada pengeluaran.':'No spending yet.',
 'Ketuk tagihan tetap untuk menandai lunas / belum. Pos harian terisi otomatis dari catatan.':'Tap a fixed bill to mark it paid / not paid. Daily pots fill in from your entries.',
 'Uang yang dikumpulkan untuk nanti':'Money put aside for later','Total semua tabungan':'All savings total','Tabungan kita':'Our savings',
-'+ Baru':'+ New','+ Tabung':'+ Save','Tabung':'Save','Pakai':'Use','Pakai tabungan':'Use savings','Tabung bulan ini':'Save this month','Uang diambil dari':'Money taken from','Belum dipilih':'Not chosen','Dari dompet':'From wallet','Pindah ke dompet':'Move to wallet','Tidak dipindah (hanya angka tabungan)':'Not moved (only the savings number)','Pilih dompet tempat uang tabungan ini benar-benar disimpan (misal blu). Saat menabung, uangnya dicatat pindah dari dompet utama ke dompet itu. Untuk mengisi saldo awal, pakai "+ Tabung" dengan catatan "Saldo awal".':'Pick the wallet where this savings money really sits (e.g. blu). When you save, the money is recorded as moving from your main wallet to that wallet. To fill a starting amount, use "+ Save" with the note "Saldo awal".',
+'+ Baru':'+ New','+ Tabung':'+ Save','Tabung':'Save','Pakai':'Use','Pakai tabungan':'Use savings','Tabung bulan ini':'Save this month','Tanpa pos':'No pot','Pilih kategori dulu':'Pick a category first','Sisa jatah':'Left this month','Aman per hari':'Safe per day','Rata-rata keluar per hari':'Average out per day','Pos harian':'Daily pots','Tagihan tetap':'Fixed bills','Tagihan lewat budget':'Bills over budget','mengurangi sisa jatah':'reduces what’s left','Sisa tagihan dibebaskan':'Bill leftover released','Per minggu':'Per week','Catatan di pos ini':'Entries in this pot','Belum ada catatan bulan ini.':'No entries this month yet.','Buka di Rencana':'Open in Plan','Masuk siklus ini':'In this cycle','Keluar siklus ini':'Out this cycle','Di mana uangnya':'Where the money is','Tidak masuk total':'Not in total','Per tabungan':'Per savings pot','Per bulan':'Per month','ditabung':'saved','dipakai':'used','tanpa target':'no target','✓ target tercapai':'✓ target reached','Tabungan':'Savings','Total uangku':'My total','Sisa jatah = pos harian yang belum terpakai, dikurangi tagihan yang lewat budget, ditambah sisa tagihan yang dibebaskan.':'Left = unused daily pots, minus bills over budget, plus released bill leftovers.','Masuk/keluar dihitung dari catatanmu di siklus gaji ini (transfer antar dompet tidak dihitung).':'In/out counts your entries in this pay cycle (transfers between wallets not counted).','Per bulan dihitung dari riwayat terbaru tiap tabungan.':'Per month uses each pot’s latest history.','Pengeluaran harian masih di bawah jatah. Pertahankan.':'Daily spending is under budget. Keep it up.','Diubah':'Updated','Uang diambil dari':'Money taken from','Belum dipilih':'Not chosen','Dari dompet':'From wallet','Pindah ke dompet':'Move to wallet','Tidak dipindah (hanya angka tabungan)':'Not moved (only the savings number)','Pilih dompet tempat uang tabungan ini benar-benar disimpan (misal blu). Saat menabung, uangnya dicatat pindah dari dompet utama ke dompet itu. Untuk mengisi saldo awal, pakai "+ Tabung" dengan catatan "Saldo awal".':'Pick the wallet where this savings money really sits (e.g. blu). When you save, the money is recorded as moving from your main wallet to that wallet. To fill a starting amount, use "+ Save" with the note "Saldo awal".',
 'Tabung atau pakai':'Save or use','Tabungan baru':'New savings','Terkumpul':'Collected','Target':'Target','Riwayat':'History',
 'Belum ada riwayat.':'No history yet.','Belum ada tabungan.':'No savings yet.','Sudah ditabung':'Saved',
 'Centang yang sudah dipindahkan ke rekening tabungan, lalu simpan.':'Tick what you moved to the savings account, then save.',
@@ -2019,7 +2133,7 @@ var EN={
 };
 /* [pattern, replacement] for text built from pieces (amounts, dates, names) */
 var EN_RULES=[
-[/ · uang keluar$/,' · money out'],[/^Uang belanja masuk ke (?!…)/,'Household money now goes to '],[/^Dipindah ke /,'Moved to '],[/^Sisa rencana$/,'Plan left'],[/^✓ Selesai$/,'✓ Done'],[/^✓ Ditabung$/,'✓ Saved'],[/^Lainnya (?=\d)/,'Others '],[/^Terpakai$/,'Used'],[/^Lewat\b/,'Over'],[/^Harian (?=\d)/,'Daily '],[/^Tagihan (?=\d)/,'Bills '],[/^Tabungan (?=\d)/,'Savings '],[/ · masuk ke Tabungan$/,' · goes to Savings'],[/^Hari ke-(\d+) dari (\d+)$/,'Day $1 of $2'],[/^Terpakai (\d+)% pos harian$/,'$1% of daily pots used'],
+[/ · uang keluar$/,' · money out'],[/ · (\d+) tabungan$/,' · $1 savings'],[/ · di ([^·]+)$/,' · in $1'],[/^Uang belanja masuk ke (?!…)/,'Household money now goes to '],[/^Dipindah ke /,'Moved to '],[/^Sisa rencana$/,'Plan left'],[/^✓ Selesai$/,'✓ Done'],[/^✓ Ditabung$/,'✓ Saved'],[/^Lainnya (?=\d)/,'Others '],[/^Terpakai$/,'Used'],[/^Lewat\b/,'Over'],[/^Harian (?=\d)/,'Daily '],[/^Tagihan (?=\d)/,'Bills '],[/^Tabungan (?=\d)/,'Savings '],[/ · masuk ke Tabungan$/,' · goes to Savings'],[/^Hari ke-(\d+) dari (\d+)$/,'Day $1 of $2'],[/^Terpakai (\d+)% pos harian$/,'$1% of daily pots used'],
 [/\bSiklus gaji\b/g,'Pay cycle'],[/\bSiklus\b/g,'Cycle'],[/\bgaji Rp\b/g,'salary Rp'],[/\(sekarang\)/g,'(current)'],
 [/^Sisa\b/,'Left'],[/^Lebih\b/,'Over'],[/^bagian teman /,'friend’s share '],[/^titipan · $/,'held · '],[/ titip Rp/g,' gave Rp'],[/^Ya · tidak dihitung pemasukan$/,'Yes · not counted as income'],[/ · bagianmu Rp/,' · your part Rp'],[/^Terpakai sampai hari ini$/,'Spent so far'],[/^Terpakai siklus ini$/,'Spent this cycle'],[/^Uang masuk sampai hari ini$/,'Income so far'],[/^Uang masuk siklus ini$/,'Income this cycle'],[/ dari jatah Rp/,' of budget Rp'],[/ dibanding siklus lalu/,' vs last cycle'],[/\(hari yang sama\)/,'(same day)'],[/^Sudah lewat jatah Rp/,'Over budget by Rp'],[/^Lewat jatah Rp/,'Over budget by Rp'],[/^Sisa Rp (.+) dari jatah\.$/,'Rp $1 left of budget.'],[/^garis = rata-rata/,'line = average'],[/^Lainnya \((\d+)\)/,'Other ($1)'],[/^Selesai, sisanya bebas: tagihannya ternyata lebih murah, sisa Rp/,'Done, free the rest: the bill was cheaper, the remaining Rp'],[/^Tidak perlu bulan ini: Rp/,'Not needed this month: Rp'],[/ Sudah dibayar di luar catatan: misal cicilan lewat kartu kredit, uangnya tetap dianggap terpakai\./,' Paid outside the app: e.g. an installment on the credit card, the money still counts as used.'],[/^Ditandai selesai\. Sisa Rp/,'Marked done. Rp'],[/ kembali ke sisa jatah\./,' goes back to what’s left.'],[/^Diatur oleh\b/,'Managed by'],[/\bLewat\b/,'Over'],[/\bterpakai\b/g,'used'],[/\bper hari\b/g,'a day'],[/\bhari lagi\b/g,'days left'],[/\bhari ke-(\d+)/g,'day $1'],[/^dari (.+)$/,'of $1'],[/^Masuk tagihan\b/,'On the bill'],[/\bLunas\b/g,'Paid'],[/\bDitabung\b/g,'Saved'],[/\bBelum dibayar\b/g,'Not paid yet'],[/\bTerbayar\b/g,'Paid'],
 [/ dari /g,' of '],[/ \/ bulan/g,' / month'],[/\/bln\b/g,'/mo'],[/\btiap bulan dari rencana\b/g,'a month from the plan'],[/\btiap bulan\b/g,'a month'],
@@ -2242,7 +2356,7 @@ document.addEventListener('change',function(e){var s=e.target.closest&&e.target.
 /* ======================= pull down to refresh + automatic update check =======================
    Pull down at the top of a main screen: fetches the newest numbers, and if a new version of the
    app was uploaded to GitHub it reloads into it. Opening the app also checks for a new version. */
-var BUILD='20261017-2229';
+var BUILD='20261017-2245';
 function checkUpdate(){
   if(IN_GOOGLE||LOCAL_DEV||!/^https:/.test(location.protocol))return Promise.resolve(false);
   return fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
