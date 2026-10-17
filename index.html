@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Ek Lemoe">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <meta name="theme-color" content="#F2F2F7">
@@ -805,9 +805,9 @@ img.fl{width:62%;height:62%;object-fit:contain;display:block;pointer-events:none
 #appView{bottom:calc(0px - var(--vgap))}
 .sheet,.kpad,.dim{bottom:calc(0px - var(--vgap))}
 #scrInfo{font-size:11px;color:var(--muted-3);margin-top:2px}
-/* test C (17 Oct): when the page is short, make html/body as tall as the screen so nothing clips the stretched app */
-html.tall,html.tall body{height:var(--fullh)!important;min-height:var(--fullh)}
-html.tall{overflow:visible!important}
+/* 17 Oct: back to the "default" status bar (black-translucent left a 47pt strip at the bottom of the home-screen app,
+   and stretching into it got cropped — test C). iOS draws the top bar itself now, so the red/black band is off. */
+:root .sbg{display:none}
 /* Akun: small segmented controls size to their words so the row label ("Tema"/"Theme") isn't cut off */
 :root .seg.inrow{width:auto}
 :root .seg.inrow button{flex:none;padding:0 11px}
@@ -1676,9 +1676,8 @@ $('peSave').onclick=function(){var items=[];['suami','istri'].forEach(function(s
 /* stretch the app over the bottom strip iOS sometimes leaves in home-screen mode (see --vgap in CSS) */
 function fitScreen(){ // reports screen vs app height in Akun (#scrInfo); --vgap stays 0
  var g=0,full=0,ih=window.innerHeight;if(window.navigator.standalone){var portrait=ih>=window.innerWidth;full=portrait?Math.max(screen.height,screen.width):Math.min(screen.height,screen.width);g=Math.round(full-ih);if(g<0||g>140)g=0}
-  /* test C (17 Oct): first try (--vgap only) was cropped by html/body height:100%+overflow:hidden; now also make html/body screen-tall */
-  var r=document.documentElement;if(g>0){r.style.setProperty('--fullh',full+'px');r.style.setProperty('--vgap',g+'px');r.classList.add('tall')}else{r.classList.remove('tall');r.style.setProperty('--vgap','0px')}
-  var el=document.getElementById('scrInfo');if(el)el.textContent=window.navigator.standalone?('Layar '+full+' · app '+ih+' · selisih '+g+' · tes C · vv '+Math.round(window.visualViewport?visualViewport.height:0)+' · doc '+r.clientHeight):''}
+  /* measure only (test C stretched into the strip and got cropped, 17 Oct) */
+  var el=document.getElementById('scrInfo');if(el)el.textContent=window.navigator.standalone?('Layar '+full+' · app '+ih+' · selisih '+g):''}
 fitScreen();window.addEventListener('resize',fitScreen);window.addEventListener('orientationchange',function(){setTimeout(fitScreen,300)});setTimeout(fitScreen,500);
 /* household money without a wallet: pick one = make it the main wallet (server also moves the waiting income into it) */
 function myIdrWallets(){return (S.wallets||[]).filter(function(w){return w.type!=='credit'&&!isFx(w)})}
@@ -2186,7 +2185,7 @@ document.addEventListener('change',function(e){var s=e.target.closest&&e.target.
 /* ======================= pull down to refresh + automatic update check =======================
    Pull down at the top of a main screen: fetches the newest numbers, and if a new version of the
    app was uploaded to GitHub it reloads into it. Opening the app also checks for a new version. */
-var BUILD='20261017-1450';
+var BUILD='20261017-1452';
 function checkUpdate(){
   if(IN_GOOGLE||LOCAL_DEV||!/^https:/.test(location.protocol))return Promise.resolve(false);
   return fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
