@@ -805,6 +805,9 @@ img.fl{width:62%;height:62%;object-fit:contain;display:block;pointer-events:none
 #appView{bottom:calc(0px - var(--vgap))}
 .sheet,.kpad,.dim{bottom:calc(0px - var(--vgap))}
 #scrInfo{font-size:11px;color:var(--muted-3);margin-top:2px}
+/* test C (17 Oct): when the page is short, make html/body as tall as the screen so nothing clips the stretched app */
+html.tall,html.tall body{height:var(--fullh)!important;min-height:var(--fullh)}
+html.tall{overflow:visible!important}
 /* Akun: small segmented controls size to their words so the row label ("Tema"/"Theme") isn't cut off */
 :root .seg.inrow{width:auto}
 :root .seg.inrow button{flex:none;padding:0 11px}
@@ -1673,7 +1676,9 @@ $('peSave').onclick=function(){var items=[];['suami','istri'].forEach(function(s
 /* stretch the app over the bottom strip iOS sometimes leaves in home-screen mode (see --vgap in CSS) */
 function fitScreen(){ // reports screen vs app height in Akun (#scrInfo); --vgap stays 0
  var g=0,full=0,ih=window.innerHeight;if(window.navigator.standalone){var portrait=ih>=window.innerWidth;full=portrait?Math.max(screen.height,screen.width):Math.min(screen.height,screen.width);g=Math.round(full-ih);if(g<0||g>140)g=0}
-  /* measure only: pushing things down cropped them (17 Oct) — the strip is outside the area iOS lets the app draw */var el=document.getElementById('scrInfo');if(el)el.textContent=window.navigator.standalone?('Layar '+full+' · app '+ih+' · selisih '+g):''}
+  /* test C (17 Oct): first try (--vgap only) was cropped by html/body height:100%+overflow:hidden; now also make html/body screen-tall */
+  var r=document.documentElement;if(g>0){r.style.setProperty('--fullh',full+'px');r.style.setProperty('--vgap',g+'px');r.classList.add('tall')}else{r.classList.remove('tall');r.style.setProperty('--vgap','0px')}
+  var el=document.getElementById('scrInfo');if(el)el.textContent=window.navigator.standalone?('Layar '+full+' · app '+ih+' · selisih '+g+' · tes C · vv '+Math.round(window.visualViewport?visualViewport.height:0)+' · doc '+r.clientHeight):''}
 fitScreen();window.addEventListener('resize',fitScreen);window.addEventListener('orientationchange',function(){setTimeout(fitScreen,300)});setTimeout(fitScreen,500);
 /* household money without a wallet: pick one = make it the main wallet (server also moves the waiting income into it) */
 function myIdrWallets(){return (S.wallets||[]).filter(function(w){return w.type!=='credit'&&!isFx(w)})}
@@ -2181,7 +2186,7 @@ document.addEventListener('change',function(e){var s=e.target.closest&&e.target.
 /* ======================= pull down to refresh + automatic update check =======================
    Pull down at the top of a main screen: fetches the newest numbers, and if a new version of the
    app was uploaded to GitHub it reloads into it. Opening the app also checks for a new version. */
-var BUILD='20261017-1443';
+var BUILD='20261017-1450';
 function checkUpdate(){
   if(IN_GOOGLE||LOCAL_DEV||!/^https:/.test(location.protocol))return Promise.resolve(false);
   return fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
