@@ -1671,8 +1671,9 @@ $('peSave').onclick=function(){var items=[];['suami','istri'].forEach(function(s
   act('savePlan',{items:items},'Rencana disimpan').then(closeAll)};
 
 /* stretch the app over the bottom strip iOS sometimes leaves in home-screen mode (see --vgap in CSS) */
-function fitScreen(){var g=0,full=0,ih=window.innerHeight;if(window.navigator.standalone){var portrait=ih>=window.innerWidth;full=portrait?Math.max(screen.height,screen.width):Math.min(screen.height,screen.width);g=Math.round(full-ih);if(g<0||g>140)g=0}
-  document.documentElement.style.setProperty('--vgap',g+'px');var el=document.getElementById('scrInfo');if(el)el.textContent=window.navigator.standalone?('Layar '+full+' · app '+ih+' · selisih '+g):''}
+function fitScreen(){ // reports screen vs app height in Akun (#scrInfo); --vgap stays 0
+ var g=0,full=0,ih=window.innerHeight;if(window.navigator.standalone){var portrait=ih>=window.innerWidth;full=portrait?Math.max(screen.height,screen.width):Math.min(screen.height,screen.width);g=Math.round(full-ih);if(g<0||g>140)g=0}
+  /* measure only: pushing things down cropped them (17 Oct) — the strip is outside the area iOS lets the app draw */var el=document.getElementById('scrInfo');if(el)el.textContent=window.navigator.standalone?('Layar '+full+' · app '+ih+' · selisih '+g):''}
 fitScreen();window.addEventListener('resize',fitScreen);window.addEventListener('orientationchange',function(){setTimeout(fitScreen,300)});setTimeout(fitScreen,500);
 /* household money without a wallet: pick one = make it the main wallet (server also moves the waiting income into it) */
 function myIdrWallets(){return (S.wallets||[]).filter(function(w){return w.type!=='credit'&&!isFx(w)})}
@@ -2180,7 +2181,7 @@ document.addEventListener('change',function(e){var s=e.target.closest&&e.target.
 /* ======================= pull down to refresh + automatic update check =======================
    Pull down at the top of a main screen: fetches the newest numbers, and if a new version of the
    app was uploaded to GitHub it reloads into it. Opening the app also checks for a new version. */
-var BUILD='20261017-1437';
+var BUILD='20261017-1443';
 function checkUpdate(){
   if(IN_GOOGLE||LOCAL_DEV||!/^https:/.test(location.protocol))return Promise.resolve(false);
   return fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
