@@ -2508,15 +2508,23 @@ function drawReview(){
   var budget=RV.pos?(side.filter(function(p){return p.id===RV.pos})[0]||{}).amount||0:(RV.wallet||RV.person?0:side.reduce(function(s,p){return s+p.amount},0));
   var days=Math.round((new Date(c.to+'T00:00:00')-new Date(c.from+'T00:00:00'))/864e5)+1;
   var dayN=H.is_current?Math.max(1,Math.round((new Date(S.today+'T00:00:00')-new Date(c.from+'T00:00:00'))/864e5)+1):days;
-  var pct=budget?total/budget:0, dayPct=dayN/days;
+  /* % of budget = the same "used" as Rencana (18 Oct): bills marked done count as fully paid (card instalments aren't recorded
+     each month), Flexi pos = repay − collect, paybacks lower their pos, spending with no pos isn't budgeted. Big number stays all spending. */
+  var bu=total;if(RV.type==='expense'&&budget){var its=side.filter(function(p){return !RV.pos||p.id===RV.pos}),ids={};its.forEach(function(p){ids[p.id]=1});
+    if(H.is_current)bu=its.reduce(function(s2,p){return s2+(p.kind==='tetap'&&p.done?Math.max(p.used,p.amount):p.used)},0);
+    else{bu=0;var rep=0,col=0;H.entries.forEach(function(e){var d=bdate(e);if(d<c.from||d>c.to)return;
+      if(e.type==='expense'&&ids[e.plan_id])bu+=e.amount-(e.friend_share||0);
+      else if(e.type==='income'&&e.category_id==='reimbursement'&&ids[e.plan_id])bu-=e.amount;
+      else if(ids.flexi&&String(e.date)>=c.from&&String(e.date)<=c.to){if(e.type==='repay'&&(!e.plan_id||e.plan_id==='flexi'))rep+=e.amount;else if(e.type==='collect')col+=e.amount}});bu=Math.max(0,bu)+Math.max(0,rep-col)}}
+  var pct=budget?bu/budget:0, dayPct=dayN/days;
   // previous cycle, same number of days in
   var prevTot=null;if(RV.prev){var pc=RV.prev.cycle,lim=cycShift({from:pc.from,to:pc.from},dayN-1);
     prevTot=RV.prev.entries.filter(function(e){return rvKeep(e)&&(!H.is_current||bdate(e)<=lim)}).reduce(function(s,e){return s+e.amount-(e.friend_share||0)},0)}
   var out='<div class="rvhero hero" style="margin-top:14px"><small>'+(RV.type==='expense'?'Terpakai':'Uang masuk')+(H.is_current?' sampai hari ini':' siklus ini')+'</small><div class="big">Rp '+rp(total)+'</div>';
   if(RV.type==='expense'&&budget){var bc=pct>1.001?'over':pct>dayPct+0.05?'warn':'';
     out+='<div class="bar"><i class="'+bc+'" style="width:'+Math.min(100,pct*100)+'%"></i>'+(H.is_current?'<em style="left:'+(dayPct*100)+'%"></em>':'')+'</div>'+
-      '<div class="lines"><span><b style="color:var(--ink)">'+Math.round(pct*100)+'%</b> dari jatah Rp '+short(budget)+'</span>'+(H.is_current?'<span>hari ke-'+dayN+' dari '+days+' ('+Math.round(dayPct*100)+'%)</span>':'')+'</div>';
-    var v=H.is_current?(pct>1?'Sudah lewat jatah Rp '+short(total-budget)+'.':pct<=dayPct?'Lebih hemat dari jadwal 👍':'Sedikit lebih cepat dari jadwal.'):(pct>1?'Lewat jatah Rp '+short(total-budget)+'.':'Sisa Rp '+short(budget-total)+' dari jatah.');
+      '<div class="lines"><span><b style="color:var(--ink)">'+Math.round(pct*100)+'%</b> dari jatah Rp '+short(budget)+(Math.abs(bu-total)>=1000?' · terpakai di pos Rp '+short(bu):'')+'</span>'+(H.is_current?'<span>hari ke-'+dayN+' dari '+days+' ('+Math.round(dayPct*100)+'%)</span>':'')+'</div>';
+    var v=H.is_current?(pct>1?'Sudah lewat jatah Rp '+short(bu-budget)+'.':pct<=dayPct?'Lebih hemat dari jadwal 👍':'Sedikit lebih cepat dari jadwal.'):(pct>1?'Lewat jatah Rp '+short(bu-budget)+'.':'Sisa Rp '+short(budget-bu)+' dari jatah.');
     out+='<div class="verdict">'+v+'</div>';}
   if(prevTot!==null&&prevTot>0){var dd=(total-prevTot)/prevTot;out+='<div class="lines" style="margin-top:8px"><span>'+(dd>=0?'▲ ':'▼ ')+Math.abs(Math.round(dd*100))+'% dibanding siklus lalu'+(H.is_current?' (hari yang sama)':'')+'</span><span>Rp '+short(prevTot)+'</span></div>'}
   out+='</div>';
@@ -2573,7 +2581,7 @@ document.addEventListener('change',function(e){var s=e.target.closest&&e.target.
 /* ======================= pull down to refresh + automatic update check =======================
    Pull down at the top of a main screen: fetches the newest numbers, and if a new version of the
    app was uploaded to GitHub it reloads into it. Opening the app also checks for a new version. */
-var BUILD='20261018-2041';
+var BUILD='20261018-2048';
 function checkUpdate(){
   if(IN_GOOGLE||LOCAL_DEV||!/^https:/.test(location.protocol))return Promise.resolve(false);
   return fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
