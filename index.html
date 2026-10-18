@@ -741,7 +741,8 @@ img.fl{width:62%;height:62%;object-fit:contain;display:block;pointer-events:none
 :root .nav .gpill{display:block;top:5px;bottom:5px}
 :root .nav .gpill i{border-radius:28px;background:var(--lg-sel);border:0;box-shadow:none}
 /* while it moves, the bubble lifts out of the bar like Music: grows past the edges as clear glass with a lit rim, then settles */
-:root .nav .gpill.squish i{animation:lgLift .52s cubic-bezier(.3,.7,.35,1)}
+:root .nav .gpill.squish i{animation:lgLiftS .5s cubic-bezier(.3,.7,.35,1)} /* 18 Oct: zoom kept but very slight (Innamul); old strong lgLift/navPop below are unused */
+@keyframes lgLiftS{0%{transform:scale(1)}30%{transform:scale(1.04,1.07)}65%{transform:scale(1.012,1.02)}100%{transform:scale(1)}}
 @keyframes lgLift{
   0%{transform:scale(1)}
   28%{transform:scale(1.14,1.24);background:rgba(255,255,255,.14);
@@ -750,7 +751,20 @@ img.fl{width:62%;height:62%;object-fit:contain;display:block;pointer-events:none
   100%{transform:scale(1)}}
 /* …and the whole bar swells a little at the same moment, then settles (Music does this too).
    The bubble code re-adds .squish on every move, so :has() restarts this each switch. */
-:root .nav:has(.gpill.squish){animation:navPop .52s cubic-bezier(.3,.7,.35,1)}
+:root .nav:has(.gpill.squish){animation:navPopS .5s cubic-bezier(.3,.7,.35,1)}
+@keyframes navPopS{0%{transform:scale(1)}30%{transform:scale(1.012,1.02)}100%{transform:scale(1)}}
+/* tapped tab icon plays its own little move, like iOS SF Symbol effects (18 Oct): house bounces, bars grow, piggy wiggles, wallet flips open */
+:root .nav button.ia svg{transform-origin:50% 90%}
+:root .nav button[data-go="home"].ia svg{animation:icoBounce .5s cubic-bezier(.3,1.5,.5,1)}
+@keyframes icoBounce{0%{transform:none}30%{transform:translateY(2px) scale(1.12,.86)}60%{transform:translateY(-4px) scale(.95,1.08)}100%{transform:none}}
+:root .nav button[data-go="plan"].ia rect{transform-box:fill-box;transform-origin:50% 100%;animation:icoGrow .5s cubic-bezier(.3,1.4,.5,1) both}
+:root .nav button[data-go="plan"].ia rect:nth-child(2){animation-delay:.07s}:root .nav button[data-go="plan"].ia rect:nth-child(3){animation-delay:.14s}
+@keyframes icoGrow{0%{transform:scaleY(.25)}100%{transform:none}}
+:root .nav button[data-go="save"].ia svg{transform-origin:50% 60%;animation:icoWiggle .6s ease-in-out}
+@keyframes icoWiggle{0%,100%{transform:none}20%{transform:rotate(-14deg)}45%{transform:rotate(11deg)}70%{transform:rotate(-6deg)}85%{transform:rotate(3deg)}}
+:root .nav button[data-go="wallet"].ia svg{transform-origin:50% 50%;animation:icoFlip .55s cubic-bezier(.3,1.3,.5,1)}
+@keyframes icoFlip{0%{transform:none}40%{transform:perspective(60px) rotateX(38deg) scale(1.06)}100%{transform:none}}
+@media (prefers-reduced-motion:reduce){:root .nav button.ia svg,:root .nav button.ia rect{animation:none!important}}
 /* the bar also lightens a little while it swells (clearly visible in dark mode), then returns to its normal tint */
 :root{--lg-pop:rgba(255,255,255,.9)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--lg-pop:rgba(78,78,84,.86)}}
@@ -768,6 +782,18 @@ img.fl{width:62%;height:62%;object-fit:contain;display:block;pointer-events:none
   box-shadow:inset 0 0 14px rgba(255,255,255,.18),0 0 0 .5px rgba(160,0,20,.2),0 10px 26px -8px rgba(250,45,72,.6)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .nav .plus{background:rgba(255,77,99,.88)}}
 :root[data-theme="dark"] .nav .plus{background:rgba(255,77,99,.88)}
+/* Clear glass tab bar (18 Oct, local test): less frost, you see the page through it; thick lit edges + top sheen sell the glass */
+:root{--lg-bg:rgba(255,255,255,.22);--lg-rim:#fff;--lg-rim2:rgba(255,255,255,.55);--lg-in:rgba(255,255,255,.55);--lg-sheen:rgba(255,255,255,.5);
+  --lg-sh:0 14px 30px -12px rgba(0,0,0,.28),0 2px 8px -3px rgba(0,0,0,.12);--lg-edge:rgba(0,0,0,.1)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--lg-bg:rgba(40,40,44,.3);--lg-rim:rgba(255,255,255,.7);--lg-rim2:rgba(255,255,255,.2);--lg-in:rgba(255,255,255,.14);--lg-sheen:rgba(255,255,255,.16);--lg-edge:rgba(255,255,255,.1)}}
+:root[data-theme="dark"]{--lg-bg:rgba(40,40,44,.3);--lg-rim:rgba(255,255,255,.7);--lg-rim2:rgba(255,255,255,.2);--lg-in:rgba(255,255,255,.14);--lg-sheen:rgba(255,255,255,.16);--lg-edge:rgba(255,255,255,.1)}
+:root .nav,:root .nav .plus{-webkit-backdrop-filter:blur(3px) saturate(180%) brightness(1.08) contrast(1.05);backdrop-filter:blur(3px) saturate(180%) brightness(1.08) contrast(1.05);
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.75),inset 0 -1px 1px rgba(255,255,255,.25),inset 0 0 18px var(--lg-in),0 0 0 .5px var(--lg-edge),var(--lg-sh)}
+:root .nav::before,:root .nav .plus::before{background:linear-gradient(180deg,var(--lg-sheen),transparent 45%),radial-gradient(120% 90% at 50% 120%,rgba(255,255,255,.18),transparent 60%)}
+/* labels stay readable over busy content */
+:root .nav button{text-shadow:0 0 6px rgba(255,255,255,.8)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .nav button{text-shadow:0 1px 3px rgba(0,0,0,.45)}}
+:root[data-theme="dark"] .nav button{text-shadow:0 1px 3px rgba(0,0,0,.45)}
 :root .hero small{padding-right:80px}
 /* Ringkasan: its cards also carry .plan, so the Rencana v2 ".plan{margin:0 16px}" ate their top spacing — restore it
    and line everything up on the same 16px edge as the rest of the app */
@@ -889,6 +915,8 @@ html.lay3 #bucketCards>.bcard{flex:0 0 calc(50% - 21px);scroll-snap-align:start;
 /* bars run the full row width (text start → right edge), so 100% always looks full and all rows line up (18 Oct) */
 #detail .item.hb{position:relative;padding-bottom:20px}
 #detail .item.hb .mbar{position:absolute;left:72px;right:16px;bottom:11px;margin:0}
+/* per-week rows: amount + share of the pos budget under it; bar = that share, so the weeks add up to Terpakai (18 Oct) */
+#detail .item.hb .amt{text-align:right}#detail .amt .wkp{display:block;font-size:12px;font-weight:500;color:var(--muted);text-align:right;margin-top:1px}
 #detail .fc{margin:12px 16px 0}
 #detail .dtwo{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 16px 0}
 #detail .dtwo div{background:var(--card);border-radius:16px;padding:12px 14px}
@@ -1930,7 +1958,7 @@ function openPosDetail(id){var p=mySide().filter(function(x){return x.id===id})[
     '<div class="dtwo"><div><small>Aman per hari</small><b>Rp '+short(Math.max(0,l)/c.left)+'</b></div><div><small>Terpakai</small><b>'+Math.round(pct)+'%</b></div></div>'+
     '<div class="dsec">Per minggu</div><div class="list">'+wk.map(function(v,i){var a=new Date(f.getTime()+i*7*DAY),b=new Date(Math.min(f.getTime()+(i*7+6)*DAY,new Date(S.cycle.to+'T00:00:00').getTime()));
       var ymd=function(d){return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)};
-      return mrow(i===nowW?'📍':'🗓️','Minggu '+(i+1)+(i===nowW?' (sekarang)':''),dshort(ymd(a))+' – '+dshort(ymd(b)),i>nowW?'–':short(v),i>nowW?0:v/wmax*100,i===nowW?'acc':'')}).join('')+'</div>'+
+      return mrow(i===nowW?'📍':'🗓️','Minggu '+(i+1)+(i===nowW?' (sekarang)':''),dshort(ymd(a))+' – '+dshort(ymd(b)),i>nowW?'–':short(v)+'<small class="wkp">'+(p.amount?Math.round(v/p.amount*100):0)+'% jatah</small>',i>nowW||!p.amount?0:v/p.amount*100,i===nowW?'acc':'')}).join('')+'</div>'+
     '<div class="dsec">Catatan di pos ini</div>'+(es.length?'<div class="list">'+es.map(txRow).join('')+'</div>':'<div class="empty">Belum ada catatan bulan ini.</div>')+
     '<div class="btns" style="margin-top:14px"><button class="white" data-go="plan">Buka di Rencana</button></div>';
   dtOpen(p.name,html)}
@@ -2545,7 +2573,7 @@ document.addEventListener('change',function(e){var s=e.target.closest&&e.target.
 /* ======================= pull down to refresh + automatic update check =======================
    Pull down at the top of a main screen: fetches the newest numbers, and if a new version of the
    app was uploaded to GitHub it reloads into it. Opening the app also checks for a new version. */
-var BUILD='20261018-1900';
+var BUILD='20261018-2041';
 function checkUpdate(){
   if(IN_GOOGLE||LOCAL_DEV||!/^https:/.test(location.protocol))return Promise.resolve(false);
   return fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
@@ -2599,6 +2627,9 @@ setTimeout(checkUpdate,1500);
     if(anim&&was!==undefined&&Math.abs(+was-x)>2){pill.classList.remove('squish');void pill.offsetWidth;pill.classList.add('squish')}
     pill.dataset.x=x; if(!anim||was===undefined){void pill.offsetWidth;pill.style.transition=''}
   }
+  /* tab icon animation: restart .ia on the tapped tab (also when it is already the current tab) */
+  document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('.nav button[data-go]');if(!b)return;b.classList.remove('ia');void b.offsetWidth;b.classList.add('ia');
+    clearTimeout(b._ia);b._ia=setTimeout(function(){b.classList.remove('ia')},800)},true);
   function boxes(){return [].slice.call(document.querySelectorAll('.nav .in,.seg'))}
   function all(anim){boxes().forEach(function(b){place(b,anim)})}
   new MutationObserver(function(ms){var seen=[];ms.forEach(function(m){var box=m.target.closest&&m.target.closest('.nav .in,.seg');if(box&&seen.indexOf(box)<0){seen.push(box)}});
