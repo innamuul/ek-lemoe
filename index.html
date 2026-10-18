@@ -805,6 +805,30 @@ img.fl{width:62%;height:62%;object-fit:contain;display:block;pointer-events:none
 #appView{bottom:calc(0px - var(--vgap))}
 .sheet,.kpad,.dim{bottom:calc(0px - var(--vgap))}
 #scrInfo{font-size:11px;color:var(--muted-3);margin-top:2px}
+/* Ringkasan calendar (18 Oct) */
+#review .cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-top:8px}
+#review .cal>b{font-size:11px;font-weight:600;color:var(--muted);text-align:center;padding:2px 0}
+#review .cal>button{position:relative;min-height:46px;border-radius:10px;background:var(--fill);padding:4px 3px;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;text-align:left;border:0;overflow:hidden}
+#review .cal em{font-style:normal;font-size:11px;font-weight:600;color:var(--muted);white-space:nowrap}
+#review .cal small{font-size:10.5px;font-weight:700;color:var(--ink);font-family:var(--f-round);white-space:nowrap;align-self:flex-end}
+#review .cal .has{background:color-mix(in srgb,var(--accent) 9%,var(--fill))}
+#review .cal .over{background:color-mix(in srgb,var(--red) 22%,var(--fill))}
+#review .cal .over small{color:var(--red)}
+#review .cal .fut{opacity:.4}
+#review .cal .tdy{box-shadow:inset 0 0 0 2px var(--accent)}
+#review .cal .sel{background:var(--accent)}#review .cal .sel em,#review .cal .sel small{color:#fff}
+/* Beranda "Hari ini" (18 Oct) */
+:root .pot .efm{font-size:12px;font-weight:600;color:var(--green);margin-top:2px}:root .pot .efm.low{color:var(--orange,#ff9f0a)}
+:root .today{margin:12px 16px 0;background:var(--card);border-radius:22px;padding:14px 32px 13px 16px}
+:root .today .th{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+:root .today .th small{font-size:13px;font-weight:600;color:var(--muted)}
+:root .today .th b{font-family:var(--f-round);font-size:22px;font-weight:800}
+:root .today .th b.over{color:var(--red)}
+:root .today .bar{height:6px;border-radius:3px;background:var(--fill);margin:9px 0 8px;overflow:hidden}
+:root .today .bar i{display:block;height:100%;border-radius:3px;background:var(--g-bar)}
+:root .today .bar i.warn{background:var(--o-bar)}:root .today .bar i.over{background:var(--r-bar)}
+:root .today .tr{display:flex;gap:14px;font-size:13px;color:var(--muted)}
+:root .today .tr span b{color:var(--ink);font-weight:600}
 /* "Masuk pos" looks like a button (17 Oct): accent pill with ▾, grey when no pos is picked */
 :root .form .posrow{position:relative}
 :root .form .posrow select{position:absolute;inset:0;width:100%;height:100%;opacity:0;margin:0;cursor:pointer}
@@ -945,6 +969,7 @@ input,textarea{caret-color:var(--accent)}
       <div class="legend" id="heroLeg"></div>
     </div>
   </div>
+  <div class="today tapcard" id="todayCard" data-detail="today" role="button" aria-label="Hari ini"></div>
   <div id="assignWallet"></div>
   <div class="sec"><h2>Minggu ini</h2><button class="link" data-review>Ringkasan ›</button></div>
   <div class="wkcard tapcard" id="weekCard" data-review role="button" aria-label="Buka ringkasan bulan">
@@ -1399,6 +1424,15 @@ function render(){
   var usedPct=hBud?hUsed/hBud:0, dayPct=day/total, fast=usedPct>dayPct+0.02;
   var rg=function(r,pct,cls){var c=2*Math.PI*r;return '<circle class="tr '+cls+'" cx="60" cy="60" r="'+r+'"/><circle class="'+cls+'" cx="60" cy="60" r="'+r+'" stroke-dasharray="'+c.toFixed(1)+'" style="--c:'+c.toFixed(1)+'" stroke-dashoffset="'+(c*(1-Math.min(1,Math.max(0,pct)))).toFixed(1)+'" transform="rotate(-90 60 60)"/>'};
   $('ring').innerHTML='<svg viewBox="0 0 120 120" aria-hidden="true">'+rg(51,dayPct,'rd')+rg(35,usedPct,fast?'ro':'rg')+'</svg>';
+  // "Hari ini" (18 Oct, idea from Budggt): today's safe amount = what's left in daily pos (incl. today) spread over the days left
+  (function(){var hid={};side.forEach(function(p){if(p.kind==='harian')hid[p.id]=1});var tOut=0,tH=0,tIn=0,n=0;
+    (S.cycleEntries||[]).forEach(function(e){if(String(e.date)!==S.today)return;var a=e.amount-(e.friend_share||0);
+      if(e.type==='expense'){tOut+=a;n++;if(hid[e.plan_id])tH+=a}else if(e.type==='income'&&!(e.friend_share>0)){tIn+=e.amount;n++}});
+    var hLeft=0;side.forEach(function(p){if(p.kind==='harian')hLeft+=p.amount-p.used});
+    var allow=Math.max(0,(hLeft+tH)/daysLeft),left=allow-tH,pc=allow?tH/allow*100:(tH?100:0);
+    $('todayCard').innerHTML='<i class="chev" aria-hidden="true">›</i><div class="th"><small>Hari ini · aman dipakai</small><b class="'+(left<0?'over':'')+'">'+(left<0?'Lewat Rp '+rp(-left):'Rp '+rp(left))+'</b></div>'+
+      '<div class="bar"><i class="'+(pc>100?'over':(pc>85?'warn':''))+'" style="width:'+Math.min(100,pc)+'%"></i></div>'+
+      '<div class="tr"><span>Keluar <b>'+rp(tOut)+'</b></span><span>Masuk <b>'+rp(tIn)+'</b></span><span>Jatah hari ini <b>'+short(allow)+'</b></span></div>'})();
   $('heroLeg').innerHTML='<span><i class="rd"></i>Hari ke-'+day+' dari '+total+'</span><span><i class="'+(fast?'ro':'rg')+'"></i>Terpakai '+Math.round(usedPct*100)+'% pos harian</span>';
   var DL=new Date(S.today+'T00:00:00');try{$('dateLn').textContent=DL.toLocaleDateString(LANG==='en'?'en-GB':'id-ID',{weekday:'long',day:'numeric',month:'long'})}catch(e){$('dateLn').textContent=dshort(S.today)}
   // partner income waiting for a wallet
@@ -1571,7 +1605,7 @@ function renderSave(){
   var cols={peri:'c-peri',pink:'c-pink',orange:'c-orange',mint:'c-mint'};
   $('pots').innerHTML=pots.length?pots.map(function(p){
     return '<button class="pot '+(cols[p.color]||'c-peri')+'" data-pot="'+p.id+'"><div class="r"><div class="ico">'+emo(p.icon)+'</div>'+(p.monthly?'<span class="pill">+'+short(p.monthly)+'/bln</span>':'')+'</div><h3>'+esc(p.name)+'</h3><div class="big">'+(p.total||!ed?'Rp '+rp(p.total):'Belum diisi')+'</div>'+
-      (p.target?'<div class="bar"><i style="width:'+Math.min(100,p.total/p.target*100)+'%"></i></div><div class="sub">target Rp '+rp(p.target)+(potWName(p)?' · di '+esc(potWName(p)):'')+'</div>':(potWName(p)?'<div class="sub">di '+esc(potWName(p))+'</div>':''))+'</button>'}).join(''):'<div class="empty">Belum ada tabungan.</div>';
+      (efMonths(p)!=null?'<div class="efm'+(efMonths(p)<3?' low':'')+'">≈ '+efMonths(p).toFixed(1).replace('.',',')+' bulan biaya hidup</div>':'')+(p.target?'<div class="bar"><i style="width:'+Math.min(100,p.total/p.target*100)+'%"></i></div><div class="sub">target Rp '+rp(p.target)+(potWName(p)?' · di '+esc(potWName(p)):'')+'</div>':(potWName(p)?'<div class="sub">di '+esc(potWName(p))+'</div>':''))+'</button>'}).join(''):'<div class="empty">Belum ada tabungan.</div>';
 }
 function updMonthlyBtn(){var b=$('saveMonthly');if(!b)return;var t=0;document.querySelectorAll('[data-chk]').forEach(function(c){if(c.getAttribute('aria-checked')==='true')t+=+c.dataset.amt});b.textContent='Sudah ditabung · Rp '+rp(t)}
 function renderWallet(){
@@ -1810,6 +1844,10 @@ function openHeroDetail(){var side=mySide(),c=cycDays(),h=side.filter(function(p
     ((over||free)?'<div class="dsec">Tagihan tetap</div><div class="list">'+(over?mrow('⚠️','Tagihan lewat budget','mengurangi sisa jatah','−'+short(over)):'')+(free?mrow('✅','Sisa tagihan dibebaskan','"Selesai, sisanya bebas"','+'+short(free)):'')+'</div>':'')+
     '<div class="foot">Sisa jatah = pos harian yang belum terpakai, dikurangi tagihan yang lewat budget, ditambah sisa tagihan yang dibebaskan.</div>';
   dtOpen('Sisa jatah',html)}
+function openTodayDetail(){var es=(S.recent||[]).concat(S.cycleEntries||[]).filter(function(e){return String(e.date)===S.today});var seen={};es=es.filter(function(e){if(seen[e.id])return false;seen[e.id]=1;return true});
+  dtOpen('Hari ini','<div class="amount"><p>'+dshort(S.today)+'</p><div class="show">'+$('todayCard').querySelector('.th b').textContent+'</div><p>aman dipakai hari ini dari pos harian</p></div>'+
+    '<div class="dsec">Catatan hari ini</div>'+(es.length?'<div class="list">'+es.map(txRow).join('')+'</div>':'<div class="empty">Belum ada catatan hari ini.</div>')+
+    '<div class="foot">Jatah hari ini = sisa pos harian (termasuk yang dipakai hari ini) dibagi sisa hari di siklus gaji. Besok angkanya dihitung ulang.</div>')}
 function openPosDetail(id){var p=mySide().filter(function(x){return x.id===id})[0];if(!p)return;var c=cycDays(),l=p.amount-p.used,pct=p.amount?p.used/p.amount*100:0;
   var es=(S.cycleEntries||[]).filter(function(e){return e.plan_id===id&&(e.type==='expense'||(e.type==='income'&&e.category_id==='reimbursement'))}).sort(function(a,b){return String(b.date).localeCompare(String(a.date))});
   // spending per week of the salary cycle
@@ -1840,7 +1878,7 @@ function openPotTotal(){var pots=S.pots||[],tot=pots.reduce(function(s,p){return
   var eta=function(p){if(!p.target)return 'tanpa target';if(p.total>=p.target)return '✓ target tercapai';if(!p.monthly)return 'kurang Rp '+short(p.target-p.total);
     var m=Math.ceil((p.target-p.total)/p.monthly),d=new Date(S.today+'T00:00:00');d.setMonth(d.getMonth()+m);return 'tercapai ±'+MN[d.getMonth()]+' '+d.getFullYear()+' ('+m+' bln lagi)'};
   var html='<div class="amount"><p>Total semua tabungan</p><div class="show">Rp '+rp(tot)+'</div><p>'+(mon?'+'+short(mon)+' tiap bulan dari rencana':'belum ada tabungan bulanan')+'</p></div>'+
-    '<div class="dsec">Per tabungan</div><div class="list">'+pots.map(function(p){return mrow(emo(p.icon),esc(p.name),eta(p)+(potWName(p)?' · di '+esc(potWName(p)):''),'Rp '+short(p.total),p.target?p.total/p.target*100:null,'acc',' data-pot="'+p.id+'"')}).join('')+'</div>'+
+    '<div class="dsec">Per tabungan</div><div class="list">'+pots.map(function(p){return mrow(emo(p.icon),esc(p.name),(efMonths(p)!=null?'±'+efMonths(p).toFixed(1).replace('.',',')+' bln biaya hidup · ':'')+eta(p)+(potWName(p)?' · di '+esc(potWName(p)):''),'Rp '+short(p.total),p.target?p.total/p.target*100:null,'acc',' data-pot="'+p.id+'"')}).join('')+'</div>'+
     (ks.length?'<div class="dsec">Per bulan</div><div class="list">'+ks.map(function(k){var v=by[k];return mrow(v>=0?'⬆️':'⬇️',MN[+k.slice(5)-1]+' '+k.slice(0,4),v>=0?'ditabung':'dipakai',(v>=0?'+':'−')+short(Math.abs(v)),Math.abs(v)/bmax*100,v>=0?'':'over')}).join('')+'</div>':'')+
     '<div class="foot">Per bulan dihitung dari riwayat terbaru tiap tabungan.</div>';
   dtOpen('Tabungan',html)}
@@ -1855,7 +1893,7 @@ function openPickWallet(moveTx){var ws=myIdrWallets();pwMove=moveTx||null;
 /* ======================= clicks ======================= */
 document.addEventListener('click',function(e){
   var t=e.target, g;
-  if(!t.closest('.eye')&&(g=t.closest('[data-detail]'))){var dk=g.dataset.detail;if(dk==='hero')openHeroDetail();else if(dk==='wt')openWalletTotal();else if(dk==='pots')openPotTotal();return}
+  if(!t.closest('.eye')&&(g=t.closest('[data-detail]'))){var dk=g.dataset.detail;if(dk==='hero')openHeroDetail();else if(dk==='today')openTodayDetail();else if(dk==='wt')openWalletTotal();else if(dk==='pots')openPotTotal();return}
   if((g=t.closest('[data-posd]'))){openPosDetail(g.dataset.posd);return}
   if((g=t.closest('[data-go]'))){e.preventDefault();closeAll();go(g.dataset.go);return}
   if((g=t.closest('[data-close]'))){closeAll();return}
@@ -1966,7 +2004,7 @@ $('txDel').onclick=function(){act('deleteEntry',{id:curTx.id},'Catatan dihapus')
 
 /* pots */
 function openPot(id){var p=S.pots.filter(function(x){return x.id===id})[0];curPot=p;$('potName').textContent=p.name;$('potAmt').textContent='Rp '+rp(p.total);
-  $('potMeta').textContent=(p.monthly?'+'+short(p.monthly)+' tiap bulan dari rencana':'')+(potWName(p)?' · disimpan di '+potWName(p):'')+(S.pots_editable&&!p.wallet_id?' · belum terhubung ke dompet (Ubah)':'');
+  $('potMeta').textContent=(efMonths(p)!=null?'cukup ±'+efMonths(p).toFixed(1).replace('.',',')+' bulan biaya hidup (rencana Rp '+short(monthlyNeed())+'/bln) · ':'')+(p.monthly?'+'+short(p.monthly)+' tiap bulan dari rencana':'')+(potWName(p)?' · disimpan di '+potWName(p):'')+(S.pots_editable&&!p.wallet_id?' · belum terhubung ke dompet (Ubah)':'');
   $('potBtns').innerHTML=S.pots_editable?'<button class="black" data-pm="in">+ Tabung</button><button class="white" data-pm="out">Pakai</button><button class="white" data-pm="edit" style="flex:.6">Ubah</button>':'';
   $('potHist').innerHTML=p.history.length?p.history.map(function(h){return '<div class="item"><div class="ico">'+(h.amount>0?'⬆️':'⬇️')+'</div><div class="mid"><div class="t nt">'+esc(h.note)+'</div><div class="s">'+dshort(h.date)+'</div></div><div class="amt '+(h.amount>0?'green':'')+'">'+(h.amount>0?'+':'−')+rp(Math.abs(h.amount))+'</div></div>'}).join(''):'<div class="empty">Belum ada riwayat.</div>';
   openSheet('pot')}
@@ -1989,6 +2027,9 @@ function potLocal(pot,amt,note,other,out){pot.total+=out?-amt:amt;pot.history=[{
   var from=out?pot.wallet_id:other,to=out?other:pot.wallet_id;if(from&&to&&from!==to&&walletOf(from)&&walletOf(to)){walletOf(from).balance-=amt;walletOf(to).balance+=amt}}
 /* savings pots live in a real wallet (17 Oct): saving = transfer main wallet → pot wallet, using = pot wallet → chosen wallet */
 function potWalletOpts(sel,cur){var ws=myIdrWallets();$(sel).innerHTML='<option value="">Belum dipilih</option>'+ws.map(function(w){return '<option value="'+w.id+'"'+(w.id===cur?' selected':'')+'>'+esc(w.name)+'</option>'}).join('')}
+/* emergency fund in months of planned living costs (18 Oct, idea from Budggt): Dana darurat ÷ both sides' daily + fixed plan per month */
+function monthlyNeed(){var t=0;['suami','istri'].forEach(function(sd){((S.plan||{})[sd]||[]).forEach(function(p){if(p.kind!=='tabungan'&&!p.removed)t+=p.amount})});return t}
+function efMonths(p){if(!/darurat|emergency/i.test(p.name||''))return null;var m=monthlyNeed();return m?p.total/m:null}
 function potWName(p){var w=p.wallet_id&&walletOf(p.wallet_id);return w?w.name:(p.kept_at||'')}
 function otherWalletOpts(sel,potW,cur){var ws=myIdrWallets().filter(function(w){return w.id!==potW});if(!ws.some(function(w){return w.id===cur}))cur=ws.length?ws[0].id:'';
   $(sel).innerHTML=ws.map(function(w){return '<option value="'+w.id+'"'+(w.id===cur?' selected':'')+'>'+esc(w.name)+'</option>'}).join('')+'<option value="">Tidak dipindah (hanya angka tabungan)</option>';$(sel).value=cur}
@@ -2070,7 +2111,7 @@ var EN={
 'Di luar rencana':'Outside the plan','Belum ada pengeluaran.':'No spending yet.',
 'Ketuk tagihan tetap untuk menandai lunas / belum. Pos harian terisi otomatis dari catatan.':'Tap a fixed bill to mark it paid / not paid. Daily pots fill in from your entries.',
 'Uang yang dikumpulkan untuk nanti':'Money put aside for later','Total semua tabungan':'All savings total','Tabungan kita':'Our savings',
-'+ Baru':'+ New','+ Tabung':'+ Save','Tabung':'Save','Pakai':'Use','Pakai tabungan':'Use savings','Tabung bulan ini':'Save this month','Disesuaikan':'Adjusted','Tanpa pos':'No pot','Pilih kategori dulu':'Pick a category first','Sisa jatah':'Left this month','Aman per hari':'Safe per day','Rata-rata keluar per hari':'Average out per day','Pos harian':'Daily pots','Tagihan tetap':'Fixed bills','Tagihan lewat budget':'Bills over budget','mengurangi sisa jatah':'reduces what’s left','Sisa tagihan dibebaskan':'Bill leftover released','Per minggu':'Per week','Catatan di pos ini':'Entries in this pot','Belum ada catatan bulan ini.':'No entries this month yet.','Buka di Rencana':'Open in Plan','Masuk siklus ini':'In this cycle','Keluar siklus ini':'Out this cycle','Di mana uangnya':'Where the money is','Tidak masuk total':'Not in total','Per tabungan':'Per savings pot','Per bulan':'Per month','ditabung':'saved','dipakai':'used','tanpa target':'no target','✓ target tercapai':'✓ target reached','Tabungan':'Savings','Total uangku':'My total','Sisa jatah = pos harian yang belum terpakai, dikurangi tagihan yang lewat budget, ditambah sisa tagihan yang dibebaskan.':'Left = unused daily pots, minus bills over budget, plus released bill leftovers.','Masuk/keluar dihitung dari catatanmu di siklus gaji ini (transfer antar dompet tidak dihitung).':'In/out counts your entries in this pay cycle (transfers between wallets not counted).','Per bulan dihitung dari riwayat terbaru tiap tabungan.':'Per month uses each pot’s latest history.','Pengeluaran harian masih di bawah jatah. Pertahankan.':'Daily spending is under budget. Keep it up.','Diubah':'Updated','Uang diambil dari':'Money taken from','Belum dipilih':'Not chosen','Dari dompet':'From wallet','Pindah ke dompet':'Move to wallet','Tidak dipindah (hanya angka tabungan)':'Not moved (only the savings number)','Pilih dompet tempat uang tabungan ini benar-benar disimpan (misal blu). Saat menabung, uangnya dicatat pindah dari dompet utama ke dompet itu. Untuk mengisi saldo awal, pakai "+ Tabung" dengan catatan "Saldo awal".':'Pick the wallet where this savings money really sits (e.g. blu). When you save, the money is recorded as moving from your main wallet to that wallet. To fill a starting amount, use "+ Save" with the note "Saldo awal".',
+'+ Baru':'+ New','+ Tabung':'+ Save','Tabung':'Save','Pakai':'Use','Pakai tabungan':'Use savings','Tabung bulan ini':'Save this month','Kalender':'Calendar','Hari ini · aman dipakai':'Today · safe to spend','Catatan hari ini':'Today’s entries','Belum ada catatan hari ini.':'No entries today yet.','aman dipakai hari ini dari pos harian':'safe to spend today from daily pots','Merah = pos harian lewat jatah hari itu. Ketuk tanggal untuk melihat catatannya.':'Red = daily pots over that day’s share. Tap a date to see its entries.','Ketuk tanggal untuk melihat catatannya.':'Tap a date to see its entries.','Jatah hari ini = sisa pos harian (termasuk yang dipakai hari ini) dibagi sisa hari di siklus gaji. Besok angkanya dihitung ulang.':'Today’s share = what’s left in daily pots (including today’s spending) divided by the days left in the pay cycle. Recalculated tomorrow.','Disesuaikan':'Adjusted','Tanpa pos':'No pot','Pilih kategori dulu':'Pick a category first','Sisa jatah':'Left this month','Aman per hari':'Safe per day','Rata-rata keluar per hari':'Average out per day','Pos harian':'Daily pots','Tagihan tetap':'Fixed bills','Tagihan lewat budget':'Bills over budget','mengurangi sisa jatah':'reduces what’s left','Sisa tagihan dibebaskan':'Bill leftover released','Per minggu':'Per week','Catatan di pos ini':'Entries in this pot','Belum ada catatan bulan ini.':'No entries this month yet.','Buka di Rencana':'Open in Plan','Masuk siklus ini':'In this cycle','Keluar siklus ini':'Out this cycle','Di mana uangnya':'Where the money is','Tidak masuk total':'Not in total','Per tabungan':'Per savings pot','Per bulan':'Per month','ditabung':'saved','dipakai':'used','tanpa target':'no target','✓ target tercapai':'✓ target reached','Tabungan':'Savings','Total uangku':'My total','Sisa jatah = pos harian yang belum terpakai, dikurangi tagihan yang lewat budget, ditambah sisa tagihan yang dibebaskan.':'Left = unused daily pots, minus bills over budget, plus released bill leftovers.','Masuk/keluar dihitung dari catatanmu di siklus gaji ini (transfer antar dompet tidak dihitung).':'In/out counts your entries in this pay cycle (transfers between wallets not counted).','Per bulan dihitung dari riwayat terbaru tiap tabungan.':'Per month uses each pot’s latest history.','Pengeluaran harian masih di bawah jatah. Pertahankan.':'Daily spending is under budget. Keep it up.','Diubah':'Updated','Uang diambil dari':'Money taken from','Belum dipilih':'Not chosen','Dari dompet':'From wallet','Pindah ke dompet':'Move to wallet','Tidak dipindah (hanya angka tabungan)':'Not moved (only the savings number)','Pilih dompet tempat uang tabungan ini benar-benar disimpan (misal blu). Saat menabung, uangnya dicatat pindah dari dompet utama ke dompet itu. Untuk mengisi saldo awal, pakai "+ Tabung" dengan catatan "Saldo awal".':'Pick the wallet where this savings money really sits (e.g. blu). When you save, the money is recorded as moving from your main wallet to that wallet. To fill a starting amount, use "+ Save" with the note "Saldo awal".',
 'Tabung atau pakai':'Save or use','Tabungan baru':'New savings','Terkumpul':'Collected','Target':'Target','Riwayat':'History',
 'Belum ada riwayat.':'No history yet.','Belum ada tabungan.':'No savings yet.','Sudah ditabung':'Saved',
 'Centang yang sudah dipindahkan ke rekening tabungan, lalu simpan.':'Tick what you moved to the savings account, then save.',
@@ -2352,14 +2393,17 @@ function drawReview(){
   var mx=top[0].sum||1;
   out+='<div class="rvcard plan"><h3>Per kategori<span>ketuk untuk lihat catatannya</span></h3>'+top.map(function(x){
     return '<button class="hrow'+(RV.cat&&RV.cat!==x.k?' faded':'')+'" aria-pressed="'+(RV.cat===x.k)+'" data-rvcat="'+esc(x.k)+'"><span class="ic">'+emo(x.icon)+'</span><span class="nm">'+esc(x.label)+'<i style="width:'+(x.sum/mx*100)+'%"></i></span><span class="v">'+rp(x.sum)+'<small>'+Math.round(x.sum/total*100)+'% · '+x.n+'×</small></span></button>'}).join('')+'</div>';
-  // per day
-  var perDay=[];for(var i=0;i<days;i++){var d=cycShift({from:c.from,to:c.from},i);perDay.push({d:d,sum:0})}
-  list.forEach(function(e){var ix=Math.round((new Date(bdate(e)+'T00:00:00')-new Date(c.from+'T00:00:00'))/864e5);if(perDay[ix])perDay[ix].sum+=e.amount});
-  var dm=Math.max.apply(null,perDay.map(function(x){return x.sum}).concat([1])),avg=total/dayN;
-  out+='<div class="rvcard plan"><h3>Per hari<span>garis = rata-rata '+short(avg)+'</span></h3><div class="cols">'+perDay.map(function(x,i){var fut=H.is_current&&x.d>S.today;
-    return '<button class="'+(fut?'fut':'')+(RV.day===x.d?' sel':'')+'" data-rvday="'+x.d+'" aria-label="'+dshort(x.d)+' Rp '+rp(x.sum)+'"><i style="height:'+(fut?2:Math.max(1.5,x.sum/dm*100))+'%"></i></button>'}).join('')+
-    '<div class="avg" style="bottom:'+(avg/dm*100)+'%"></div></div><div class="colx"><span>'+dshort(c.from)+'</span><span>'+dshort(c.to)+'</span></div>'+
-    '<div class="colcap">'+(RV.day?(function(){var x=perDay.filter(function(y){return y.d===RV.day})[0];return dshort(x.d)+' · Rp '+rp(x.sum)})():'Ketuk batang untuk melihat harinya.')+'</div></div>';
+  // per day → month calendar of the salary cycle (18 Oct, idea from Budggt): each day shows what went out; tap = that day's entries
+  var perDay=[];for(var i=0;i<days;i++){var d=cycShift({from:c.from,to:c.from},i);perDay.push({d:d,sum:0,h:0})}
+  var hIds={};side.forEach(function(p){if(p.kind==='harian')hIds[p.id]=1});
+  list.forEach(function(e){var ix=Math.round((new Date(bdate(e)+'T00:00:00')-new Date(c.from+'T00:00:00'))/864e5);if(perDay[ix]){perDay[ix].sum+=e.amount;if(hIds[e.plan_id])perDay[ix].h+=e.amount}});
+  var hDay=side.filter(function(p){return p.kind==='harian'}).reduce(function(s2,p){return s2+p.amount},0)/days,avg=total/dayN;
+  var lead=(new Date(c.from+'T00:00:00').getDay()+6)%7,DNc=LANG==='en'?['M','T','W','T','F','S','S']:['S','S','R','K','J','S','M'],MNc=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  out+='<div class="rvcard plan"><h3>Kalender<span>rata-rata '+short(avg)+'/hari'+(RV.type==='expense'&&hDay?' · jatah harian '+short(hDay):'')+'</span></h3><div class="cal">'+DNc.map(function(x){return '<b>'+x+'</b>'}).join('')+
+    Array(lead+1).join('<i></i>')+perDay.map(function(x,k){var fut=H.is_current&&x.d>S.today,dd=+x.d.slice(8),first=k===0||dd===1;
+      var cls=(fut?'fut':'')+(x.sum?' has':'')+(RV.type==='expense'&&hDay&&x.h>hDay?' over':'')+(x.d===S.today?' tdy':'')+(RV.day===x.d?' sel':'');
+      return '<button class="'+cls+'" data-rvday="'+x.d+'" aria-label="'+dshort(x.d)+' Rp '+rp(x.sum)+'"><em>'+dd+(first?' '+MNc[+x.d.slice(5,7)-1]:'')+'</em>'+(x.sum&&!fut?'<small>'+short(x.sum)+'</small>':'')+'</button>'}).join('')+'</div>'+
+    '<div class="colcap">'+(RV.day?(function(){var x=perDay.filter(function(y){return y.d===RV.day})[0];return dshort(x.d)+' · Rp '+rp(x.sum)})():(RV.type==='expense'&&hDay?'Merah = pos harian lewat jatah hari itu. Ketuk tanggal untuk melihat catatannya.':'Ketuk tanggal untuk melihat catatannya.'))+'</div></div>';
   // with whom
   var wp={};list.forEach(function(e){String(e.with_people||'').split(',').forEach(function(n){n=n.trim();if(n)wp[n]=(wp[n]||0)+e.amount});if(e.with_partner){var pn=me?S.partnerName:'Suami';wp[pn]=(wp[pn]||0)+e.amount}});
   var wl=Object.keys(wp).sort(function(a,b){return wp[b]-wp[a]}).slice(0,6);
@@ -2378,7 +2422,7 @@ document.addEventListener('change',function(e){var s=e.target.closest&&e.target.
 /* ======================= pull down to refresh + automatic update check =======================
    Pull down at the top of a main screen: fetches the newest numbers, and if a new version of the
    app was uploaded to GitHub it reloads into it. Opening the app also checks for a new version. */
-var BUILD='20261018-1157';
+var BUILD='20261018-1603';
 function checkUpdate(){
   if(IN_GOOGLE||LOCAL_DEV||!/^https:/.test(location.protocol))return Promise.resolve(false);
   return fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
