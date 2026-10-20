@@ -288,7 +288,18 @@ body.sheet-open{overflow:hidden}
 .kgrid button{height:54px;border-radius:16px;background:var(--paper);border:1px solid var(--line);font-size:24px;font-weight:600;text-align:center}
 .kgrid button:active{background:var(--chip)}
 .kgrid button[data-k="000"]{font-size:20px}
-body.kp-open .sheet.on{padding-bottom:330px}
+/* calculator pad (20 Oct): 4 columns, operators in accent, = tall */
+.kgrid.calc{grid-template-columns:repeat(4,1fr)}
+.kgrid.calc button.op{color:var(--accent);font-size:26px}
+.kgrid.calc button.eq{grid-row:span 2;height:auto;background:var(--accent);color:var(--on-accent,#fff);border-color:transparent}
+.kgrid.calc button.z{grid-column:span 2}
+.kpad.dec .kgrid.calc button.op,.kpad.dec .kgrid.calc button.eq{opacity:.3;pointer-events:none}
+/* quick amounts: one row that slides sideways */
+.kq{display:flex;gap:8px;overflow-x:auto;padding:0 2px 8px;scrollbar-width:none;-webkit-overflow-scrolling:touch}.kq::-webkit-scrollbar{display:none}
+.kq button{flex:0 0 auto;padding:8px 14px;border-radius:999px;background:var(--paper);border:1px solid var(--line);font-weight:600;font-size:15px;font-family:var(--f-round)}
+.kq button:active{background:var(--chip)}.kpad.dec .kq{display:none}
+#kpShow{flex:1;min-width:0;align-self:center;font-family:var(--f-round);font-size:15px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:rtl;text-align:left;padding-right:10px}
+body.kp-open .sheet.on{padding-bottom:436px}
 .ico.wl{background:transparent;overflow:hidden;padding:0}.ico.wl .wlogo{width:100%;height:100%;display:block;border-radius:50%;box-shadow:0 0 0 1px var(--line)}.ico.wl .wlogo.full{box-shadow:none}
 .wc b .wlogo{width:20px;height:20px;vertical-align:-5px;border-radius:50%}
 .wdlogo{width:72px!important;height:72px!important;margin:6px auto 0;font-size:34px;display:grid;place-items:center;border-radius:50%;background:var(--card)}
@@ -433,6 +444,8 @@ img.fl{width:62%;height:62%;object-fit:contain;display:block;pointer-events:none
 .colcap{font-size:13px;color:var(--muted);margin-top:8px;min-height:18px}
 /* friend's share */
 .fsh{padding:0 18px 12px;font-size:13px;color:var(--muted)}
+.sugg{display:flex;gap:6px;overflow-x:auto;padding:0 16px 10px;scrollbar-width:none}.sugg::-webkit-scrollbar{display:none}.sugg>button{flex:0 0 auto}
+.seg.mini{margin:0;flex:0 0 auto}.seg.mini button{padding:5px 10px;font-size:13px}
 .owed{margin:10px 16px 0;background:var(--card);border-radius:14px;padding:4px 14px}
 .owed .owrow{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:14px;color:var(--muted)}.owed .owrow+.owrow{border-top:.5px solid var(--line)}
 .owed .owrow span{flex:1;min-width:0}.owed .owrow b{color:var(--ink);font-weight:600}
@@ -1129,6 +1142,7 @@ input,textarea{caret-color:var(--accent)}
   <div class="list">
     <div class="item"><div class="ico">🌐</div><div class="mid"><div class="t">Bahasa</div></div><div class="seg inrow" style="width:168px" role="group" aria-label="Bahasa"><button data-lang-set="id">Indonesia</button><button data-lang-set="en">English</button></div></div>
     <div class="item"><div class="ico">🧪</div><div class="mid"><div class="t">Tampilan ringkas</div><div class="s">Matikan untuk kembali ke tampilan lama</div></div><button class="sw" role="switch" aria-checked="false" id="laySw" aria-label="Tampilan baru"></button></div>
+    <div class="item"><div class="ico">🔢</div><div class="mid"><div class="t">Format angka</div><div class="s">Lengkap 2.900 · atau ringkas 3rb (dibulatkan)</div></div><div class="seg mini" id="numfSeg"><button data-numf="full">3.000</button><button data-numf="short">3rb</button></div></div>
     <div class="item"><div class="ico">🌗</div><div class="mid"><div class="t">Tema</div></div><div class="seg inrow" role="group" aria-label="Tampilan"><button data-theme-set="auto">Otomatis</button><button data-theme-set="light">Terang</button><button data-theme-set="dark">Gelap</button></div></div>
     <div class="item"><div class="ico">📅</div><div class="mid"><div class="t">Tanggal gajian</div><div class="s">Siklus dihitung dari tanggal ini</div></div><div class="amt" id="salDay"></div></div>
     <button class="item" data-open="planEdit"><div class="ico">📝</div><div class="mid"><div class="t">Ubah rencana</div></div><span class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg></span></button>
@@ -1169,8 +1183,11 @@ input,textarea{caret-color:var(--accent)}
   </div>
   <div class="form">
     <label><span>Tanggal</span><input type="date" id="date" aria-label="Tanggal"></label>
-    <label><span>Catatan</span><input id="note" placeholder="Misal: Zakir" autocomplete="off"></label>
+    <label><span>Catatan</span><input id="note" placeholder="Misal: Zakir" autocomplete="off" autocapitalize="words"></label>
+    <div class="sugg" id="noteSug" hidden></div>
     <div class="fr ppl" data-show="expense income"><span>Dengan</span><div class="pchips" id="ppl"></div></div>
+    <div class="sugg" id="pSug" hidden></div>
+    <div class="fr" data-show="expense" id="treatRow"><span>Dibayarin orang lain<br><small class="muted">dicatat, tapi tidak memotong saldo &amp; jatah · tag siapa yang bayar</small></span><button class="sw" role="switch" aria-checked="false" id="treatSw" aria-label="Dibayarin orang lain"></button></div>
     <label data-show="expense" id="fsRow"><span>Bagian teman<br><small class="muted">dibayar pakai uang titipannya</small></span><input id="fshare" inputmode="numeric" placeholder="0"></label>
     <div class="fsh" id="fsHint" hidden></div>
     <div class="fr" data-show="income"><span>Uang titipan teman<br><small class="muted">dia titip, nanti kamu yang bayarkan</small></span><button class="sw" role="switch" aria-checked="false" id="titipSw" aria-label="Uang titipan teman"></button></div>
@@ -1340,8 +1357,14 @@ input,textarea{caret-color:var(--accent)}
 var S=null, TOKEN=null, curTx=null, curPot=null, curWallet=null, editId=null;
 var $=function(id){return document.getElementById(id)};
 var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
-var rp=function(n){n=Math.round(+n||0);return (n<0?'−':'')+Math.abs(n).toLocaleString('id-ID')};
-var short=function(n){var en=(function(){try{return localStorage.getItem('ek_lang')}catch(e){}})()==='en';var a=Math.abs(n),s=n<0?'−':'';if(a>=1e6)return s+(a/1e6).toFixed(a>=1e7?1:2).replace(/\.?0+$/,'').replace('.',en?'.':',')+(en?'M':'jt');if(a>=1e3)return s+Math.round(a/1e3)+(en?'k':'rb');return s+a};
+/* rpIn = always the full number (input fields, the calculator). rp/short = what the app shows: '••••' while numbers
+   are hidden (👁, every page, 20 Oct), and short "3rb / 1,43jt" when Akun › Format angka = Ringkas */
+var rpIn=function(n){n=Math.round(+n||0);return (n<0?'−':'')+Math.abs(n).toLocaleString('id-ID')};
+var HIDE=(function(){try{return localStorage.getItem('ek_hide')==='1'}catch(e){return false}})();
+var NUMF=(function(){try{return localStorage.getItem('ek_numfmt')==='short'}catch(e){return false}})();
+var rp=function(n){return HIDE?'••••':NUMF?shortRaw(n):rpIn(n)};
+var short=function(n){return HIDE?'••••':shortRaw(n)};
+var shortRaw=function(n){n=Math.round(+n||0);var en=(function(){try{return localStorage.getItem('ek_lang')}catch(e){}})()==='en';var a=Math.abs(n),s=n<0?'−':'';if(a>=1e6)return s+(a/1e6).toFixed(a>=1e7?1:2).replace(/\.?0+$/,'').replace('.',en?'.':',')+(en?'M':'jt');if(a>=1e3)return s+Math.round(a/1e3)+(en?'k':'rb');return s+a};
 var num=function(v){return +(String(v||'').replace(/[^\d]/g,''))||0};
 var GO='<span class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg></span>';
 var MONTHS=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
@@ -1360,6 +1383,8 @@ if(window.matchMedia)try{matchMedia('(prefers-color-scheme: dark)').addEventList
 document.querySelectorAll('[data-theme-set]').forEach(function(b){b.onclick=function(){store('ek_theme',b.dataset.themeSet==='auto'?null:b.dataset.themeSet);applyTheme(b.dataset.themeSet)}});
 applyTheme(load('ek_theme'));
 /* layout v3 (18 Oct): Akun › "Tampilan ringkas" switch */
+document.querySelectorAll('[data-numf]').forEach(function(b){b.setAttribute('aria-pressed',(b.dataset.numf==='short')===NUMF);
+  b.onclick=function(){if((b.dataset.numf==='short')===NUMF)return;store('ek_numfmt',b.dataset.numf==='short'?'short':null);try{sessionStorage.setItem('ek_reopen','me')}catch(e){}location.reload()}});
 setTimeout(function(){var ls=document.getElementById('laySw');if(!ls)return;ls.setAttribute('aria-checked',LAY3);ls.addEventListener('click',function(){setTimeout(function(){LAY3=ls.getAttribute('aria-checked')==='true';store('ek_layout',LAY3?null:'v2');document.documentElement.classList.toggle('lay3',LAY3);render()},0)})},0);
 /* v3 is the default since 18 Oct; Akun switch off (or ?v2) = old layout */
 var LAY3=!/[?&]v2/.test(location.search)&&load('ek_layout')!=='v2';document.documentElement.classList.toggle('lay3',LAY3);
@@ -1367,7 +1392,8 @@ var LAY3=!/[?&]v2/.test(location.search)&&load('ek_layout')!=='v2';document.docu
 var EYE_ON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
 var EYE_OFF='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l18 18M10.6 5.1A10.4 10.4 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7c1.8 0 3.4-.5 4.8-1.3M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
 function applyHide(h){
-  document.body.classList.toggle('hide-num',h);
+  HIDE=h;document.body.classList.toggle('hide-num',h);
+  if(S&&S.me)try{render();if($('review').classList.contains('on')&&RV.cur)drawReview();if($('calendar').classList.contains('on')&&CAL.cur)drawCal();if($('all').classList.contains('on'))loadHist()}catch(err){}
   var b=$('eyeBtn');b.innerHTML=h?EYE_OFF:EYE_ON;b.setAttribute('aria-pressed',h);b.setAttribute('aria-label',h?'Tampilkan angka':'Sembunyikan angka');
 }
 $('eyeBtn').onclick=function(){var h=!document.body.classList.contains('hide-num');store('ek_hide',h?'1':null);applyHide(h)};
@@ -1829,11 +1855,12 @@ function drawPeople(){var el=$('ppl');if(!el)return;var sel=form.people||[];var 
   sel.forEach(function(n){if(list.indexOf(n)<0)list.unshift(n)});
   el.innerHTML=list.map(function(n){return '<button class="pchip nt" aria-pressed="'+(sel.indexOf(n)>=0)+'" data-person="'+esc(n)+'">'+esc(n)+'</button>'}).join('')+
     (form.addingPerson?'<span class="pnew"><input id="pNew" placeholder="Nama" autocomplete="off" enterkeyhint="done"><button class="pchip add" data-personok>OK</button></span>':'<button class="pchip add" data-personadd>+ Tambah</button>');
-  if(form.addingPerson)setTimeout(function(){var i=$('pNew');if(i){i.focus();i.onkeydown=function(ev){if(ev.key==='Enter'){ev.preventDefault();addPerson(i.value)}}}},30);
+  if(form.addingPerson)setTimeout(function(){var i=$('pNew');if(i){i.setAttribute('autocapitalize','words');i.focus();i.oninput=function(){peopleSug(i.value)};peopleSug('');i.onkeydown=function(ev){if(ev.key==='Enter'){ev.preventDefault();addPerson(i.value)}}}},30);
+  else if($('pSug'))$('pSug').hidden=true;
 }
 function titipOpen(name){var seen={},inn=0,used=0;(S.recent||[]).concat(S.cycleEntries||[]).forEach(function(e){if(seen[e.id]||e.id===editId)return;seen[e.id]=1;
     var pp=String(e.with_people||'').split(',').map(function(x){return x.trim()});if(pp.indexOf(name)<0||!e.friend_share)return;
-    if(e.type==='income')inn+=e.friend_share;else if(e.type==='expense')used+=e.friend_share/Math.max(1,pp.length)});return Math.max(0,Math.round(inn-used))}
+    if(e.type==='income')inn+=e.friend_share/Math.max(1,pp.length);else if(e.type==='expense')used+=e.friend_share/Math.max(1,pp.length)});return Math.max(0,Math.round(inn-used))}
 function fsHint(){var el=$('fsHint');if(!el)return;if(form.type!=='expense'){el.hidden=true;return}
   var tips=(form.people||[]).map(function(n){return [n,titipOpen(n)]}).filter(function(x){return x[1]>0});
   if(!tips.length){el.hidden=true;return}var tot=tips.reduce(function(s,x){return s+x[1]},0);
@@ -1843,7 +1870,20 @@ function owedHint(){var el=$('owedHint');if(!el)return;var L=S.lent||[];if(form.
   el.hidden=false;el.innerHTML=L.map(function(o){return '<div class="owrow"><span class="nt"><b>'+esc(o.person)+'</b> masih utang Rp '+rp(o.left)+'</span><button data-recv="'+esc(o.person)+'">Terima</button></div>'}).join('')}
 function openReceive(person){var o=(S.lent||[]).filter(function(x){return x.person===person})[0];if(!o)return;
   openLoanMove('collect',person);lmRecv=o;$('lmTitle').textContent='Terima dari '+person;
-  $('lmSub').textContent='Masih utang Rp '+rp(o.left)+(o.flexi?' · uang dari Flexi Cash, jadi mengurangi pos Flexi':'')+'. Bayar sebagian? Ubah jumlahnya.';$('lmAmt').value=rp(o.left)}
+  $('lmSub').textContent='Masih utang Rp '+rp(o.left)+(o.flexi?' · uang dari Flexi Cash, jadi mengurangi pos Flexi':'')+'. Bayar sebagian? Ubah jumlahnya.';$('lmAmt').value=rpIn(o.left)}
+/* typing suggestions (20 Oct): past notes and every name I ever tagged (S.notes / S.people_all from the server, plus what's on the phone) */
+function sugPool(key){var seen={},out=[];function add(x){x=String(x||'').trim();var k=x.toLowerCase();if(x&&!seen[k]){seen[k]=1;out.push(x)}}
+  (S[key]||[]).forEach(add);(S.recent||[]).concat(S.cycleEntries||[]).forEach(function(e){if(key==='notes')add(e.note);else String(e.with_people||'').split(',').forEach(add)});
+  if(key==='people_all')(S.friends||[]).forEach(add);return out}
+function sugMatch(pool,q,max){q=q.trim().toLowerCase();var a=[],b=[];pool.forEach(function(x){var l=x.toLowerCase();if(l===q)return;
+  if(l.indexOf(q)===0)a.push(x);else if((' '+l).indexOf(' '+q)>=0)b.push(x)});return a.concat(b).slice(0,max)}
+function noteSug(){var el=$('noteSug'),q=$('note').value;if(!q.trim()){el.hidden=true;return}var m=sugMatch(sugPool('notes'),q,6);
+  el.hidden=!m.length;el.innerHTML=m.map(function(x){return '<button class="pchip nt" data-nsug="'+esc(x)+'">'+esc(x)+'</button>'}).join('')}
+$('note').addEventListener('input',noteSug);$('note').addEventListener('blur',function(){setTimeout(function(){$('noteSug').hidden=true},200)});
+function peopleSug(q){var el=$('pSug');if(!el)return;var sel=(form.people||[]).map(function(x){return x.toLowerCase()});
+  var pool=sugPool('people_all').filter(function(x){return sel.indexOf(x.toLowerCase())<0});
+  var m=q.trim()?sugMatch(pool,q,8):pool.filter(function(x){return (S.friends||[]).indexOf(x)<0}).slice(0,8);
+  el.hidden=!m.length||!form.addingPerson;el.innerHTML=m.map(function(x){return '<button class="pchip nt" data-psug="'+esc(x)+'">'+esc(x)+'</button>'}).join('')}
 function addPerson(name){name=String(name||'').trim();form.addingPerson=false;setTimeout(fsHint,0);
   if(name){form.people=form.people||[];if(form.people.indexOf(name)<0)form.people.push(name);S.friends=S.friends||[];if(S.friends.indexOf(name)<0)S.friends.push(name)}
   drawPeople();if(name){var el=$('ppl');el.scrollLeft=0}}
@@ -1855,9 +1895,10 @@ function openAdd(opts){
   form={people:e&&e.with_people?String(e.with_people).split(',').map(function(x){return x.trim()}).filter(String):[],addingPerson:false,type:e?(e.type==='transfer'?'transfer':(e.type==='income'?'income':'expense')):(opts.type||'expense'),cat:e?e.category_id:(opts.cat||null),wallet:e?e.wallet_id:(opts.from||S.default_wallet||(S.wallets[0]||{}).id),
         from:e?e.wallet_id:(opts.from||S.default_wallet||(S.wallets[0]||{}).id),to:e?e.to_wallet_id:(opts.to||null),toPartner:!!opts.toPartner};
   if(!form.to){var o=S.wallets.filter(function(w){return w.id!==form.from&&w.type!=='credit'})[0];form.to=o&&o.id}
-  $('amt').value=e?rp(e.amount):(opts.amount?rp(opts.amount):'');$('note').value=e?(e.note||''):'';$('fee').value='';
+  $('amt').value=e?rpIn(e.amount):(opts.amount?rpIn(opts.amount):'');$('note').value=e?(e.note||''):'';$('fee').value='';
   $('date').value=e?e.date:S.today;
-  $('fshare').value=e&&e.type==='expense'&&e.friend_share?rp(e.friend_share):'';$('titipSw').setAttribute('aria-checked',!!(e&&e.type==='income'&&e.friend_share));
+  $('treatSw').setAttribute('aria-checked','false');$('treatRow').hidden=!!e; // only for new entries
+  $('fshare').value=e&&e.type==='expense'&&e.friend_share?rpIn(e.friend_share):'';$('titipSw').setAttribute('aria-checked',!!(e&&e.type==='income'&&e.friend_share));
   $('withSw').setAttribute('aria-checked',e?!!e.with_partner:false);$('nextSw').setAttribute('aria-checked',!!(e&&e.count_date));$('askSw').setAttribute('aria-checked',e?!!e.ask_payback:false);
   var pn=S.me==='innamul'?S.partnerName:'suami';$('withLbl').textContent='Bareng '+pn;$('askLbl').textContent='Minta ganti ke '+pn;
   walletCards('wFrom',form.wallet,false);walletCards('tFrom',form.from,false);walletCards('tTo',form.to,!e);
@@ -1867,8 +1908,8 @@ function openAdd(opts){
   drawPeople();fsHint();
   openSheet('add'); if(!e)setTimeout(function(){$('amt').focus()},350);
 }
-$('amt').addEventListener('input',function(){var v=num(this.value);this.value=v?'Rp '+rp(v):''});
-['fee','fshare','nwBal','npStart','npTarget','epTarget','adjReal','pmAmt','nlAmt','nlMonthly','lmAmt'].forEach(function(id){$(id).addEventListener('input',function(){if(this.dataset.dec)return;var v=num(this.value);this.value=v?rp(v):''})});
+$('amt').addEventListener('input',function(){var v=num(this.value);this.value=v?'Rp '+rpIn(v):''});
+['fee','fshare','nwBal','npStart','npTarget','epTarget','adjReal','pmAmt','nlAmt','nlMonthly','lmAmt'].forEach(function(id){$(id).addEventListener('input',function(){if(this.dataset.dec)return;var v=num(this.value);this.value=v?rpIn(v):''})});
 $('bucket').addEventListener('change',function(){bucketLook();updMap()});
 $('saveEntry').onclick=function(){
   var p={type:form.type,amount:num($('amt').value),date:$('date').value,note:$('note').value.trim()};
@@ -1881,6 +1922,14 @@ $('saveEntry').onclick=function(){
   if(form.type==='expense'){p.friend_share=Math.min(p.amount,num($('fshare').value));}
   if(form.type==='income'){p.titip=$('titipSw').getAttribute('aria-checked')==='true';if(p.titip&&!(form.people||[]).length){toast('Tag teman yang titip uangnya dulu',true);return}}
   if(form.type==='expense'){var wsel=walletOf(form.wallet);p.count_next=!!(wsel&&wsel.type==='credit'&&$('nextSw').getAttribute('aria-checked')==='true')}
+  /* someone else paid (20 Oct): same as the Money Lover habit — a "titipan" income from them + the expense paid with it,
+     both in one wallet, so the wallet, pos, week and Ringkasan all net to 0 but the entry and who paid stay visible */
+  if(!editId&&form.type==='expense'&&$('treatSw').getAttribute('aria-checked')==='true'){
+    if(!(form.people||[]).length){toast('Tag siapa yang bayarin dulu',true);return}
+    var inc=catById('other_income')?'other_income':((catsFor('income')[0]||{}).id||'');
+    quickAdd({type:'income',amount:p.amount,date:p.date,wallet_id:p.wallet_id,category_id:inc,note:'Dibayarin '+p.with_people+(p.note?' · '+p.note:''),with_people:p.with_people,titip:true});
+    p.friend_share=p.amount;p.note=p.note||('Dibayarin '+p.with_people);quickAdd(p);
+    closeAll();showTick('Tersimpan','Rp '+rp(p.amount)+' · dibayarin '+p.with_people);return}
   if(editId){p.id=editId;quickEdit(p)}else quickAdd(p);
   closeAll();showTick(editId?'Diubah':'Tersimpan',entrySub(p));
 };
@@ -1896,9 +1945,9 @@ $('search').addEventListener('input',function(){drawCats(this.value)});
 var peSide='suami', peItems=null;
 function openPlanEdit(){peItems=JSON.parse(JSON.stringify({suami:S.plan.suami,istri:S.plan.istri}));peSide=S.side;drawPE();openSheet('planEdit')}
 function drawPE(){document.querySelectorAll('[data-pe]').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.pe===peSide)});
-  $('peList').innerHTML=peItems[peSide].map(function(p,i){return '<div class="fr'+(p.removed?' removed':'')+'"><button class="minus" data-rm="'+i+'" aria-label="'+(p.removed?'Kembalikan':'Hapus')+' '+esc(p.name)+'">'+(p.removed?'↺':'−')+'</button><input class="n" value="'+esc(p.name)+'" data-nm="'+i+'" aria-label="Nama pos"><select data-kd="'+i+'" aria-label="Jenis"><option value="harian"'+(p.kind==='harian'?' selected':'')+'>Harian</option><option value="tetap"'+(p.kind==='tetap'?' selected':'')+'>Tetap</option>'+(p.kind==='tabungan'?'<option value="tabungan" selected>Tabungan</option>':'')+'</select><input class="a" inputmode="numeric" value="'+rp(p.amount)+'" data-am="'+i+'" aria-label="Nominal"></div>'}).join('');peTot()}
+  $('peList').innerHTML=peItems[peSide].map(function(p,i){return '<div class="fr'+(p.removed?' removed':'')+'"><button class="minus" data-rm="'+i+'" aria-label="'+(p.removed?'Kembalikan':'Hapus')+' '+esc(p.name)+'">'+(p.removed?'↺':'−')+'</button><input class="n" value="'+esc(p.name)+'" data-nm="'+i+'" aria-label="Nama pos"><select data-kd="'+i+'" aria-label="Jenis"><option value="harian"'+(p.kind==='harian'?' selected':'')+'>Harian</option><option value="tetap"'+(p.kind==='tetap'?' selected':'')+'>Tetap</option>'+(p.kind==='tabungan'?'<option value="tabungan" selected>Tabungan</option>':'')+'</select><input class="a" inputmode="numeric" value="'+rpIn(p.amount)+'" data-am="'+i+'" aria-label="Nominal"></div>'}).join('');peTot()}
 function peTot(){var s=function(k){return peItems[k].filter(function(p){return !p.removed}).reduce(function(a,p){return a+p.amount},0)};var l=S.salary-s('suami')-s('istri');$('peSal').textContent='Rp '+rp(S.salary);$('peLeft').textContent='Rp '+rp(l);$('peLeft').className=l<0?'red':''}
-$('peList').addEventListener('input',function(e){var t=e.target;if(t.dataset.am){var v=num(t.value);peItems[peSide][+t.dataset.am].amount=v;t.value=rp(v);peTot()}if(t.dataset.nm)peItems[peSide][+t.dataset.nm].name=t.value});
+$('peList').addEventListener('input',function(e){var t=e.target;if(t.dataset.am){var v=num(t.value);peItems[peSide][+t.dataset.am].amount=v;t.value=rpIn(v);peTot()}if(t.dataset.nm)peItems[peSide][+t.dataset.nm].name=t.value});
 $('peList').addEventListener('change',function(e){var t=e.target;if(t.dataset.kd)peItems[peSide][+t.dataset.kd].kind=t.value});
 $('peAdd').onclick=function(){peItems[peSide].push({name:'Pos baru',amount:0,kind:'harian',side:peSide});drawPE()};
 $('peSave').onclick=function(){var items=[];['suami','istri'].forEach(function(sd){peItems[sd].forEach(function(p){items.push({id:p.id,side:sd,name:p.name,amount:p.amount,kind:p.kind,pot_id:p.pot_id,removed:!!p.removed})})});
@@ -2036,6 +2085,8 @@ document.addEventListener('click',function(e){
     if(box.id==='tTo'){form.toPartner=g.hasAttribute('data-partner');form.to=g.dataset.w||null;personNote();updMap()}
     if(box.id==='nlWho'){nlWho=g.dataset.p}
     return}
+  if((g=t.closest('[data-nsug]'))){$('note').value=g.dataset.nsug;$('noteSug').hidden=true;return}
+  if((g=t.closest('[data-psug]'))){addPerson(g.dataset.psug);return}
   if((g=t.closest('.sw'))){g.setAttribute('aria-checked',g.getAttribute('aria-checked')!=='true');return}
   if((g=t.closest('[data-tx]'))){openTx(g.dataset.tx);return}
   if(t.closest('[data-all]')){openAll();return}
@@ -2051,7 +2102,7 @@ document.addEventListener('click',function(e){
   if(t.closest('[data-rvclear]')){RV.cat='';RV.day=null;drawReview();return}
   if((g=t.closest('[data-person]'))){var nm=g.dataset.person;form.people=form.people||[];var ix=form.people.indexOf(nm);if(ix>=0)form.people.splice(ix,1);else form.people.push(nm);g.setAttribute('aria-pressed',ix<0);fsHint();return}
   if(t.closest('[data-personadd]')){pickContact();return}
-  if((g=t.closest('[data-fsuse]'))){var amt0=num($('amt').value),v=+g.dataset.fsuse;$('fshare').value=rp(amt0?Math.min(v,amt0):v);return}
+  if((g=t.closest('[data-fsuse]'))){var amt0=num($('amt').value),v=+g.dataset.fsuse;$('fshare').value=rpIn(amt0?Math.min(v,amt0):v);return}
   if(t.closest('[data-personok]')){addPerson(($('pNew')||{}).value);return}
   if((g=t.closest('[data-bill]'))){openBill(g.dataset.bill);return}
   if(t.closest('[data-billpay]')){payBill(billId);return}
@@ -2130,7 +2181,7 @@ function openPot(id){var p=S.pots.filter(function(x){return x.id===id})[0];curPo
   $('potHist').innerHTML=p.history.length?p.history.map(function(h){return '<div class="item"><div class="ico">'+(h.amount>0?'⬆️':'⬇️')+'</div><div class="mid"><div class="t nt">'+esc(h.note)+'</div><div class="s">'+dshort(h.date)+'</div></div><div class="amt '+(h.amount>0?'green':'')+'">'+(h.amount>0?'+':'−')+rp(Math.abs(h.amount))+'</div></div>'}).join(''):'<div class="empty">Belum ada riwayat.</div>';
   openSheet('pot')}
 var pmMode='in';
-function openPotMove(m){if(m==='edit'){$('epName').value=curPot.name;$('epTarget').value=curPot.target?rp(curPot.target):'';potWalletOpts('epWallet',curPot.wallet_id||'');openSheet('editPot');return}
+function openPotMove(m){if(m==='edit'){$('epName').value=curPot.name;$('epTarget').value=curPot.target?rpIn(curPot.target):'';potWalletOpts('epWallet',curPot.wallet_id||'');openSheet('editPot');return}
   pmMode=m;$('pmWRow').hidden=!curPot.wallet_id;if(curPot.wallet_id){$('pmWLbl').textContent=m==='in'?'Dari dompet':'Pindah ke dompet';otherWalletOpts('pmWallet',curPot.wallet_id,S.default_wallet)}
   $('pmTitle').textContent=m==='in'?'Tabung':'Pakai tabungan';$('pmFrom').textContent=(m==='in'?'Ke ':'Dari ')+curPot.name+' · sekarang Rp '+rp(curPot.total);$('pmAmt').value='';$('pmNote').value='';
   $('pmExplain').innerHTML=m==='in'?'<b>Tabung di luar rencana</b>Misal ada uang lebih, atau untuk mengisi saldo awal (tulis "Saldo awal").':'<b>Tidak mengurangi pos bulan ini</b>Uangnya diambil dari tabungan, jadi jatah dapur dan jajan tetap aman.';
@@ -2204,7 +2255,7 @@ function openLoan(){nlWho=S.flexi.people[0];$('nlWho').innerHTML=S.flexi.people.
 $('nlSave').onclick=function(){var a=num($('nlAmt').value);if(!a){toast('Isi jumlah pinjaman',true);return}
   act('newLoan',{amount:a,person:$('nlOther').value.trim()||nlWho,wallet_id:$('nlWallet').value,months:num($('nlMonths').value),monthly:num($('nlMonthly').value),start_pay:$('nlStart').value},'Pinjaman dicatat').then(closeAll)};
 function openLoanMove(mode,person){lmMode=mode;lmPerson=person;lmRecv=null;$('lmTitle').textContent=mode==='collect'?'Terima dari '+person:'Bayar cicilan Flexi';
-  $('lmSub').textContent=mode==='collect'?'Bagian '+person+' untuk cicilan Flexi':'Total cicilan bulan ini Rp '+rp(S.flexi.monthly);$('lmAmt').value=mode==='repay'?rp(S.flexi.monthly):'';
+  $('lmSub').textContent=mode==='collect'?'Bagian '+person+' untuk cicilan Flexi':'Total cicilan bulan ini Rp '+rp(S.flexi.monthly);$('lmAmt').value=mode==='repay'?rpIn(S.flexi.monthly):'';
   $('lmWallet').innerHTML=walletOptions(S.default_wallet);$('lmDate').value=S.today;openSheet('loanMove')}
 $('lmSave').onclick=function(){var a=num($('lmAmt').value);if(!a){toast('Isi jumlahnya',true);return}
   var pl={amount:a,person:lmPerson,wallet_id:$('lmWallet').value,date:$('lmDate').value,plan_id:''};
@@ -2299,7 +2350,7 @@ var EN={
 '+ Tambah pos':'+ Add pot','belum dibagi ke pos':'not assigned to pots','Menu utama':'Main menu','Tampilan':'Display',
 'Jenis: Harian = terpakai sedikit-sedikit (pakai bar). Tetap = dibayar sekali sebulan. Siklus yang sudah lewat tidak berubah.':'Type: Daily = spent bit by bit (with a bar). Fixed = paid once a month. Past cycles don’t change.',
 'Misal: BSI, Gopay, Cash':'e.g. BSI, Gopay, Cash','Misal: BSI':'e.g. BSI','Misal: Umrah':'e.g. Umrah','Misal: Zakir':'e.g. Zakir','Misal: bayar sewa 2027':'e.g. 2027 rent',
-'Sudah ada':'Already exists','Diatur oleh':'Managed by','Dipakai':'Used','Dipinjam':'Borrowed','Terima dari':'Received from','Terima bayaran':'Receive payment','Belum dibayar':'Not paid yet','Terima':'Receive',
+'Sudah ada':'Already exists','Diatur oleh':'Managed by','Dipakai':'Used','Dipinjam':'Borrowed','Terima dari':'Received from','Terima bayaran':'Receive payment','Format angka':'Number format','Lengkap 2.900 · atau ringkas 3rb (dibulatkan)':'Full 2,900 · or short 3k (rounded)','Dibayarin orang lain':'Someone else paid','Tag siapa yang bayarin dulu':'Tag who paid first','Belum dibayar':'Not paid yet','Terima':'Receive',
 'Penyesuaian saldo':'Balance adjustment','Pinjam dari Flexi':'Borrowed from Flexi','Dipinjamkan':'Lent','Terima cicilan saudara':'Installment from sister','Bayar cicilan':'Installment paid',
 'Pilih Innamul atau Putri dulu':'Pick Innamul or Putri first','PIN salah':'Wrong PIN','Pilih dompet':'Pick a wallet','Pilih dompet asal dan tujuan yang berbeda':'Pick two different wallets',
 'Nama dompet wajib diisi':'Wallet name is required','Tidak diizinkan':'Not allowed','Tabungan diatur oleh Putri':'Savings are managed by Putri','Catatan tidak ditemukan':'Entry not found',
@@ -2372,14 +2423,24 @@ document.querySelectorAll('[data-lang-set]').forEach(function(b){b.setAttribute(
    Amount fields open this pad instead of the phone keyboard. */
 (function(){
   var pad=document.createElement('div');pad.className='kpad';pad.id='kpad';pad.setAttribute('aria-hidden','true');
-  pad.innerHTML='<div class="kbar"><span id="kpShow"></span><button data-k="done">Selesai</button></div><div class="kgrid">'+
-    ['1','2','3','4','5','6','7','8','9','000','0','del'].map(function(k){return '<button data-k="'+k+'"'+(k==='del'?' aria-label="Hapus angka"':'')+'>'+(k==='del'?'⌫':k)+'</button>'}).join('')+'</div>';
+  // calculator keys like Money Lover (20 Oct): C ÷ × ⌫ / − + / = ; the field always holds the result, the sum shows in the bar
+  var KL={C:'C','/':'÷','*':'×',del:'⌫','-':'−','+':'+','=':'='};
+  pad.innerHTML='<div class="kbar"><span id="kpShow" class="nt"></span><button data-k="done">Selesai</button></div><div class="kq" id="kq">'+[1e3,2e3,5e3,1e4,2e4,5e4,1e5,1e6].map(function(v){return '<button data-k="q'+v+'">+'+shortRaw(v)+'</button>'}).join('')+'</div><div class="kgrid calc">'+
+    ['C','/','*','del','7','8','9','-','4','5','6','+','1','2','3','=','0','000'].map(function(k){var op=KL[k]&&k!=='del';return '<button data-k="'+k+'" class="'+(op?'op':'')+(k==='='?' eq':'')+(k==='0'?' z':'')+(k==='del'?' op':'')+'"'+(k==='del'?' aria-label="Hapus angka"':'')+'>'+(KL[k]||k)+'</button>'}).join('')+'</div>';
   document.body.appendChild(pad);
   var cur=null;
   function isNum(el){return el&&el.tagName==='INPUT'&&el.id!=='pin'&&(el.getAttribute('inputmode')==='numeric'||el.dataset.num)}
   function mark(root){(root.querySelectorAll?root:document).querySelectorAll('input[inputmode="numeric"]').forEach(function(i){if(i.id==='pin')return;i.dataset.num='1';i.setAttribute('inputmode','none')})}
   mark(document);new MutationObserver(function(ms){ms.forEach(function(m){m.addedNodes.forEach(function(n){if(n.nodeType===1)mark(n)})})}).observe(document.body,{childList:true,subtree:true});
-  function show(){$('kpShow').textContent='';var k0=pad.querySelector('[data-k="000"]');if(k0)k0.textContent=cur&&cur.dataset.dec?',':'000';document.body.classList.add('kp-open');pad.classList.add('on');setTimeout(function(){cur&&cur.scrollIntoView({block:'center',behavior:'smooth'})},60)}
+  var toks=[]; // calculator: ['25000','+','13500'] while a sum is open
+  function isOp(t){return t==='+'||t==='-'||t==='*'||t==='/'}
+  function calc(){var a=[];toks.forEach(function(t){a.push(isOp(t)?t:+t||0)});if(isOp(a[a.length-1]))a.pop();
+    var b=[a[0]||0];for(var i=1;i<a.length;i+=2){var o=a[i],v=a[i+1];if(o==='*')b[b.length-1]*=v;else if(o==='/')b[b.length-1]=v?b[b.length-1]/v:b[b.length-1];else b.push(o,v)}
+    var r=b[0];for(var j=1;j<b.length;j+=2)r=b[j]==='+'?r+b[j+1]:r-b[j+1];return Math.max(0,Math.round(r))}
+  function paint(){var r=calc();cur.value=r?String(r):'';cur.dispatchEvent(new Event('input',{bubbles:true}));
+    // the bar is right-to-left so a long sum shows its end; the <bdi> keeps the sum itself reading left-to-right
+    $('kpShow').innerHTML=toks.length>1?'<bdi dir="ltr">'+toks.map(function(t){return isOp(t)?' '+KL[t]+' ':rpIn(+t||0)}).join('')+' = <b>'+rpIn(r)+'</b></bdi>':''}
+  function show(){$('kpShow').textContent='';toks=[];pad.classList.toggle('dec',!!(cur&&cur.dataset.dec));var k0=pad.querySelector('[data-k="000"]');if(k0)k0.textContent=cur&&cur.dataset.dec?',':'000';document.body.classList.add('kp-open');pad.classList.add('on');setTimeout(function(){cur&&cur.scrollIntoView({block:'center',behavior:'smooth'})},60)}
   function hide(){cur=null;document.body.classList.remove('kp-open');pad.classList.remove('on')}
   // closing the pad mid-tap drops the sheet ~330px, so the finger lifts on something else (e.g. Batal → the dim layer):
   // while a finger/mouse is down, wait for the tap to finish (the click handler below hides it; pointerup is the fallback)
@@ -2394,8 +2455,23 @@ document.querySelectorAll('[data-lang-set]').forEach(function(b){b.setAttribute(
   pad.addEventListener('mousedown',function(e){e.preventDefault()});pad.addEventListener('touchstart',function(e){e.preventDefault();var b=e.target.closest('[data-k]');if(b)press(b.dataset.k)},{passive:false});
   pad.addEventListener('click',function(e){var b=e.target.closest('[data-k]');if(b)press(b.dataset.k)});
   function press(k){
-    if(k==='done'){if(cur)cur.blur();hide();return}
+    if(k==='done'){toks=[];$('kpShow').textContent='';if(cur)cur.blur();hide();return}
     if(!cur)return;
+    if(!cur.dataset.dec&&k.charAt(0)==='q'){ // quick amount chip: empty field → that amount, otherwise add it (like counting notes)
+      var qv=String(+k.slice(1));
+      if(toks.length){if(isOp(toks[toks.length-1]))toks.push(qv);else toks.push('+',qv);paint();return}
+      var d0=String(cur.value).replace(/[^\d]/g,'');if(!d0||d0==='0'){cur.value=qv;cur.dispatchEvent(new Event('input',{bubbles:true}));return}
+      toks=[d0,'+',qv];paint();return}
+    if(!cur.dataset.dec){ // calculator
+      if(k==='C'){toks=[];cur.value='';cur.dispatchEvent(new Event('input',{bubbles:true}));$('kpShow').textContent='';return}
+      if(k==='='){if(toks.length){paint();toks=[];$('kpShow').textContent=''}return}
+      if(isOp(k)){if(!toks.length){var v0=String(cur.value).replace(/[^\d]/g,'');if(!v0)return;toks=[v0]}
+        if(isOp(toks[toks.length-1]))toks[toks.length-1]=k;else toks.push(k);paint();return}
+      if(toks.length){var last=toks[toks.length-1];
+        if(k==='del'){if(isOp(last))toks.pop();else{last=last.slice(0,-1);if(last)toks[toks.length-1]=last;else toks.pop()}if(toks.length===1)toks=[];if(!toks.length){$('kpShow').textContent='';return}paint();return}
+        if(isOp(last)){if(k==='000')return;toks.push(k)}else{if(k==='000'){if(last!=='0')toks[toks.length-1]=last+'000'}else toks[toks.length-1]=(last==='0'?'':last)+k}
+        if(String(toks[toks.length-1]).length>13)return;paint();return}
+    }
     if(cur.dataset.dec){var t=String(cur.value).replace(/[^\d,]/g,'');if(k==='del')t=t.slice(0,-1);else if(k==='000'){if(t.indexOf(',')<0)t=(t||'0')+','}else if(!/,\d\d$/.test(t))t=(t==='0'?'':t)+k;cur.value=t;cur.dispatchEvent(new Event('input',{bubbles:true}));return}
     var d=String(cur.value).replace(/[^\d]/g,'');
     if(k==='del')d=d.slice(0,-1);else if(k==='000'){if(d&&d!=='0')d+='000'}else d=(d==='0'?'':d)+k;
@@ -2598,7 +2674,7 @@ document.addEventListener('change',function(e){var s=e.target.closest&&e.target.
 /* ======================= pull down to refresh + automatic update check =======================
    Pull down at the top of a main screen: fetches the newest numbers, and if a new version of the
    app was uploaded to GitHub it reloads into it. Opening the app also checks for a new version. */
-var BUILD='20261020-1027';
+var BUILD='20261020-2145';
 function checkUpdate(){
   if(IN_GOOGLE||LOCAL_DEV||!/^https:/.test(location.protocol))return Promise.resolve(false);
   return fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
