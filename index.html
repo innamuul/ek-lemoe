@@ -1867,7 +1867,7 @@ function fsHint(){var el=$('fsHint');if(!el)return;if(form.type!=='expense'){el.
   el.hidden=false;el.innerHTML='<span class="nt">'+tips.map(function(x){return esc(x[0])+' titip Rp '+rp(x[1])}).join(', ')+'</span><button data-fsuse="'+tot+'">Pakai</button>'}
 /* "Masih utang" (20 Oct): people I lent money to and who haven't paid it all back (S.lent from the server). Shown on Masuk; Terima = payback */
 function owedHint(){var el=$('owedHint');if(!el)return;var L=S.lent||[];if(form.type!=='income'||editId||!L.length){el.hidden=true;return}
-  el.hidden=false;el.innerHTML=L.map(function(o){return '<div class="owrow"><span class="nt"><b>'+esc(o.person)+'</b> masih utang Rp '+rp(o.left)+'</span><button data-recv="'+esc(o.person)+'">Terima</button></div>'}).join('')}
+  el.hidden=false;el.innerHTML=L.map(function(o){return '<div class="owrow"><span><b class="nt">'+esc(o.person)+'</b> masih utang Rp '+rp(o.left)+'</span><button data-recv="'+esc(o.person)+'">Terima</button></div>'}).join('')}
 function openReceive(person){var o=(S.lent||[]).filter(function(x){return x.person===person})[0];if(!o)return;
   openLoanMove('collect',person);lmRecv=o;$('lmTitle').textContent='Terima dari '+person;
   $('lmSub').textContent='Masih utang Rp '+rp(o.left)+(o.flexi?' · uang dari Flexi Cash, jadi mengurangi pos Flexi':'')+'. Bayar sebagian? Ubah jumlahnya.';$('lmAmt').value=rpIn(o.left)}
@@ -2350,7 +2350,7 @@ var EN={
 '+ Tambah pos':'+ Add pot','belum dibagi ke pos':'not assigned to pots','Menu utama':'Main menu','Tampilan':'Display',
 'Jenis: Harian = terpakai sedikit-sedikit (pakai bar). Tetap = dibayar sekali sebulan. Siklus yang sudah lewat tidak berubah.':'Type: Daily = spent bit by bit (with a bar). Fixed = paid once a month. Past cycles don’t change.',
 'Misal: BSI, Gopay, Cash':'e.g. BSI, Gopay, Cash','Misal: BSI':'e.g. BSI','Misal: Umrah':'e.g. Umrah','Misal: Zakir':'e.g. Zakir','Misal: bayar sewa 2027':'e.g. 2027 rent',
-'Sudah ada':'Already exists','Diatur oleh':'Managed by','Dipakai':'Used','Dipinjam':'Borrowed','Terima dari':'Received from','Terima bayaran':'Receive payment','Format angka':'Number format','Lengkap 2.900 · atau ringkas 3rb (dibulatkan)':'Full 2,900 · or short 3k (rounded)','Dibayarin orang lain':'Someone else paid','Tag siapa yang bayarin dulu':'Tag who paid first','Belum dibayar':'Not paid yet','Terima':'Receive',
+'Sudah ada':'Already exists','Diatur oleh':'Managed by','Dipakai':'Used','Dipinjam':'Borrowed','Terima dari':'Received from','Terima bayaran':'Receive payment','Format angka':'Number format','Lengkap 2.900 · atau ringkas 3rb (dibulatkan)':'Full 2,900 · or short 3k (rounded)','Dibayarin orang lain':'Someone else paid','dicatat, tapi tidak memotong saldo & jatah · tag siapa yang bayar':'recorded, but it doesn’t touch your balance or budget · tag who paid','Tag siapa yang bayarin dulu':'Tag who paid first','Belum dibayar':'Not paid yet','Terima':'Receive',
 'Penyesuaian saldo':'Balance adjustment','Pinjam dari Flexi':'Borrowed from Flexi','Dipinjamkan':'Lent','Terima cicilan saudara':'Installment from sister','Bayar cicilan':'Installment paid',
 'Pilih Innamul atau Putri dulu':'Pick Innamul or Putri first','PIN salah':'Wrong PIN','Pilih dompet':'Pick a wallet','Pilih dompet asal dan tujuan yang berbeda':'Pick two different wallets',
 'Nama dompet wajib diisi':'Wallet name is required','Tidak diizinkan':'Not allowed','Tabungan diatur oleh Putri':'Savings are managed by Putri','Catatan tidak ditemukan':'Entry not found',
@@ -2373,6 +2373,10 @@ var EN={
 };
 /* [pattern, replacement] for text built from pieces (amounts, dates, names) */
 var EN_RULES=[
+  /* 20 Oct: Dibayarin / Masih utang / Terima texts */
+  [/^Terima dari /,'Receive from '],[/ masih utang Rp /,' still owes Rp '],[/^Masih utang Rp /,'Still owes Rp '],
+  [/ · uang dari Flexi Cash, jadi mengurangi pos Flexi/,' · Flexi Cash money, so it lowers the Flexi pos'],[/\. Bayar sebagian\? Ubah jumlahnya\.$/,'. Paid only part? Change the amount.'],
+  [/ · dibayarin /,' · paid by '],
 [/ · uang keluar$/,' · money out'],[/ · (\d+) tabungan$/,' · $1 savings'],[/ · di ([^·]+)$/,' · in $1'],[/^Uang belanja masuk ke (?!…)/,'Household money now goes to '],[/^Dipindah ke /,'Moved to '],[/^Sisa rencana$/,'Plan left'],[/^✓ Selesai$/,'✓ Done'],[/^✓ Ditabung$/,'✓ Saved'],[/^Lainnya (?=\d)/,'Others '],[/^Terpakai$/,'Used'],[/^Lewat\b/,'Over'],[/^Harian (?=\d)/,'Daily '],[/^Tagihan (?=\d)/,'Bills '],[/^Tabungan (?=\d)/,'Savings '],[/ · masuk ke Tabungan$/,' · goes to Savings'],[/^Hari ke-(\d+) dari (\d+)$/,'Day $1 of $2'],[/^Terpakai (\d+)% pos harian$/,'$1% of daily pots used'],
 [/\bSiklus gaji\b/g,'Pay cycle'],[/\bSiklus\b/g,'Cycle'],[/\bgaji Rp\b/g,'salary Rp'],[/\(sekarang\)/g,'(current)'],
 [/^Sisa\b/,'Left'],[/^Lebih\b/,'Over'],[/^bagian teman /,'friend’s share '],[/^titipan · $/,'held · '],[/ titip Rp/g,' gave Rp'],[/^Ya · tidak dihitung pemasukan$/,'Yes · not counted as income'],[/ · bagianmu Rp/,' · your part Rp'],[/^Terpakai sampai hari ini$/,'Spent so far'],[/^Terpakai siklus ini$/,'Spent this cycle'],[/^Uang masuk sampai hari ini$/,'Income so far'],[/^Uang masuk siklus ini$/,'Income this cycle'],[/ dari jatah Rp/,' of budget Rp'],[/ dibanding siklus lalu/,' vs last cycle'],[/\(hari yang sama\)/,'(same day)'],[/^Sudah lewat jatah Rp/,'Over budget by Rp'],[/^Lewat jatah Rp/,'Over budget by Rp'],[/^Sisa Rp (.+) dari jatah\.$/,'Rp $1 left of budget.'],[/^garis = rata-rata/,'line = average'],[/^Lainnya \((\d+)\)/,'Other ($1)'],[/^Selesai, sisanya bebas: tagihannya ternyata lebih murah, sisa Rp/,'Done, free the rest: the bill was cheaper, the remaining Rp'],[/^Tidak perlu bulan ini: Rp/,'Not needed this month: Rp'],[/ Sudah dibayar di luar catatan: misal cicilan lewat kartu kredit, uangnya tetap dianggap terpakai\./,' Paid outside the app: e.g. an installment on the credit card, the money still counts as used.'],[/^Ditandai selesai\. Sisa Rp/,'Marked done. Rp'],[/ kembali ke sisa jatah\./,' goes back to what’s left.'],[/^Diatur oleh\b/,'Managed by'],[/\bLewat\b/,'Over'],[/\bterpakai\b/g,'used'],[/\bper hari\b/g,'a day'],[/\bhari lagi\b/g,'days left'],[/\bhari ke-(\d+)/g,'day $1'],[/^dari (.+)$/,'of $1'],[/^Masuk tagihan\b/,'On the bill'],[/\bLunas\b/g,'Paid'],[/\bDitabung\b/g,'Saved'],[/\bBelum dibayar\b/g,'Not paid yet'],[/\bTerbayar\b/g,'Paid'],
@@ -2680,7 +2684,7 @@ document.addEventListener('change',function(e){var s=e.target.closest&&e.target.
 /* ======================= pull down to refresh + automatic update check =======================
    Pull down at the top of a main screen: fetches the newest numbers, and if a new version of the
    app was uploaded to GitHub it reloads into it. Opening the app also checks for a new version. */
-var BUILD='20261020-2150';
+var BUILD='20261020-2152';
 function checkUpdate(){
   if(IN_GOOGLE||LOCAL_DEV||!/^https:/.test(location.protocol))return Promise.resolve(false);
   return fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
