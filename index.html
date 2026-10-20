@@ -432,7 +432,11 @@ img.fl{width:62%;height:62%;object-fit:contain;display:block;pointer-events:none
 .colx{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:6px}
 .colcap{font-size:13px;color:var(--muted);margin-top:8px;min-height:18px}
 /* friend's share */
-.fsh{padding:0 18px 12px;font-size:13px;color:var(--muted)}.fsh button{margin-left:6px;font-weight:600;color:var(--accent)}
+.fsh{padding:0 18px 12px;font-size:13px;color:var(--muted)}
+.owed{margin:10px 16px 0;background:var(--card);border-radius:14px;padding:4px 14px}
+.owed .owrow{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:14px;color:var(--muted)}.owed .owrow+.owrow{border-top:.5px solid var(--line)}
+.owed .owrow span{flex:1;min-width:0}.owed .owrow b{color:var(--ink);font-weight:600}
+.owed button{background:var(--accent);color:var(--on-accent,#fff);border-radius:999px;padding:6px 14px;font-weight:600;font-size:14px}.fsh button{margin-left:6px;font-weight:600;color:var(--accent)}
 
 /* pull to refresh */
 .ptr{position:fixed;left:50%;top:calc(6px + env(safe-area-inset-top));width:40px;height:40px;margin-left:-20px;border-radius:50%;z-index:30;display:grid;place-items:center;
@@ -1150,6 +1154,7 @@ input,textarea{caret-color:var(--accent)}
   <div class="grab"></div>
   <div class="sbar"><button class="round" data-close>Batal</button><b id="addTitle">Catat</b><button class="black" id="saveEntry">Simpan</button></div>
   <div class="seg" id="typeSeg" style="margin-top:0"><button aria-pressed="true" data-type="expense">Keluar</button><button aria-pressed="false" data-type="income">Masuk</button><button aria-pressed="false" data-type="transfer">Transfer</button></div>
+  <div class="owed" id="owedHint" hidden></div>
   <div class="amount"><input id="amt" inputmode="numeric" placeholder="Rp 0" aria-label="Jumlah" autocomplete="off"></div>
   <div data-show="expense income">
     <div class="lbl">Untuk apa?</div>
@@ -1202,7 +1207,7 @@ input,textarea{caret-color:var(--accent)}
   <div class="sbar"><span></span><b id="txName"></b><button class="round" data-close>Tutup</button></div>
   <div class="amount"><p id="txMeta"></p><div class="show" id="txAmt"></div></div>
   <div class="form" id="txRows"></div>
-  <div class="btns"><button class="black" id="txMove" hidden>Pindah dompet</button><button class="black" id="txEdit">Ubah</button><button class="white danger" id="txDel">Hapus</button></div>
+  <div class="btns"><button class="black" id="txRecv" hidden>Terima bayaran</button><button class="black" id="txMove" hidden>Pindah dompet</button><button class="black" id="txEdit">Ubah</button><button class="white danger" id="txDel">Hapus</button></div>
   <div class="foot">Salah kategori atau ternyata tidak perlu? Ubah kategori, pindahkan ke pos lain, atau hapus.</div>
 </div>
 
@@ -1755,7 +1760,7 @@ function renderFlexi(){
   var html='<div class="wtot fx"><small>Sisa utang Flexi Cash</small><b>Rp '+rp(withSch.length?totalLeft:(f.owed||0))+'</b>'+
     '<div class="fxrow"><span>Bayar berikutnya · '+dshort(f.next_due||S.today)+'</span><strong>Rp '+rp(nextTotal||f.monthly)+'</strong></div>'+
     (lastEnd?'<div class="fxrow"><span>Lunas semua</span><strong>'+ymLbl(lastEnd)+'</strong></div>':'')+
-    (f.owed!=null&&withSch.length&&Math.abs(f.owed-totalLeft)>1000?'<div class="fxwarn">Saldo dompet Flexi di app Rp '+rp(f.owed)+' — beda '+rp(Math.abs(f.owed-totalLeft))+' dari jadwal bank</div>':'')+
+    (f.owed!=null&&withSch.length&&Math.abs(f.owed-totalLeft)>10000?/* interest of a new loan is booked as a fee when it's paid, so small gaps are normal */'<div class="fxwarn">Saldo dompet Flexi di app Rp '+rp(f.owed)+' — beda '+rp(Math.abs(f.owed-totalLeft))+' dari jadwal bank</div>':'')+
     (f.limit?'<div class="fxlim">limit Rp '+rp(f.limit)+'</div>':'')+'</div>';
   // 2 — who pays what for the next 8th; sisters usually round up, extra is fine
   html+='<div class="sec"><h2>Siapa bayar berapa</h2><span class="muted" style="font-size:13px">untuk '+dshort(f.next_due||S.today)+'</span></div><div class="list">'+
@@ -1807,7 +1812,7 @@ function setType(t){form.type=t;document.querySelectorAll('#typeSeg button').for
   $('walletLbl').textContent=t==='income'?'Masuk ke':'Bayar pakai';
   if(!editId)$('addTitle').textContent={expense:'Pengeluaran',income:'Pemasukan',transfer:'Transfer'}[t];
   if(t!=='transfer'){var cur=catById(form.cat);if(!cur||cur.kind!==(t==='income'?'income':'expense'))form.cat=null;drawTiles()}
-  personNote();updMap();nextRowUpd();
+  personNote();updMap();nextRowUpd();owedHint();
 }
 function fillBuckets(sel){var side=mySide();$('bucket').innerHTML='<option value="">Tanpa pos</option>'+side.map(function(p){return '<option value="'+p.id+'"'+(p.id===sel?' selected':'')+'>'+esc(p.name)+'</option>'}).join('');bucketLook()}
 function bucketLook(){var b=$('bucket'),pl=$('bucketPill');pl.classList.toggle('none',!b.value);pl.textContent=b.selectedOptions[0]?b.selectedOptions[0].text:'Tanpa pos'}
@@ -1833,6 +1838,12 @@ function fsHint(){var el=$('fsHint');if(!el)return;if(form.type!=='expense'){el.
   var tips=(form.people||[]).map(function(n){return [n,titipOpen(n)]}).filter(function(x){return x[1]>0});
   if(!tips.length){el.hidden=true;return}var tot=tips.reduce(function(s,x){return s+x[1]},0);
   el.hidden=false;el.innerHTML='<span class="nt">'+tips.map(function(x){return esc(x[0])+' titip Rp '+rp(x[1])}).join(', ')+'</span><button data-fsuse="'+tot+'">Pakai</button>'}
+/* "Masih utang" (20 Oct): people I lent money to and who haven't paid it all back (S.lent from the server). Shown on Masuk; Terima = payback */
+function owedHint(){var el=$('owedHint');if(!el)return;var L=S.lent||[];if(form.type!=='income'||editId||!L.length){el.hidden=true;return}
+  el.hidden=false;el.innerHTML=L.map(function(o){return '<div class="owrow"><span class="nt"><b>'+esc(o.person)+'</b> masih utang Rp '+rp(o.left)+'</span><button data-recv="'+esc(o.person)+'">Terima</button></div>'}).join('')}
+function openReceive(person){var o=(S.lent||[]).filter(function(x){return x.person===person})[0];if(!o)return;
+  openLoanMove('collect',person);lmRecv=o;$('lmTitle').textContent='Terima dari '+person;
+  $('lmSub').textContent='Masih utang Rp '+rp(o.left)+(o.flexi?' · uang dari Flexi Cash, jadi mengurangi pos Flexi':'')+'. Bayar sebagian? Ubah jumlahnya.';$('lmAmt').value=rp(o.left)}
 function addPerson(name){name=String(name||'').trim();form.addingPerson=false;setTimeout(fsHint,0);
   if(name){form.people=form.people||[];if(form.people.indexOf(name)<0)form.people.push(name);S.friends=S.friends||[];if(S.friends.indexOf(name)<0)S.friends.push(name)}
   drawPeople();if(name){var el=$('ppl');el.scrollLeft=0}}
@@ -2057,6 +2068,7 @@ document.addEventListener('click',function(e){
   if(t.closest('[data-cardpay]')){openAdd({type:'transfer',from:S.default_wallet,to:S.card&&S.card&&cardWalletId(),amount:S.card.next_bill});return}
   if(t.closest('[data-adjcard]')){openAdjust(cardWalletId(),S.card.name,S.card.balance);return}
   if((g=t.closest('[data-collect]'))){openLoanMove('collect',g.dataset.collect);return}
+  if((g=t.closest('[data-recv]'))){openReceive(g.dataset.recv);return}
   if(t.closest('[data-repay]')){openLoanMove('repay');return}
 });
 function cardWalletId(){var w=S.wallets.filter(function(x){return x.type==='credit'})[0];return w&&w.id}
@@ -2102,10 +2114,13 @@ function openTx(id){var e=(S.recent||[]).concat(S.cycleEntries||[],HIST?HIST.ent
   var editable=['expense','income','transfer'].indexOf(e.type)>=0&&!(e.link_id&&e.type==='income');
   $('txEdit').hidden=!editable;
   $('txMove').hidden=!(e.type==='income'&&e.link_id); // uang belanja from the partner: locked, but its wallet can move
+  var ow=e.type==='lend'&&(S.lent||[]).filter(function(o){return o.person.toLowerCase()===String(e.person||'').trim().toLowerCase()})[0];
+  $('txRecv').hidden=!ow;if(ow)$('txRows').innerHTML+='<div class="fr"><span>Belum dibayar</span><span class="ml-auto muted">Rp '+rp(ow.left)+'</span></div>';$('txRecv').dataset.p=ow?ow.person:'';
   openSheet('tx')}
 function typeLabel(t){return {transfer:'Transfer',adjust:'Adjustments',debt:'Debt',lend:'Loan',collect:'Debt Collection',repay:'Repayment'}[t]||t}
 $('txEdit').onclick=function(){openAdd({edit:curTx})};
 $('txMove').onclick=function(){openPickWallet(curTx)};
+$('txRecv').onclick=function(){openReceive(this.dataset.p)};
 $('txDel').onclick=function(){act('deleteEntry',{id:curTx.id},'Catatan dihapus').then(closeAll)};
 
 /* pots */
@@ -2181,18 +2196,20 @@ $('wdDelete').onclick=function(){var b=this;if(!b.dataset.sure){b.dataset.sure='
 $('nwSave').onclick=function(){if(!$('nwName').value.trim()){toast('Isi nama dompet',true);return}act('addWallet',{currency:$('nwCur').value,name:$('nwName').value.trim(),balance:$('nwCur').value!=='IDR'?(parseFloat(String($('nwBal').value).replace(/[^\d,]/g,'').replace(',','.'))||0):num($('nwBal').value),type:nwType,include_total:$('nwInc').getAttribute('aria-checked')==='true'},'Dompet ditambahkan').then(closeAll)};
 
 /* loans */
-var nlWho=null, lmMode=null, lmPerson=null;
+var nlWho=null, lmMode=null, lmPerson=null, lmRecv=null;
 function walletOptions(sel){return S.wallets.filter(function(w){return w.type!=='credit'}).map(function(w){return '<option value="'+w.id+'"'+(w.id===sel?' selected':'')+'>'+esc(w.name)+'</option>'}).join('')}
 function openLoan(){nlWho=S.flexi.people[0];$('nlWho').innerHTML=S.flexi.people.map(function(p,i){return '<button class="wc person" aria-pressed="'+(i===0)+'" data-p="'+esc(p)+'"><b>👩 '+esc(p)+'</b><span>saudara</span></button>'}).join('');
   ['nlAmt','nlOther','nlMonths','nlMonthly'].forEach(function(x){$(x).value=''});$('nlWallet').innerHTML=walletOptions(S.default_wallet);
   var d=new Date(S.today+'T00:00:00');d.setMonth(d.getMonth()+1);$('nlStart').value=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2);openSheet('newLoan')}
 $('nlSave').onclick=function(){var a=num($('nlAmt').value);if(!a){toast('Isi jumlah pinjaman',true);return}
   act('newLoan',{amount:a,person:$('nlOther').value.trim()||nlWho,wallet_id:$('nlWallet').value,months:num($('nlMonths').value),monthly:num($('nlMonthly').value),start_pay:$('nlStart').value},'Pinjaman dicatat').then(closeAll)};
-function openLoanMove(mode,person){lmMode=mode;lmPerson=person;$('lmTitle').textContent=mode==='collect'?'Terima dari '+person:'Bayar cicilan Flexi';
+function openLoanMove(mode,person){lmMode=mode;lmPerson=person;lmRecv=null;$('lmTitle').textContent=mode==='collect'?'Terima dari '+person:'Bayar cicilan Flexi';
   $('lmSub').textContent=mode==='collect'?'Bagian '+person+' untuk cicilan Flexi':'Total cicilan bulan ini Rp '+rp(S.flexi.monthly);$('lmAmt').value=mode==='repay'?rp(S.flexi.monthly):'';
   $('lmWallet').innerHTML=walletOptions(S.default_wallet);$('lmDate').value=S.today;openSheet('loanMove')}
 $('lmSave').onclick=function(){var a=num($('lmAmt').value);if(!a){toast('Isi jumlahnya',true);return}
-  act(lmMode,{amount:a,person:lmPerson,wallet_id:$('lmWallet').value,date:$('lmDate').value,plan_id:lmMode==='repay'?'':''},lmMode==='collect'?'Diterima':'Cicilan dicatat').then(closeAll)};
+  var pl={amount:a,person:lmPerson,wallet_id:$('lmWallet').value,date:$('lmDate').value,plan_id:''};
+  if(lmRecv){pl.plan_id=lmRecv.flexi?'flexi':'';pl.note='Bayar pinjaman'+(a<lmRecv.left?' (sebagian)':'')}
+  act(lmMode,pl,lmMode==='collect'?'Diterima':'Cicilan dicatat').then(closeAll)};
 
 $('logout').onclick=function(){flush().then(function(){call('logout',{token:TOKEN}).catch(function(){});TOKEN=null;store('ek_queue',null);Q=[];showLogin()})};
 
@@ -2282,7 +2299,7 @@ var EN={
 '+ Tambah pos':'+ Add pot','belum dibagi ke pos':'not assigned to pots','Menu utama':'Main menu','Tampilan':'Display',
 'Jenis: Harian = terpakai sedikit-sedikit (pakai bar). Tetap = dibayar sekali sebulan. Siklus yang sudah lewat tidak berubah.':'Type: Daily = spent bit by bit (with a bar). Fixed = paid once a month. Past cycles don’t change.',
 'Misal: BSI, Gopay, Cash':'e.g. BSI, Gopay, Cash','Misal: BSI':'e.g. BSI','Misal: Umrah':'e.g. Umrah','Misal: Zakir':'e.g. Zakir','Misal: bayar sewa 2027':'e.g. 2027 rent',
-'Sudah ada':'Already exists','Diatur oleh':'Managed by','Dipakai':'Used','Dipinjam':'Borrowed','Terima dari':'Received from',
+'Sudah ada':'Already exists','Diatur oleh':'Managed by','Dipakai':'Used','Dipinjam':'Borrowed','Terima dari':'Received from','Terima bayaran':'Receive payment','Belum dibayar':'Not paid yet','Terima':'Receive',
 'Penyesuaian saldo':'Balance adjustment','Pinjam dari Flexi':'Borrowed from Flexi','Dipinjamkan':'Lent','Terima cicilan saudara':'Installment from sister','Bayar cicilan':'Installment paid',
 'Pilih Innamul atau Putri dulu':'Pick Innamul or Putri first','PIN salah':'Wrong PIN','Pilih dompet':'Pick a wallet','Pilih dompet asal dan tujuan yang berbeda':'Pick two different wallets',
 'Nama dompet wajib diisi':'Wallet name is required','Tidak diizinkan':'Not allowed','Tabungan diatur oleh Putri':'Savings are managed by Putri','Catatan tidak ditemukan':'Entry not found',
@@ -2537,9 +2554,9 @@ function drawReview(){
   var by={};list.forEach(function(e){var k=e.category_id||e.label;var o=by[k]=by[k]||{k:k,label:e.label,icon:e.icon,sum:0,n:0};o.sum+=e.amount;o.n++});
   var cats=Object.keys(by).map(function(k){return by[k]}).sort(function(a,b){return b.sum-a.sum});
   var top=cats.slice(0,8),rest=cats.slice(8);if(rest.length)top.push({k:'__other',label:'Lainnya ('+rest.length+')',icon:'•',sum:rest.reduce(function(s,x){return s+x.sum},0),n:rest.reduce(function(s,x){return s+x.n},0)});
-  var mx=top[0].sum||1;
+  var mx=Math.max.apply(null,top.map(function(x){return x.sum}).concat([1])); // "Lainnya" can be bigger than the top category (20 Oct: its bar ran off the card)
   out+='<div class="rvcard plan"><h3>Per kategori<span>ketuk untuk lihat catatannya</span></h3>'+top.map(function(x){
-    return '<button class="hrow'+(RV.cat&&RV.cat!==x.k?' faded':'')+'" aria-pressed="'+(RV.cat===x.k)+'" data-rvcat="'+esc(x.k)+'"><span class="ic">'+emo(x.icon)+'</span><span class="nm">'+esc(x.label)+'<i style="width:'+(x.sum/mx*100)+'%"></i></span><span class="v">'+rp(x.sum)+'<small>'+Math.round(x.sum/total*100)+'% · '+x.n+'×</small></span></button>'}).join('')+'</div>';
+    return '<button class="hrow'+(RV.cat&&RV.cat!==x.k?' faded':'')+'" aria-pressed="'+(RV.cat===x.k)+'" data-rvcat="'+esc(x.k)+'"><span class="ic">'+emo(x.icon)+'</span><span class="nm">'+esc(x.label)+'<i style="width:'+Math.min(100,x.sum/mx*100)+'%"></i></span><span class="v">'+rp(x.sum)+'<small>'+Math.round(x.sum/total*100)+'% · '+x.n+'×</small></span></button>'}).join('')+'</div>';
   // per day: v3 = 7-day style bars (calendar has its own page), v2 = calendar (18 Oct)
   if(LAY3){
   var perDay=[];for(var i=0;i<days;i++){var d=cycShift({from:c.from,to:c.from},i);perDay.push({d:d,sum:0})}
@@ -2581,7 +2598,7 @@ document.addEventListener('change',function(e){var s=e.target.closest&&e.target.
 /* ======================= pull down to refresh + automatic update check =======================
    Pull down at the top of a main screen: fetches the newest numbers, and if a new version of the
    app was uploaded to GitHub it reloads into it. Opening the app also checks for a new version. */
-var BUILD='20261018-2048';
+var BUILD='20261020-1027';
 function checkUpdate(){
   if(IN_GOOGLE||LOCAL_DEV||!/^https:/.test(location.protocol))return Promise.resolve(false);
   return fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
