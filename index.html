@@ -2452,7 +2452,13 @@ document.querySelectorAll('[data-lang-set]').forEach(function(b){b.setAttribute(
   document.addEventListener('pointerup',lift,true);document.addEventListener('pointercancel',lift,true);
   function startedOnCur(){var l=downOn&&downOn.closest&&downOn.closest('label');return downOn===cur||!!(l&&l.contains(cur))}
   document.addEventListener('click',function(e){if(cur&&!startedOnCur()&&!pad.contains(e.target)&&e.target!==cur&&!isNum(e.target)){pend=false;hide()}},true);
-  pad.addEventListener('mousedown',function(e){e.preventDefault()});pad.addEventListener('touchstart',function(e){e.preventDefault();var b=e.target.closest('[data-k]');if(b)press(b.dataset.k)},{passive:false});
+  pad.addEventListener('mousedown',function(e){e.preventDefault()});pad.addEventListener('touchstart',function(e){
+    // quick-amount row slides sideways: don't press on touch-down there, only on a lift without moving (20 Oct, Innamul)
+    if(e.target.closest('#kq')){var t0=e.touches[0];kqT={x:t0.clientX,y:t0.clientY,moved:false};return}
+    e.preventDefault();var b=e.target.closest('[data-k]');if(b)press(b.dataset.k)},{passive:false});
+  var kqT=null;
+  pad.addEventListener('touchmove',function(e){if(kqT){var t=e.touches[0];if(Math.abs(t.clientX-kqT.x)>8||Math.abs(t.clientY-kqT.y)>8)kqT.moved=true}},{passive:true});
+  pad.addEventListener('touchend',function(e){if(!kqT)return;var m=kqT.moved;kqT=null;e.preventDefault();if(m)return;var b=e.target.closest('[data-k]');if(b)press(b.dataset.k)},{passive:false});
   pad.addEventListener('click',function(e){var b=e.target.closest('[data-k]');if(b)press(b.dataset.k)});
   function press(k){
     if(k==='done'){toks=[];$('kpShow').textContent='';if(cur)cur.blur();hide();return}
@@ -2674,7 +2680,7 @@ document.addEventListener('change',function(e){var s=e.target.closest&&e.target.
 /* ======================= pull down to refresh + automatic update check =======================
    Pull down at the top of a main screen: fetches the newest numbers, and if a new version of the
    app was uploaded to GitHub it reloads into it. Opening the app also checks for a new version. */
-var BUILD='20261020-2145';
+var BUILD='20261020-2150';
 function checkUpdate(){
   if(IN_GOOGLE||LOCAL_DEV||!/^https:/.test(location.protocol))return Promise.resolve(false);
   return fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
