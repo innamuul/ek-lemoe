@@ -292,8 +292,10 @@ body.sheet-open{overflow:hidden}
 .kgrid.calc{grid-template-columns:repeat(4,1fr)}
 .kgrid.calc button.op{color:var(--accent);font-size:26px}
 .kgrid.calc button.eq{grid-row:span 2;height:auto;background:var(--accent);color:var(--on-accent,#fff);border-color:transparent}
-.kgrid.calc button.z{grid-column:span 2}
-.kpad.dec .kgrid.calc button.op,.kpad.dec .kgrid.calc button.eq{opacity:.3;pointer-events:none}
+.kgrid.calc button.cm{font-size:30px;line-height:1}
+.kpad.dec .kgrid.calc button.op:not(.eq){opacity:.3;pointer-events:none}
+.kgrid.calc button.eq.txt{font-size:18px;font-weight:700}
+.kbar{min-height:24px;padding:2px 6px 6px}
 /* quick amounts: one row that slides sideways */
 .kq{display:flex;gap:8px;overflow-x:auto;padding:0 2px 8px;scrollbar-width:none;-webkit-overflow-scrolling:touch}.kq::-webkit-scrollbar{display:none}
 .kq button{flex:0 0 auto;padding:8px 14px;border-radius:999px;background:var(--paper);border:1px solid var(--line);font-weight:600;font-size:15px;font-family:var(--f-round)}
@@ -1359,13 +1361,16 @@ var $=function(id){return document.getElementById(id)};
 var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
 /* rpIn = always the full number (input fields, the calculator). rp/short = what the app shows: '••••' while numbers
    are hidden (👁, every page, 20 Oct), and short "3rb / 1,43jt" when Akun › Format angka = Ringkas */
-var rpIn=function(n){n=Math.round(+n||0);return (n<0?'−':'')+Math.abs(n).toLocaleString('id-ID')};
+var rpIn=function(n){n=Math.round((+n||0)*100)/100;var f=n%1?2:0;return (n<0?'−':'')+Math.abs(n).toLocaleString('id-ID',{minimumFractionDigits:f,maximumFractionDigits:f})};
+/* what an amount field shows while typing: dots for thousands, the comma and up to 2 decimals kept as typed */
+var fmtIn=function(raw){var t=String(raw||'').replace(/[^\d,]/g,''),i=t.indexOf(',');if(i<0){var v=+t;return v?rpIn(v):''}
+  var a=t.slice(0,i),d=t.slice(i+1).replace(/,/g,'').slice(0,2);return (a?rpIn(+a):'0')+','+d};
 var HIDE=(function(){try{return localStorage.getItem('ek_hide')==='1'}catch(e){return false}})();
 var NUMF=(function(){try{return localStorage.getItem('ek_numfmt')==='short'}catch(e){return false}})();
 var rp=function(n){return HIDE?'••••':NUMF?shortRaw(n):rpIn(n)};
 var short=function(n){return HIDE?'••••':shortRaw(n)};
 var shortRaw=function(n){n=Math.round(+n||0);var en=(function(){try{return localStorage.getItem('ek_lang')}catch(e){}})()==='en';var a=Math.abs(n),s=n<0?'−':'';if(a>=1e6)return s+(a/1e6).toFixed(a>=1e7?1:2).replace(/\.?0+$/,'').replace('.',en?'.':',')+(en?'M':'jt');if(a>=1e3)return s+Math.round(a/1e3)+(en?'k':'rb');return s+a};
-var num=function(v){return +(String(v||'').replace(/[^\d]/g,''))||0};
+var num=function(v){var t=String(v||'').replace(/[^\d,]/g,''),i=t.indexOf(',');if(i<0)return +t||0;return Math.round((parseFloat(t.slice(0,i)+'.'+t.slice(i+1).replace(/,/g,''))||0)*100)/100};
 var GO='<span class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg></span>';
 var MONTHS=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
 var dshort=function(ymd){var p=String(ymd).split('-');return +p[2]+' '+MONTHS[+p[1]-1]};
@@ -1858,9 +1863,14 @@ function drawPeople(){var el=$('ppl');if(!el)return;var sel=form.people||[];var 
   if(form.addingPerson)setTimeout(function(){var i=$('pNew');if(i){i.setAttribute('autocapitalize','words');i.focus();i.oninput=function(){peopleSug(i.value)};peopleSug('');i.onkeydown=function(ev){if(ev.key==='Enter'){ev.preventDefault();addPerson(i.value)}}}},30);
   else if($('pSug'))$('pSug').hidden=true;
 }
-function titipOpen(name){var seen={},inn=0,used=0;(S.recent||[]).concat(S.cycleEntries||[]).forEach(function(e){if(seen[e.id]||e.id===editId)return;seen[e.id]=1;
-    var pp=String(e.with_people||'').split(',').map(function(x){return x.trim()});if(pp.indexOf(name)<0||!e.friend_share)return;
-    if(e.type==='income')inn+=e.friend_share/Math.max(1,pp.length);else if(e.type==='expense')used+=e.friend_share/Math.max(1,pp.length)});return Math.max(0,Math.round(inn-used))}
+function titipOpen(name){var seen={},list=[],bal={};
+  (S.recent||[]).concat(S.cycleEntries||[]).forEach(function(e){if(seen[e.id]||e.id===editId||!e.friend_share||(e.type!=='income'&&e.type!=='expense'))return;seen[e.id]=1;list.push(e)});
+  // oldest first; on the same day the money a friend gave comes before what it paid for
+  list.sort(function(a,b){return String(a.date).localeCompare(String(b.date))||(a.type==='income'?0:1)-(b.type==='income'?0:1)});
+  list.forEach(function(e){var pp=String(e.with_people||'').split(',').map(function(x){return x.trim()}).filter(String);if(!pp.length)return;
+    if(e.type==='income'){pp.forEach(function(n){bal[n]=(bal[n]||0)+e.friend_share/pp.length});return}
+    var rem=e.friend_share;pp.forEach(function(n){var t=Math.min(bal[n]||0,rem);if(t>0){bal[n]-=t;rem-=t}})}); // only people with titipan left pay
+  return Math.max(0,Math.round(bal[name]||0))}
 function fsHint(){var el=$('fsHint');if(!el)return;if(form.type!=='expense'){el.hidden=true;return}
   var tips=(form.people||[]).map(function(n){return [n,titipOpen(n)]}).filter(function(x){return x[1]>0});
   if(!tips.length){el.hidden=true;return}var tot=tips.reduce(function(s,x){return s+x[1]},0);
@@ -1908,8 +1918,8 @@ function openAdd(opts){
   drawPeople();fsHint();
   openSheet('add'); if(!e)setTimeout(function(){$('amt').focus()},350);
 }
-$('amt').addEventListener('input',function(){var v=num(this.value);this.value=v?'Rp '+rpIn(v):''});
-['fee','fshare','nwBal','npStart','npTarget','epTarget','adjReal','pmAmt','nlAmt','nlMonthly','lmAmt'].forEach(function(id){$(id).addEventListener('input',function(){if(this.dataset.dec)return;var v=num(this.value);this.value=v?rpIn(v):''})});
+$('amt').addEventListener('input',function(){var f=fmtIn(this.value);this.value=f?'Rp '+f:''});
+['fee','fshare','nwBal','npStart','npTarget','epTarget','adjReal','pmAmt','nlAmt','nlMonthly','lmAmt'].forEach(function(id){$(id).addEventListener('input',function(){if(this.dataset.dec)return;this.value=fmtIn(this.value)})});
 $('bucket').addEventListener('change',function(){bucketLook();updMap()});
 $('saveEntry').onclick=function(){
   var p={type:form.type,amount:num($('amt').value),date:$('date').value,note:$('note').value.trim()};
@@ -2429,8 +2439,8 @@ document.querySelectorAll('[data-lang-set]').forEach(function(b){b.setAttribute(
   var pad=document.createElement('div');pad.className='kpad';pad.id='kpad';pad.setAttribute('aria-hidden','true');
   // calculator keys like Money Lover (20 Oct): C ÷ × ⌫ / − + / = ; the field always holds the result, the sum shows in the bar
   var KL={C:'C','/':'÷','*':'×',del:'⌫','-':'−','+':'+','=':'='};
-  pad.innerHTML='<div class="kbar"><span id="kpShow" class="nt"></span><button data-k="done">Selesai</button></div><div class="kq" id="kq">'+[1e3,2e3,5e3,1e4,2e4,5e4,1e5,1e6].map(function(v){return '<button data-k="q'+v+'">+'+shortRaw(v)+'</button>'}).join('')+'</div><div class="kgrid calc">'+
-    ['C','/','*','del','7','8','9','-','4','5','6','+','1','2','3','=','0','000'].map(function(k){var op=KL[k]&&k!=='del';return '<button data-k="'+k+'" class="'+(op?'op':'')+(k==='='?' eq':'')+(k==='0'?' z':'')+(k==='del'?' op':'')+'"'+(k==='del'?' aria-label="Hapus angka"':'')+'>'+(KL[k]||k)+'</button>'}).join('')+'</div>';
+  pad.innerHTML='<div class="kbar"><span id="kpShow" class="nt"></span></div><div class="kq" id="kq">'+[1e3,2e3,5e3,1e4,2e4,5e4,1e5,1e6].map(function(v){return '<button data-k="q'+v+'">+'+shortRaw(v)+'</button>'}).join('')+'</div><div class="kgrid calc">'+
+    ['C','/','*','del','7','8','9','-','4','5','6','+','1','2','3','=','0','000',','].map(function(k){var op=KL[k]&&k!=='del';return '<button data-k="'+k+'" class="'+(op?'op':'')+(k==='='?' eq':'')+(k===','?' cm':'')+(k==='del'?' op':'')+'"'+(k==='del'?' aria-label="Hapus angka"':'')+'>'+(KL[k]||k)+'</button>'}).join('')+'</div>';
   document.body.appendChild(pad);
   var cur=null;
   function isNum(el){return el&&el.tagName==='INPUT'&&el.id!=='pin'&&(el.getAttribute('inputmode')==='numeric'||el.dataset.num)}
@@ -2438,14 +2448,16 @@ document.querySelectorAll('[data-lang-set]').forEach(function(b){b.setAttribute(
   mark(document);new MutationObserver(function(ms){ms.forEach(function(m){m.addedNodes.forEach(function(n){if(n.nodeType===1)mark(n)})})}).observe(document.body,{childList:true,subtree:true});
   var toks=[]; // calculator: ['25000','+','13500'] while a sum is open
   function isOp(t){return t==='+'||t==='-'||t==='*'||t==='/'}
-  function calc(){var a=[];toks.forEach(function(t){a.push(isOp(t)?t:+t||0)});if(isOp(a[a.length-1]))a.pop();
+  function toIn(v){return v?(v%1?v.toFixed(2):String(v)).replace('.',','):''}
+  function calc(){var a=[];toks.forEach(function(t){a.push(isOp(t)?t:num(t))});if(isOp(a[a.length-1]))a.pop();
     var b=[a[0]||0];for(var i=1;i<a.length;i+=2){var o=a[i],v=a[i+1];if(o==='*')b[b.length-1]*=v;else if(o==='/')b[b.length-1]=v?b[b.length-1]/v:b[b.length-1];else b.push(o,v)}
-    var r=b[0];for(var j=1;j<b.length;j+=2)r=b[j]==='+'?r+b[j+1]:r-b[j+1];return Math.max(0,Math.round(r))}
-  function paint(){var r=calc();cur.value=r?String(r):'';cur.dispatchEvent(new Event('input',{bubbles:true}));
+    var r=b[0];for(var j=1;j<b.length;j+=2)r=b[j]==='+'?r+b[j+1]:r-b[j+1];return Math.max(0,Math.round(r*100)/100)}
+  function paint(typing){var r=calc(),last=toks[toks.length-1],v=typing&&!isOp(last)?last:toIn(r);cur.value=v&&v!=='0'?v:'';cur.dispatchEvent(new Event('input',{bubbles:true}));
     // the bar is right-to-left so a long sum shows its end; the <bdi> keeps the sum itself reading left-to-right
-    $('kpShow').innerHTML=toks.length>1?'<bdi dir="ltr">'+toks.map(function(t){return isOp(t)?' '+KL[t]+' ':rpIn(+t||0)}).join('')+' = <b>'+rpIn(r)+'</b></bdi>':''}
-  function show(){$('kpShow').textContent='';toks=[];pad.classList.toggle('dec',!!(cur&&cur.dataset.dec));var k0=pad.querySelector('[data-k="000"]');if(k0)k0.textContent=cur&&cur.dataset.dec?',':'000';document.body.classList.add('kp-open');pad.classList.add('on');setTimeout(function(){cur&&cur.scrollIntoView({block:'center',behavior:'smooth'})},60)}
-  function hide(){cur=null;document.body.classList.remove('kp-open');pad.classList.remove('on')}
+    $('kpShow').innerHTML=toks.length>1?'<bdi dir="ltr">'+toks.map(function(t){return isOp(t)?' '+KL[t]+' ':(fmtIn(t)||'0')}).join('')+(typing||toks.length<3?'':' = <b>'+rpIn(r)+'</b>')+'</bdi>':''}
+  function eqUpd(){var b=pad.querySelector('.kgrid .eq');if(!b)return;var sum=toks.length>0;b.dataset.k=sum?'=':'done';b.textContent=sum?'=':'Selesai';b.classList.toggle('txt',!sum)}
+  function show(){$('kpShow').textContent='';toks=[];setTimeout(eqUpd,0);pad.classList.toggle('dec',!!(cur&&cur.dataset.dec));document.body.classList.add('kp-open');pad.classList.add('on');setTimeout(function(){cur&&cur.scrollIntoView({block:'center',behavior:'smooth'})},60)}
+  function hide(){if(cur&&toks.length){var r0=calc();cur.value=toIn(r0);cur.dispatchEvent(new Event('input',{bubbles:true}))}toks=[];$('kpShow').textContent='';cur=null;document.body.classList.remove('kp-open');pad.classList.remove('on')}
   // closing the pad mid-tap drops the sheet ~330px, so the finger lifts on something else (e.g. Batal → the dim layer):
   // while a finger/mouse is down, wait for the tap to finish (the click handler below hides it; pointerup is the fallback)
   var pressing=false,pend=false;
@@ -2464,28 +2476,29 @@ document.querySelectorAll('[data-lang-set]').forEach(function(b){b.setAttribute(
   pad.addEventListener('touchmove',function(e){if(kqT){var t=e.touches[0];if(Math.abs(t.clientX-kqT.x)>8||Math.abs(t.clientY-kqT.y)>8)kqT.moved=true}},{passive:true});
   pad.addEventListener('touchend',function(e){if(!kqT)return;var m=kqT.moved;kqT=null;e.preventDefault();if(m)return;var b=e.target.closest('[data-k]');if(b)press(b.dataset.k)},{passive:false});
   pad.addEventListener('click',function(e){var b=e.target.closest('[data-k]');if(b)press(b.dataset.k)});
-  function press(k){
+  function press(k){press0(k);eqUpd()}
+  function press0(k){
     if(k==='done'){toks=[];$('kpShow').textContent='';if(cur)cur.blur();hide();return}
     if(!cur)return;
     if(!cur.dataset.dec&&k.charAt(0)==='q'){ // quick amount chip: empty field → that amount, otherwise add it (like counting notes)
       var qv=String(+k.slice(1));
       if(toks.length){if(isOp(toks[toks.length-1]))toks.push(qv);else toks.push('+',qv);paint();return}
-      var d0=String(cur.value).replace(/[^\d]/g,'');if(!d0||d0==='0'){cur.value=qv;cur.dispatchEvent(new Event('input',{bubbles:true}));return}
+      var d0=String(cur.value).replace(/[^\d,]/g,'');if(!d0||d0==='0'){cur.value=qv;cur.dispatchEvent(new Event('input',{bubbles:true}));return}
       toks=[d0,'+',qv];paint();return}
     if(!cur.dataset.dec){ // calculator
       if(k==='C'){toks=[];cur.value='';cur.dispatchEvent(new Event('input',{bubbles:true}));$('kpShow').textContent='';return}
       if(k==='='){if(toks.length){paint();toks=[];$('kpShow').textContent=''}return}
-      if(isOp(k)){if(!toks.length){var v0=String(cur.value).replace(/[^\d]/g,'');if(!v0)return;toks=[v0]}
+      if(isOp(k)){if(!toks.length){var v0=String(cur.value).replace(/[^\d,]/g,'');if(!v0)return;toks=[v0]}
         if(isOp(toks[toks.length-1]))toks[toks.length-1]=k;else toks.push(k);paint();return}
       if(toks.length){var last=toks[toks.length-1];
-        if(k==='del'){if(isOp(last))toks.pop();else{last=last.slice(0,-1);if(last)toks[toks.length-1]=last;else toks.pop()}if(toks.length===1)toks=[];if(!toks.length){$('kpShow').textContent='';return}paint();return}
-        if(isOp(last)){if(k==='000')return;toks.push(k)}else{if(k==='000'){if(last!=='0')toks[toks.length-1]=last+'000'}else toks[toks.length-1]=(last==='0'?'':last)+k}
-        if(String(toks[toks.length-1]).length>13)return;paint();return}
+        if(k==='del'){if(isOp(last))toks.pop();else{last=last.slice(0,-1);if(last)toks[toks.length-1]=last;else toks.pop()}if(toks.length===1)toks=[];if(!toks.length){$('kpShow').textContent='';return}paint(true);return}
+        if(isOp(last)){if(k==='000')return;toks.push(k===','?'0,':k)}
+        else if(k===','){if(last.indexOf(',')<0)toks[toks.length-1]=last+','}
+        else if(k==='000'){if(last!=='0'&&last.indexOf(',')<0)toks[toks.length-1]=last+'000'}
+        else if(!/,\d\d$/.test(last))toks[toks.length-1]=(last==='0'?'':last)+k
+        if(String(toks[toks.length-1]).length>13)return;paint(true);return}
     }
-    if(cur.dataset.dec){var t=String(cur.value).replace(/[^\d,]/g,'');if(k==='del')t=t.slice(0,-1);else if(k==='000'){if(t.indexOf(',')<0)t=(t||'0')+','}else if(!/,\d\d$/.test(t))t=(t==='0'?'':t)+k;cur.value=t;cur.dispatchEvent(new Event('input',{bubbles:true}));return}
-    var d=String(cur.value).replace(/[^\d]/g,'');
-    if(k==='del')d=d.slice(0,-1);else if(k==='000'){if(d&&d!=='0')d+='000'}else d=(d==='0'?'':d)+k;
-    if(d.length>13)return; cur.value=d; cur.dispatchEvent(new Event('input',{bubbles:true}));
+    {var t=String(cur.value).replace(/[^\d,]/g,'');if(k==='del')t=t.slice(0,-1);else if(k===','){if(t.indexOf(',')<0)t=(t||'0')+','}else if(k==='000'){if(t.indexOf(',')<0&&t&&t!=='0')t+='000'}else if(!/,\d\d$/.test(t))t=(t==='0'?'':t)+k;if(t.length>16)return;cur.value=t;cur.dispatchEvent(new Event('input',{bubbles:true}));return}
   }
   /* sheets close → pad closes */
   var oc=window.closeAll;window.closeAll=function(){hide();return oc.apply(this,arguments)};
@@ -2684,7 +2697,7 @@ document.addEventListener('change',function(e){var s=e.target.closest&&e.target.
 /* ======================= pull down to refresh + automatic update check =======================
    Pull down at the top of a main screen: fetches the newest numbers, and if a new version of the
    app was uploaded to GitHub it reloads into it. Opening the app also checks for a new version. */
-var BUILD='20261020-2152';
+var BUILD='20261021-0953';
 function checkUpdate(){
   if(IN_GOOGLE||LOCAL_DEV||!/^https:/.test(location.protocol))return Promise.resolve(false);
   return fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
