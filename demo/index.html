@@ -2402,11 +2402,11 @@ function quickAdd(p){
     putEntry(v);applyLocal(v,1)}
   else{var v2=viewOf(p.cid,p);putEntry(v2);applyLocal(v2,1)}
   if(p.fee>0){var f=viewOf(newId(),{date:p.date,type:'expense',amount:p.fee,wallet_id:p.wallet_id,category_id:'fees',plan_id:(catById('fees')||{}).bucket||'',note:'Biaya admin'});putEntry(f);applyLocal(f,1)}
-  enqueue('addEntry',p);render();
+  enqueue('addEntry',p);histForget();render();
 }
 function quickEdit(p){var old=findEntry(p.id);
   if(old){applyLocal(old,-1);dropEntry(old.id);var v=viewOf(old.id,p);if(old.type==='transfer'&&!p.to_wallet_id)v.to_wallet_id=old.to_wallet_id;putEntry(v);applyLocal(v,1)}
-  enqueue('editEntry',p);render()}
+  enqueue('editEntry',p);histForget();render()}
 function quickDelete(id){var old=findEntry(id);if(old){applyLocal(old,-1);dropEntry(id)}enqueue('deleteEntry',{id:id});render()}
 function quickPaid(planId){var p=mySide().filter(function(x){return x.id===planId})[0];if(!p)return;p.paid=!p.paid;enqueue('togglePaid',{plan_id:planId,paid:p.paid});render()}
 function quickSettle(id){(S.shared||[]).forEach(function(x){if(x.id===id)x.settled=true});enqueue('settle',{id:id});render();toast('Ditandai impas')}
@@ -2427,6 +2427,8 @@ function start(){
   if(cached&&cached.me){S=cached;$('loginView').hidden=true;$('appView').hidden=false;render();reopen();openingFx()}
   if(Q.length){flush();return}
   call('state').then(function(st){if(Q.length)return;S=st;cacheState();$('loginView').hidden=true;$('appView').hidden=false;render();reopen();openingFx()}).catch(function(e){if(e!=='LOGIN'&&!cached)toast(e,true)})}
+// warm the month data Ringkasan / Kalender use, so their first open is instant too (22 Oct)
+setTimeout(function(){if(TOKEN&&S&&S.me)histLoad(null,true,function(){},function(){})},2500);
 // after a language switch (page reload) go straight back to Akun instead of Beranda
 function reopen(){var s=null;try{s=sessionStorage.getItem('ek_reopen');sessionStorage.removeItem('ek_reopen')}catch(e){}if(s)go(s)}
 
@@ -3043,12 +3045,23 @@ document.addEventListener('click',function(e){
 });
 function cardWalletId(){var w=S.wallets.filter(function(x){return x.type==='credit'})[0];return w&&w.id}
 
+/* month data (Transaksi, Ringkasan, Kalender): show the remembered copy at once, then refresh quietly.
+   Unsent changes go first (flush), so a just-saved entry never blinks away. Current month in Transaksi = what's on the phone. */
+var HC={};
+function histKey(date,budget){return (budget?'b:':'')+(date||'now')}
+function histLocal(){return {cycle:S.cycle,is_current:true,has_older:true,entries:(S.cycleEntries||[]).slice().sort(function(a,b){return String(b.date).localeCompare(String(a.date))})}}
+function histLoad(date,budget,show,fail){var k=histKey(date,budget),c=HC[k]||(!date&&!budget&&S&&S.cycle?histLocal():null);
+  if(c)show(c,true);
+  flush().then(function(){return call('history',budget?{date:date,budget:true}:{date:date})}).then(function(h){HC[k]=h;show(h,false)}).catch(function(e){if(!c)fail(e)});
+  return !!c}
+function histForget(id){Object.keys(HC).forEach(function(k){if(id){HC[k].entries=(HC[k].entries||[]).filter(function(e){return e.id!==id})}else if(/now$/.test(k))delete HC[k]})}
+
 /* all entries (one salary cycle at a time) */
 var HIST=null, histDate=null, allF='all';
 function openAll(date){histDate=date||null;go('all');loadHist()}
-function loadHist(){
-  $('allList').innerHTML='<div class="empty">Memuat…</div>';
-  call('history',{date:histDate}).then(function(h){HIST=h;drawAll()}).catch(function(e){$('allList').innerHTML='<div class="empty">'+esc(e)+'</div>'});
+function loadHist(){var want=histDate;
+  if(!histLoad(want,false,function(h){if(histDate!==want)return;HIST=h;drawAll()},function(e){$('allList').innerHTML='<div class="empty">'+esc(e)+'</div>'}))
+    $('allList').innerHTML='<div class="empty">Memuat…</div>';
 }
 function drawAll(){
   if(!HIST)return; var c=HIST.cycle;
@@ -3063,7 +3076,7 @@ function drawAll(){
     if(allF==='other'&&(e.type==='expense'||e.type==='income'))return false;
     return !q||[e.label,e.note,e.wallet,e.to_wallet,e.person].join(' ').toLowerCase().indexOf(q)>=0});
   if(!list.length){$('allList').innerHTML='<div class="empty" style="margin-top:16px">Tidak ada catatan.</div>';return}
-  var DN=['Min','Sen','Sel','Rab','Kam','Jum','Sab'], html='', day=null, buf=[], dayOut=0;
+  var DN=LANG==='en'?['Sun','Mon','Tue','Wed','Thu','Fri','Sat']:['Min','Sen','Sel','Rab','Kam','Jum','Sab'], html='', day=null, buf=[], dayOut=0;
   function flush(){if(!day)return;html+='<div class="dayh">'+DN[new Date(day+'T00:00:00').getDay()]+', '+dshort(day)+(dayOut?'<span>−'+rp(dayOut)+'</span>':'')+'</div><div class="list">'+buf.join('')+'</div>'}
   list.forEach(function(e){if(e.date!==day){flush();day=e.date;buf=[];dayOut=0}buf.push(txRow(e));if(e.type==='expense')dayOut+=e.amount});
   flush(); $('allList').innerHTML=html;
@@ -3091,7 +3104,10 @@ function typeLabel(t){return {transfer:'Transfer',adjust:'Adjustments',debt:'Deb
 $('txEdit').onclick=function(){openAdd({edit:curTx})};
 $('txMove').onclick=function(){openPickWallet(curTx)};
 $('txRecv').onclick=function(){openReceive(this.dataset.p)};
-$('txDel').onclick=function(){act('deleteEntry',{id:curTx.id},'Catatan dihapus').then(closeAll)};
+$('txDel').onclick=function(){var id=curTx.id;quickDelete(id);histForget(id);
+  [HIST,RV.cur,RV.prev,CAL.cur].forEach(function(h){if(h&&h.entries)h.entries=h.entries.filter(function(e){return e.id!==id})});
+  closeAll();toast('Catatan dihapus');
+  if($('all').classList.contains('on'))drawAll();if($('review').classList.contains('on')&&RV.cur)drawReview();if($('calendar').classList.contains('on')&&CAL.cur)drawCal()};
 
 /* pots */
 function openPot(id){var p=S.pots.filter(function(x){return x.id===id})[0];curPot=p;$('potName').textContent=p.name;$('potAmt').textContent='Rp '+rp(p.total);
@@ -3478,8 +3494,9 @@ function openReview(){RV.date=null;RV.cat='';RV.day=null;go('review');loadReview
 /* ===== Kalender page (v3, 18 Oct): month grid of one salary cycle, tap a day → its entries ===== */
 var CAL={date:null,cur:null,day:null};
 function openCal(){CAL.date=null;CAL.day=S.today;go('calendar');loadCal()}
-function loadCal(){$('calBody').innerHTML='<div class="empty" style="margin-top:16px">Memuat…</div>';
-  call('history',{date:CAL.date,budget:true}).then(function(h){CAL.cur=h;if(!h.is_current&&CAL.day&&(CAL.day<h.cycle.from||CAL.day>h.cycle.to))CAL.day=null;drawCal()}).catch(function(e){$('calBody').innerHTML='<div class="empty">'+esc(e)+'</div>'})}
+function loadCal(){var want=CAL.date;
+  if(!histLoad(want,true,function(h){if(CAL.date!==want)return;CAL.cur=h;if(!h.is_current&&CAL.day&&(CAL.day<h.cycle.from||CAL.day>h.cycle.to))CAL.day=null;drawCal()},function(e){$('calBody').innerHTML='<div class="empty">'+esc(e)+'</div>'}))
+    $('calBody').innerHTML='<div class="empty" style="margin-top:16px">Memuat…</div>'}
 $('calPrev').onclick=function(){CAL.date=cycShift(CAL.cur.cycle,-1);CAL.day=null;loadCal()};
 $('calNext').onclick=function(){CAL.date=cycShift(CAL.cur.cycle,1);CAL.day=null;loadCal()};
 function drawCal(){var H=CAL.cur;if(!H)return;var c=H.cycle,DAY=864e5;
@@ -3502,11 +3519,11 @@ function drawCal(){var H=CAL.cur;if(!H)return;var c=H.cycle,DAY=864e5;
   else html+='<div class="hint" style="margin-top:14px">Ketuk tanggal untuk melihat catatannya. '+(over?over+' hari pos harian lewat jatah.':'')+'</div>';
   $('calBody').innerHTML=html}
 function cycShift(c,n){var d=new Date((n<0?c.from:c.to)+'T00:00:00');d.setDate(d.getDate()+n);return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)}
-function loadReview(){
-  $('rvBody').innerHTML='<div class="empty" style="margin-top:16px">Memuat…</div>';
-  call('history',{date:RV.date,budget:true}).then(function(h){RV.cur=h;RV.prev=null;drawReview();
-    if(h.has_older)return call('history',{date:cycShift(h.cycle,-1),budget:true}).then(function(p){RV.prev=p;drawReview()});
-  }).catch(function(e){$('rvBody').innerHTML='<div class="empty">'+esc(e)+'</div>'});
+function loadReview(){var want=RV.date,prevAsked=false;RV.prev=null;
+  if(!histLoad(want,true,function(h){if(RV.date!==want)return;RV.cur=h;drawReview();
+      if(h.has_older&&!prevAsked){prevAsked=true;histLoad(cycShift(h.cycle,-1),true,function(p){if(RV.date!==want)return;RV.prev=p;drawReview()},function(){})}},
+    function(e){$('rvBody').innerHTML='<div class="empty">'+esc(e)+'</div>'}))
+    $('rvBody').innerHTML='<div class="empty" style="margin-top:16px">Memuat…</div>';
 }
 function rvKeep(e){ // which entries count, given the filters
   if(e.type!==RV.type)return false;
@@ -3610,7 +3627,7 @@ document.addEventListener('change',function(e){var s=e.target.closest&&e.target.
 /* ======================= pull down to refresh + automatic update check =======================
    Pull down at the top of a main screen: fetches the newest numbers, and if a new version of the
    app was uploaded to GitHub it reloads into it. Opening the app also checks for a new version. */
-var BUILD='demo-202610220242';
+var BUILD='demo-202610220523';
 function checkUpdate(){
   if(IN_GOOGLE||LOCAL_DEV||!/^https:/.test(location.protocol))return Promise.resolve(false);
   return fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
