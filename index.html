@@ -2384,6 +2384,10 @@ var EN={
 /* [pattern, replacement] for text built from pieces (amounts, dates, names) */
 var EN_RULES=[
   /* 20 Oct: Dibayarin / Masih utang / Terima texts */
+  /* 22 Oct: texts still Indonesian in English mode (seen in the demo) */
+  [/^Minggu (\d+)/,'Week $1'],[/% jatah$/,'% of budget'],
+  [/ Kamu bisa melihat semuanya\.$/,' You can see everything.'],[/ bulan biaya hidup$/,' months of living costs'],[/^cukup ±/,'enough for ±'],
+  [/ bulan biaya hidup \(rencana Rp /,' months of living costs (plan Rp '],[/\/bln\) · /,'/mo) · '],[/^Hari ini aman\s*$/,'Safe today '],[/^Hari ini\s*$/,'Today '],[/^lewat Rp /,'over Rp '],
   [/^Terima dari /,'Receive from '],[/ masih utang Rp /,' still owes Rp '],[/^Masih utang Rp /,'Still owes Rp '],
   [/ · uang dari Flexi Cash, jadi mengurangi pos Flexi/,' · Flexi Cash money, so it lowers the Flexi pos'],[/\. Bayar sebagian\? Ubah jumlahnya\.$/,'. Paid only part? Change the amount.'],
   [/ · dibayarin /,' · paid by '],
@@ -2697,7 +2701,7 @@ document.addEventListener('change',function(e){var s=e.target.closest&&e.target.
 /* ======================= pull down to refresh + automatic update check =======================
    Pull down at the top of a main screen: fetches the newest numbers, and if a new version of the
    app was uploaded to GitHub it reloads into it. Opening the app also checks for a new version. */
-var BUILD='20261021-0953';
+var BUILD='20261022-0942';
 function checkUpdate(){
   if(IN_GOOGLE||LOCAL_DEV||!/^https:/.test(location.protocol))return Promise.resolve(false);
   return fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
