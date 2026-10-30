@@ -2441,7 +2441,7 @@ var EN={
 /* [pattern, replacement] for text built from pieces (amounts, dates, names) */
 var EN_RULES=[
   /* 30 Oct: Uang bebas card + net Masuk */
-  [/^Uang bebas$/,'Free money'],[/^Di dompet$/,'In wallets'],[/^ · masih harus dibayar $/,' · still to pay '],[/^Cukup untuk sisa jatahmu ✓$/,'Enough for what’s left of your budget ✓'],
+  [/^Uang bebas$/,'Free money'],[/^Di dompet ?$/,'In wallets '],[/^ · masih harus dibayar $/,' · still to pay '],[/^Cukup untuk sisa jatahmu ✓$/,'Enough for what’s left of your budget ✓'],
   [/^Uangmu kurang Rp (.+) untuk yang harus dibayar\.$/,'You’re Rp $1 short for what must be paid.'],[/^Sisa jatah Rp (.+), tapi uang bebasmu cuma Rp (.+)\.$/,'Budget left Rp $1, but your free money is only Rp $2.'],
   [/^Uang yang benar-benar bebas$/,'Money that’s really free'],[/^di dompet dikurangi yang masih harus dibayar$/,'in wallets minus what’s still to pay'],[/^Di dompet \(Total uangku\)$/,'In wallets (My total)'],
   [/^Masih harus dibayar$/,'Still to pay'],[/^Masih harus dibayar \/ disisihkan$/,'Still to pay / set aside'],[/^Dibanding rencana$/,'Compared with the plan'],[/^Sisa jatah$/,'Budget left'],
@@ -2776,7 +2776,7 @@ document.addEventListener('change',function(e){var s=e.target.closest&&e.target.
 /* ======================= pull down to refresh + automatic update check =======================
    Pull down at the top of a main screen: fetches the newest numbers, and if a new version of the
    app was uploaded to GitHub it reloads into it. Opening the app also checks for a new version. */
-var BUILD='20261030-1013';
+var BUILD='20261030-1014';
 function checkUpdate(){
   if(IN_GOOGLE||LOCAL_DEV||!/^https:/.test(location.protocol))return Promise.resolve(false);
   return fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
