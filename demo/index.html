@@ -1392,7 +1392,7 @@ var TABS = {
   Entries:    ['id', 'date', 'owner', 'type', 'amount', 'wallet_id', 'to_wallet_id', 'category_id', 'plan_id', 'note', 'with_partner', 'ask_payback', 'settled', 'link_id', 'person', 'ml_id', 'ml_synced', 'created_at', 'deleted', 'count_date', 'with_people', 'friend_share'],
   Pots:       ['id', 'name', 'icon', 'color', 'target', 'kept_at', 'order', 'wallet_id'],
   PotMoves:   ['id', 'pot_id', 'date', 'amount', 'note', 'by', 'cycle'],
-  Loans:      ['id', 'person', 'principal', 'date', 'wallet_id', 'months', 'monthly', 'start_pay', 'note', 'ref', 'schedule']
+  Loans:      ['id', 'person', 'principal', 'date', 'wallet_id', 'months', 'monthly', 'start_pay', 'note', 'ref', 'schedule', 'plan_id']
 };
 var USERS = ['innamul', 'putri'];
 var SIDE = { innamul: 'suami', putri: 'istri' };
@@ -1446,7 +1446,7 @@ function api(token, action, payload) {
 /* ------------------------------------------------------------------ */
 /* Auth: PIN per person, token kept per device                          */
 /* ------------------------------------------------------------------ */
-var SCHEMA_V = '8';
+var SCHEMA_V = '9';
 function ensureSchema_() {
   if (props_().getProperty('SCHEMA') === SCHEMA_V) return;
   Object.keys(TABS).forEach(function (t) {
@@ -1673,6 +1673,15 @@ function buildState_(me) {
           // only paybacks of Flexi money: a sister's loan, or a person I lent Flexi money to (lend/collect with plan_id flexi, 20 Oct)
           if (e.type === 'collect' && (loanPeople[String(e.person).toLowerCase()] || e.plan_id === flexiPlanId)) col += num_(e.amount); });
         used += Math.max(0, rep - col);
+      } else if (owner === 'innamul') {
+        /* a Flexi loan I took for myself can belong to one of my pos (Loans.plan_id, 30 Oct, e.g. LOAN0047 → jajan):
+           its repayment and the paybacks of money I lent from it count here, and until it is repaid this cycle
+           the instalment due this cycle is already set aside in the pos */
+        var rp = 0;
+        entries.forEach(function (e) { if (e.owner !== owner || !inCycle(e) || e.plan_id !== p.id) return;
+          if (e.type === 'repay') rp += num_(e.amount); else if (e.type === 'collect') used -= num_(e.amount); });
+        used += rp;
+        if (!rp) used += loanDue_(p.id, cyc, cfg);
       }
       var done = paid.indexOf(p.id) >= 0; // "Anggap selesai" — marked by hand
       var isPaid = done || (p.kind !== 'harian' && used >= num_(p.amount) * 0.99);
@@ -1791,11 +1800,19 @@ function lentState_(entries, loanPeople) {
   entries.forEach(function (e) {
     if (e.owner !== 'innamul' || (e.type !== 'lend' && e.type !== 'collect') || !e.person) return;
     var k = String(e.person).trim().toLowerCase(); if (loanPeople[k]) return;
-    var o = by[k] = by[k] || { person: String(e.person).trim(), lent: 0, got: 0, flexi: false, since: e.date };
-    if (e.type === 'lend') { o.lent += num_(e.amount); if (e.plan_id === 'flexi') o.flexi = true; if (e.date < o.since) o.since = e.date; } else o.got += num_(e.amount);
+    var o = by[k] = by[k] || { person: String(e.person).trim(), lent: 0, got: 0, flexi: false, plan_id: '', since: e.date };
+    if (e.type === 'lend') { o.lent += num_(e.amount); if (e.plan_id === 'flexi') o.flexi = true; if (e.plan_id) o.plan_id = e.plan_id; if (e.date < o.since) o.since = e.date; } else o.got += num_(e.amount);
   });
   return values_(by).map(function (o) { o.left = Math.round(o.lent - o.got); return o; }).filter(function (o) { return o.left > 0; })
     .sort(function (a, b) { return b.left - a.left; });
+}
+/** Instalments due this cycle (auto-pay day = Flexi due_day) of the loans assigned to pos planId. */
+function loanDue_(planId, cyc, cfg) {
+  var dd = 8; try { dd = num_(JSON.parse(cfg.flexi || '{}').due_day || 8); } catch (err) {}
+  var due = 0;
+  DB.all('Loans').forEach(function (l) { if (l.plan_id !== planId) return; var sch = []; try { sch = JSON.parse(l.schedule || '[]'); } catch (err) {}
+    sch.forEach(function (x) { var d = x[0] + '-' + ('0' + dd).slice(-2); if (d >= cyc.from && d <= cyc.to) due += num_(x[1]); }); });
+  return due;
 }
 function flexiState_(cfg, entries, cyc, bal) {
   var f = JSON.parse(cfg.flexi || '{}'); if (!f.monthly) return null;
@@ -2099,7 +2116,7 @@ function handleAdmin_(b) {
   if (b.action === 'addLoan') {
     var l = b.loan || {}; var lid = uid_();
     DB.insert('Loans', { id: lid, person: l.person, principal: num_(l.principal), date: l.date, wallet_id: l.wallet_id || '', months: num_(l.months), monthly: num_(l.monthly), start_pay: l.start_pay || '', note: l.note || '',
-      ref: l.ref || '', schedule: l.schedule ? (typeof l.schedule === 'string' ? l.schedule : JSON.stringify(l.schedule)) : '' });
+      ref: l.ref || '', schedule: l.schedule ? (typeof l.schedule === 'string' ? l.schedule : JSON.stringify(l.schedule)) : '', plan_id: l.plan_id || '' });
     return { ok: true, data: { id: lid } };
   }
   if (b.action === 'setConfig') { // only these keys
@@ -2109,7 +2126,7 @@ function handleAdmin_(b) {
     return { ok: true };
   }
   if (b.action === 'updateLoan') {
-    var lp = {}; ['months', 'monthly', 'start_pay', 'note', 'principal', 'person', 'date', 'ref'].forEach(function (k) { if (b.loan[k] !== undefined) lp[k] = b.loan[k]; });
+    var lp = {}; ['months', 'monthly', 'start_pay', 'note', 'principal', 'person', 'date', 'ref', 'plan_id'].forEach(function (k) { if (b.loan[k] !== undefined) lp[k] = b.loan[k]; });
     if (b.loan.schedule !== undefined) lp.schedule = typeof b.loan.schedule === 'string' ? b.loan.schedule : JSON.stringify(b.loan.schedule);
     DB.update('Loans', b.loan.id, lp); return { ok: true };
   }
@@ -2191,7 +2208,7 @@ function makeClaudeKey() {
   var CATS=[{"id":"cafe","label":"Kopi","icon":"☕","kind":"expense","ml_parent":"Food & Beverage","ml_name":"Café","visible_to":"both","bucket_innamul":"jajan","bucket_putri":"dapur","quick_innamul":true,"quick_putri":false,"order":0},{"id":"restaurants","label":"Makan","icon":"🍜","kind":"expense","ml_parent":"Food & Beverage","ml_name":"Restaurants","visible_to":"both","bucket_innamul":"jajan","bucket_putri":"dapur","quick_innamul":true,"quick_putri":false,"order":1},{"id":"snacks","label":"Snack & minum","icon":"🍪","kind":"expense","ml_parent":"Food & Beverage","ml_name":"Snacks And Beverages","visible_to":"both","bucket_innamul":"jajan","bucket_putri":"dapur","quick_innamul":true,"quick_putri":false,"order":2},{"id":"belanja_dapur","label":"Belanja dapur","icon":"🍳","kind":"expense","ml_parent":"Household","ml_name":"Monthly Needs","visible_to":"putri","bucket_innamul":"","bucket_putri":"dapur","quick_innamul":false,"quick_putri":true,"order":3},{"id":"monthly_needs","label":"Belanja rumah","icon":"🛒","kind":"expense","ml_parent":"Household","ml_name":"Monthly Needs","visible_to":"both","bucket_innamul":"jajan","bucket_putri":"dapur","quick_innamul":true,"quick_putri":true,"order":4},{"id":"galon","label":"Galon","icon":"💧","kind":"expense","ml_parent":"Household","ml_name":"Monthly Needs","visible_to":"both","bucket_innamul":"jajan","bucket_putri":"dapur","quick_innamul":false,"quick_putri":true,"order":5},{"id":"petrol","label":"Bensin","icon":"⛽","kind":"expense","ml_parent":"Transportation","ml_name":"Petrol","visible_to":"both","bucket_innamul":"jajan","bucket_putri":"dapur","quick_innamul":true,"quick_putri":false,"order":6},{"id":"parking","label":"Parkir","icon":"🅿️","kind":"expense","ml_parent":"Transportation","ml_name":"Parking Fees","visible_to":"both","bucket_innamul":"jajan","bucket_putri":"dapur","quick_innamul":true,"quick_putri":false,"order":7},{"id":"vehicle","label":"Servis motor","icon":"🔧","kind":"expense","ml_parent":"Transportation","ml_name":"Vehicle Maintenance","visible_to":"both","bucket_innamul":"jajan","bucket_putri":"dapur","quick_innamul":false,"quick_putri":false,"order":8},{"id":"travel","label":"Perjalanan","icon":"🧳","kind":"expense","ml_parent":"Transportation","ml_name":"Travel","visible_to":"both","bucket_innamul":"jajan","bucket_putri":"dapur","quick_innamul":false,"quick_putri":false,"order":9},{"id":"phone","label":"Pulsa & paket","icon":"📱","kind":"expense","ml_parent":"Bills & Utilities","ml_name":"Phone Bill","visible_to":"both","bucket_innamul":"jajan","bucket_putri":"dapur","quick_innamul":true,"quick_putri":false,"order":10},{"id":"electricity","label":"Listrik","icon":"⚡","kind":"expense","ml_parent":"Bills & Utilities","ml_name":"Electricity Bill","visible_to":"both","bucket_innamul":"jajan","bucket_putri":"listrik","quick_innamul":false,"quick_putri":true,"order":11},{"id":"water","label":"Air PDAM","icon":"🚰","kind":"expense","ml_parent":"Bills & Utilities","ml_name":"Water Bill","visible_to":"both","bucket_innamul":"jajan","bucket_putri":"dapur","quick_innamul":false,"quick_putri":false,"order":12},{"id":"internet","label":"Internet / WiFi","icon":"🌐","kind":"expense","ml_parent":"Bills & Utilities","ml_name":"Internet Bill","visible_to":"both","bucket_innamul":"jajan","bucket_putri":"wifi","quick_innamul":false,"quick_putri":false,"order":13},{"id":"gas","label":"Gas","icon":"🔥","kind":"expense","ml_parent":"Bills & Utilities","ml_name":"Gas Bill","visible_to":"both","bucket_innamul":"jajan","bucket_putri":"dapur","quick_innamul":false,"quick_putri":false,"order":14},{"id":"insurance","label":"BPJS / asuransi","icon":"🛡️","kind":"expense","ml_parent":"Bills & Utilities","ml_name":"Insurances","visible_to":"both","bucket_innamul":"jajan","bucket_putri":"dapur","quick_innamul":false,"quick_putri":false,"order":15},{"id":"rent","label":"Sewa rumah","icon":"🏠","kind":"expense","ml_parent":"Bills & Utilities","ml_name":"Rentals","visible_to":"both","bucket_innamul":"jajan","bucket_putri":"dapur","quick_innamul":false,"quick_putri":false,"order":16},{"id":"laundry","label":"Laundry","icon":"👕","kind":"expense","ml_parent":"Household","ml_name":"Laundry","visible_to":"both","bucket_innamul":"jajan","bucket_putri":"dapur","quick_innamul":false,"quick_putri":true,"order":17},{"id":"pets","label":"Kucing","icon":"🐈","kind":"expense","ml_parent":"Household","ml_name":"Pets","visible_to":"both","bucket_innamul":"jajan","bucket_putri":"kucing","quick_innamul":false,"quick_putri":true,"order":18},{"id":"home_services","label":"Jasa rumah","icon":"🧹","kind":"expense","ml_parent":"Household","ml_name":"Home Services","visible_to":"both","bucket_innamul":"jajan","bucket_putri":"dapur","quick_innamul":false,"quick_putri":false,"order":19},{"id":"houseware","label":"Perabot","icon":"🪑","kind":"expense","ml_parent":"Shopping","ml_name":"Houseware","visible_to":"both","bucket_innamul":"jajan","bucket_putri":"dapur","quick_innamul":false,"quick_putri":false,"order":20},{"id":"personal_care","label":"Perawatan diri","icon":"💈","kind":"expense","ml_parent":"Shopping","ml_name":"Personal Care","visible_to":"both","bucket_innamul":"jajan","bucket_putri":"dapur","quick_innamul":false,"quick_putri":false,"order":21},{"id":"clothing","label":"Pakaian","icon":"👔","kind":"expense","ml_parent":"Shopping","ml_name":"Clothing","visible_to":"both","bucket_innamul":"jajan","bucket_putri":"dapur","quick_innamul":false,"quick_putri":false,"order":22},{"id":"electronics","label":"Elektronik","icon":"🔌","kind":"expense","ml_parent":"Shopping","ml_name":"Electronics","visible_to":"both","bucket_innamul":"jajan","bucket_putri":"dapur","quick_innamul":false,"quick_putri":false,"order":23},{"id":"makeup","label":"Makeup","icon":"💄","kind":"expense","ml_parent":"Shopping","ml_name":"Makeup","visible_to":"both","bucket_innamul":"jajan","bucket_putri":"dapur","quick_innamul":false,"quick_putri":false,"order":24},{"id":"doctor","label":"Dokter","icon":"🩺","kind":"expense","ml_parent":"Health & Fitness","ml_name":"Doctor","visible_to":"both","bucket_innamul":"jajan","bucket_putri":"gigi","quick_innamul":false,"quick_putri":false,"order":25},{"id":"pharmacy","label":"Apotek","icon":"💊","kind":"expense","ml_parent":"Health & Fitness","ml_name":"Pharmacy","visible_to":"both","bucket_innamul":"jajan","bucket_putri":"dapur","quick_innamul":false,"quick_putri":false,"order":26},{"id":"fitness","label":"Gym & olahraga","icon":"🏋️","kind":"expense","ml_parent":"Health & Fitness","ml_name":"Fitness","visible_to":"both","bucket_innamul":"jajan","bucket_putri":"gym","quick_innamul":false,"quick_putri":false,"order":27},{"id":"swim","label":"Renang","icon":"🏊","kind":"expense","ml_parent":"Health & Fitness","ml_name":"Fitness","visible_to":"putri","bucket_innamul":"","bucket_putri":"renang","quick_innamul":false,"quick_putri":true,"order":28},{"id":"software","label":"Software / AI","icon":"🤖","kind":"expense","ml_parent":"Entertainment","ml_name":"Software Purchase","visible_to":"innamul","bucket_innamul":"aset","bucket_putri":"","quick_innamul":true,"quick_putri":false,"order":29},{"id":"games","label":"Game","icon":"🎮","kind":"expense","ml_parent":"Entertainment","ml_name":"Games","visible_to":"innamul","bucket_innamul":"aset","bucket_putri":"","quick_innamul":false,"quick_putri":false,"order":30},{"id":"streaming","label":"Streaming","icon":"📺","kind":"expense","ml_parent":"Entertainment","ml_name":"Streaming Service","visible_to":"both","bucket_innamul":"aset","bucket_putri":"dapur","quick_innamul":false,"quick_putri":false,"order":31},{"id":"inapp","label":"In-app","icon":"📲","kind":"expense","ml_parent":"Entertainment","ml_name":"In App Purchase","visible_to":"innamul","bucket_innamul":"aset","bucket_putri":"","quick_innamul":false,"quick_putri":false,"order":32},{"id":"charity","label":"Sedekah","icon":"🤲","kind":"expense","ml_parent":"Gifts & Donations","ml_name":"Charity","visible_to":"both","bucket_innamul":"jajan","bucket_putri":"dapur","quick_innamul":false,"quick_putri":false,"order":33},{"id":"marriage","label":"Kondangan","icon":"💍","kind":"expense","ml_parent":"Gifts & Donations","ml_name":"Marriage","visible_to":"both","bucket_innamul":"jajan","bucket_putri":"dapur","quick_innamul":false,"quick_putri":false,"order":34},{"id":"funeral","label":"Takziah","icon":"🕊️","kind":"expense","ml_parent":"Gifts & Donations","ml_name":"Funeral","visible_to":"both","bucket_innamul":"jajan","bucket_putri":"dapur","quick_innamul":false,"quick_putri":false,"order":35},{"id":"ecig","label":"Vape","icon":"💨","kind":"expense","ml_parent":"Bad Stuff","ml_name":"E-Cigarette","visible_to":"innamul","bucket_innamul":"jajan","bucket_putri":"","quick_innamul":true,"quick_putri":false,"order":36},{"id":"cigarettes","label":"Rokok","icon":"🚬","kind":"expense","ml_parent":"Bad Stuff","ml_name":"Cigarettes","visible_to":"innamul","bucket_innamul":"jajan","bucket_putri":"","quick_innamul":false,"quick_putri":false,"order":37},{"id":"fees","label":"Biaya admin","icon":"🏧","kind":"expense","ml_parent":"","ml_name":"Fees & Charges","visible_to":"both","bucket_innamul":"jajan","bucket_putri":"dapur","quick_innamul":false,"quick_putri":false,"order":38},{"id":"interest","label":"Bunga kartu","icon":"📉","kind":"expense","ml_parent":"","ml_name":"Pay Interest","visible_to":"innamul","bucket_innamul":"jajan","bucket_putri":"","quick_innamul":false,"quick_putri":false,"order":39},{"id":"other_expense","label":"Lainnya","icon":"•","kind":"expense","ml_parent":"","ml_name":"Other Expense","visible_to":"both","bucket_innamul":"jajan","bucket_putri":"dapur","quick_innamul":false,"quick_putri":false,"order":40},{"id":"uang_belanja_istri","label":"Uang belanja ke Nyonya","icon":"💸","kind":"expense","ml_parent":"Household","ml_name":"Uang Belanja Istri","visible_to":"innamul","bucket_innamul":"","bucket_putri":"","quick_innamul":false,"quick_putri":false,"order":41},{"id":"ganti_ke_suami","label":"Ganti uang ke suami","icon":"💸","kind":"expense","ml_parent":"","ml_name":"","visible_to":"putri","bucket_innamul":"","bucket_putri":"","quick_innamul":false,"quick_putri":false,"order":42},{"id":"adjustments","label":"Penyesuaian","icon":"±","kind":"expense","ml_parent":"","ml_name":"Adjustments","visible_to":"both","bucket_innamul":"","bucket_putri":"","quick_innamul":false,"quick_putri":false,"order":43},{"id":"salary","label":"Gaji","icon":"💼","kind":"income","ml_parent":"","ml_name":"Salary","visible_to":"both","bucket_innamul":"","bucket_putri":"","quick_innamul":false,"quick_putri":false,"order":44},{"id":"other_income","label":"Pemasukan lain","icon":"💰","kind":"income","ml_parent":"","ml_name":"Other Income","visible_to":"both","bucket_innamul":"","bucket_putri":"","quick_innamul":false,"quick_putri":false,"order":45},{"id":"reimbursement","label":"Diganti Nyonya","icon":"🔁","kind":"income","ml_parent":"","ml_name":"Reimbursement","visible_to":"innamul","bucket_innamul":"jajan","bucket_putri":"","quick_innamul":false,"quick_putri":false,"order":46},{"id":"uang_belanja_dari_suami","label":"Uang belanja dari suami","icon":"💸","kind":"income","ml_parent":"","ml_name":"","visible_to":"putri","bucket_innamul":"","bucket_putri":"","quick_innamul":false,"quick_putri":false,"order":47},{"id":"cashback","label":"Cashback","icon":"🎁","kind":"income","ml_parent":"","ml_name":"Other Income","visible_to":"putri","bucket_innamul":"","bucket_putri":"","quick_innamul":false,"quick_putri":false,"order":48}];
   var TOKEN='dededededededededededededededededededede';
   if(localStorage.getItem('ek_lang')===null)localStorage.setItem('ek_lang','en'); // demo opens in English
-  props['TOK_'+TOKEN]='innamul';props.SCHEMA=String("8");props.LINKS_ONLY='1';
+  props['TOK_'+TOKEN]='innamul';props.SCHEMA=String("9");props.LINKS_ONLY='1';
 
   /* ---------- the made-up household (dates follow today, so the demo always looks current) ---------- */
   function build(){
@@ -3257,7 +3274,7 @@ function openLoanMove(mode,person){lmMode=mode;lmPerson=person;lmRecv=null;$('lm
   $('lmWallet').innerHTML=walletOptions(S.default_wallet);$('lmDate').value=S.today;openSheet('loanMove')}
 $('lmSave').onclick=function(){var a=num($('lmAmt').value);if(!a){toast('Isi jumlahnya',true);return}
   var pl={amount:a,person:lmPerson,wallet_id:$('lmWallet').value,date:$('lmDate').value,plan_id:''};
-  if(lmRecv){pl.plan_id=lmRecv.flexi?'flexi':'';pl.note='Bayar pinjaman'+(a<lmRecv.left?' (sebagian)':'')}
+  if(lmRecv){pl.plan_id=lmRecv.plan_id||(lmRecv.flexi?'flexi':'');pl.note='Bayar pinjaman'+(a<lmRecv.left?' (sebagian)':'')}
   act(lmMode,pl,lmMode==='collect'?'Diterima':'Cicilan dicatat').then(closeAll)};
 
 $('logout').onclick=function(){flush().then(function(){call('logout',{token:TOKEN}).catch(function(){});TOKEN=null;store('ek_queue',null);Q=[];showLogin()})};
@@ -3707,7 +3724,7 @@ document.addEventListener('change',function(e){var s=e.target.closest&&e.target.
 /* ======================= pull down to refresh + automatic update check =======================
    Pull down at the top of a main screen: fetches the newest numbers, and if a new version of the
    app was uploaded to GitHub it reloads into it. Opening the app also checks for a new version. */
-var BUILD='demo-202610300314';
+var BUILD='demo-202610300328';
 function checkUpdate(){
   if(IN_GOOGLE||LOCAL_DEV||!/^https:/.test(location.protocol))return Promise.resolve(false);
   return fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
