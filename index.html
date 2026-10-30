@@ -1474,7 +1474,9 @@ function applyLocal(e,sign){
   if(e.type==='expense')(S.week||[]).forEach(function(d){if(d.date===e.date)d.total+=sign*(e.amount-(e.friend_share||0))});
 }
 function nextCycleStart(ymd){var sd=+S.salaryDay||24,d=new Date(ymd+'T00:00:00'),y=d.getFullYear(),m=d.getMonth();if(d.getDate()>=sd)m+=1;
-  var n=new Date(y,m,sd);return n.getFullYear()+'-'+('0'+(n.getMonth()+1)).slice(-2)+'-'+('0'+n.getDate()).slice(-2)}
+  var n=new Date(y,m,sd);
+  if(S.cycle&&ymd>=S.cycle.from&&ymd<=S.cycle.to){n=new Date(S.cycle.to+'T00:00:00');n.setDate(n.getDate()+1)} /* early/late salary: cycle comes from the server */
+  return n.getFullYear()+'-'+('0'+(n.getMonth()+1)).slice(-2)+'-'+('0'+n.getDate()).slice(-2)}
 function viewOf(id,p){var c=catById(p.category_id)||{},w=walletOf(p.wallet_id)||{},t=walletOf(p.to_wallet_id)||{};
   return {id:id,date:p.date,type:p.type,amount:+p.amount,wallet:w.name||'',wallet_id:p.wallet_id||'',to_wallet:t.name||'',to_wallet_id:p.to_wallet_id||'',
     category_id:p.category_id||'',label:c.label||typeLabel(p.type),icon:c.icon||{transfer:'⇄'}[p.type]||'•',plan_id:p.plan_id||'',note:p.note||'',
@@ -2718,7 +2720,7 @@ document.addEventListener('change',function(e){var s=e.target.closest&&e.target.
 /* ======================= pull down to refresh + automatic update check =======================
    Pull down at the top of a main screen: fetches the newest numbers, and if a new version of the
    app was uploaded to GitHub it reloads into it. Opening the app also checks for a new version. */
-var BUILD='20261022-1223';
+var BUILD='20261030-0953';
 function checkUpdate(){
   if(IN_GOOGLE||LOCAL_DEV||!/^https:/.test(location.protocol))return Promise.resolve(false);
   return fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
