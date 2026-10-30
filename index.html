@@ -2326,7 +2326,7 @@ function openLoanMove(mode,person){lmMode=mode;lmPerson=person;lmRecv=null;$('lm
   $('lmWallet').innerHTML=walletOptions(S.default_wallet);$('lmDate').value=S.today;openSheet('loanMove')}
 $('lmSave').onclick=function(){var a=num($('lmAmt').value);if(!a){toast('Isi jumlahnya',true);return}
   var pl={amount:a,person:lmPerson,wallet_id:$('lmWallet').value,date:$('lmDate').value,plan_id:''};
-  if(lmRecv){pl.plan_id=lmRecv.flexi?'flexi':'';pl.note='Bayar pinjaman'+(a<lmRecv.left?' (sebagian)':'')}
+  if(lmRecv){pl.plan_id=lmRecv.plan_id||(lmRecv.flexi?'flexi':'');pl.note='Bayar pinjaman'+(a<lmRecv.left?' (sebagian)':'')}
   act(lmMode,pl,lmMode==='collect'?'Diterima':'Cicilan dicatat').then(closeAll)};
 
 $('logout').onclick=function(){flush().then(function(){call('logout',{token:TOKEN}).catch(function(){});TOKEN=null;store('ek_queue',null);Q=[];showLogin()})};
@@ -2776,7 +2776,7 @@ document.addEventListener('change',function(e){var s=e.target.closest&&e.target.
 /* ======================= pull down to refresh + automatic update check =======================
    Pull down at the top of a main screen: fetches the newest numbers, and if a new version of the
    app was uploaded to GitHub it reloads into it. Opening the app also checks for a new version. */
-var BUILD='20261030-1014';
+var BUILD='20261030-1028';
 function checkUpdate(){
   if(IN_GOOGLE||LOCAL_DEV||!/^https:/.test(location.protocol))return Promise.resolve(false);
   return fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
