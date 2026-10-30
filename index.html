@@ -946,7 +946,22 @@ html.lay3 #bucketCards>.bcard{flex:0 0 calc(50% - 21px);scroll-snap-align:start;
 #detail .dtwo small{display:block;font-size:12px;color:var(--muted)}
 #detail .dtwo b{font-family:var(--f-round);font-size:19px}
 #detail .foot{margin-top:14px}
-.form input[type="date"],.form input[type="month"]{text-align:right}
+/* "Ke mana uangnya?" (30 Oct): a money flow that adds up — start of cycle + in − out = in wallets now */
+#detail .flow{margin:0 16px;background:var(--card);border-radius:18px;overflow:hidden}
+#detail .flow .fr{display:flex;gap:10px;align-items:flex-start;padding:11px 16px;border-top:.5px solid var(--sep)}
+#detail .flow .fr:first-child{border-top:0}
+#detail .flow .fr .fl1{flex:1;min-width:0}#detail .flow .fr .fl1 b{display:block;font-size:15px;font-weight:600}
+#detail .flow .fr .fl1 small{display:block;font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.35}
+#detail .flow .fr em{font-style:normal;font-family:var(--f-round);font-size:15.5px;font-weight:700;white-space:nowrap}
+#detail .flow .fr em.in{color:var(--green)}#detail .flow .fr.sub{padding-left:30px}#detail .flow .fr.sub b{font-weight:500;font-size:14px}
+#detail .flow .fr.sub em{font-weight:600;font-size:14px;color:var(--muted)}
+#detail .flow .fr.tot{background:var(--fill)}#detail .flow .fr.tot b,#detail .flow .fr.tot em{font-size:16.5px;font-weight:800}
+#detail .flow .fr.tot em.neg{color:var(--red)}
+#detail .split{margin:12px 16px 0;background:var(--card);border-radius:18px;padding:14px 16px}
+#detail .split .sb{display:flex;height:12px;border-radius:6px;overflow:hidden;margin:10px 0 8px;background:var(--fill)}
+#detail .split .sb i{display:block;height:100%}#detail .split .sb i.h{background:#FF9F0A}#detail .split .sb i.m{background:var(--accent)}
+#detail .split .sl{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:var(--muted)}#detail .split .sl b{display:block;color:var(--ink);font-family:var(--f-round);font-size:17px}
+#detail .split .sl span:last-child{text-align:right}#detail .split .sl i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;vertical-align:0}.form input[type="date"],.form input[type="month"]{text-align:right}
 /* "Dengan" chips sit on the right like other row values; auto margin collapses when the row scrolls */
 :root .pchips>:first-child{margin-left:auto}
 .form input[type="date"]::-webkit-date-and-time-value,.form input[type="month"]::-webkit-date-and-time-value{text-align:right}
@@ -2056,7 +2071,54 @@ function openRealDetail(){var r=realMoney(),rem=heroRem||0;
     '<div class="dtwo"><div><small>Di dompet (Total uangku)</small><b>Rp '+short(r.hold)+'</b></div><div><small>Masih harus dibayar</small><b>−Rp '+short(r.owe)+'</b></div></div>'+
     '<div class="dsec">Masih harus dibayar / disisihkan</div><div class="list">'+r.items.map(function(x){return mrow(emo(x.icon),esc(x.label),x.sub,'Rp '+rp(x.amount))}).join('')+'</div>'+
     '<div class="dsec">Dibanding rencana</div><div class="list">'+mrow(emo('📊'),'Sisa jatah','pos harian, menurut Rencana','Rp '+rp(rem))+mrow(emo(r.free<rem?'⚠️':'✅'),r.free<rem?'Kurang':'Lebih','uang bebas − sisa jatah',(r.free<rem?'−':'+')+'Rp '+rp(Math.abs(r.free-rem)))+'</div>'+
+    '<div class="btns" style="margin-top:14px"><button class="white" data-flow>Ke mana uangnya? ›</button></div>'+
     '<div class="foot">Sisa jatah menghitung belanja di siklus ini. Uang bebas melihat uang yang benar-benar ada: tagihan kartu dari bulan lalu, utang tanpa pos, dan cicilan Flexi yang belum ditarik membuat keduanya bisa berbeda.</div>')}
+/* "Ke mana uangnya?" (30 Oct, Innamul): explain the cycle to Putri. Only money in my Total uangku wallets is followed:
+   start of cycle (worked back from today) + money in − money out = in wallets now, then − still to pay = Uang bebas.
+   Card purchases aren't wallet money until the card is paid, so they show inside "Bayar kartu kredit". */
+function moneyFlow(){var ids={},now=0;(S.wallets||[]).forEach(function(w){if(w.include_total&&w.type!=='credit'&&!isFx(w)&&!w.inactive){ids[w.id]=1;now+=w.balance}});
+  var cr={};(S.wallets||[]).forEach(function(w){if(w.type==='credit')cr[w.id]=w});var fw=S.flexi&&S.flexi.wallet_id;
+  var plan={};mySide().forEach(function(p){plan[p.id]=p});
+  var g={salary:0,partner:0,partnerN:[],otherIn:0,lendBack:0,ub:0,pos:{},noPos:[],card:0,flexi:0,flexiIn:0,lend:0,adj:0,moveOut:0,moveIn:0};
+  var seen={},es=(S.cycleEntries||[]).filter(function(e){if(seen[e.id])return false;seen[e.id]=1;return e.date>=S.cycle.from&&e.date<=S.cycle.to});
+  es.forEach(function(e){var a=e.amount,w=ids[e.wallet_id],t=ids[e.to_wallet_id];
+    if(e.type==='income'&&w){if(e.category_id==='salary')g.salary+=a;else if(e.link_id||e.category_id==='reimbursement'){g.partner+=a;g.partnerN.push(e)}else g.otherIn+=a}
+    else if(e.type==='collect'&&w)g.lendBack+=a;
+    else if(e.type==='expense'&&w){if(e.category_id==='uang_belanja_istri')g.ub+=a;else if(e.plan_id&&plan[e.plan_id]){g.pos[e.plan_id]=(g.pos[e.plan_id]||0)+a}else g.noPos.push(e)}
+    else if(e.type==='lend'&&w)g.lend+=a;
+    else if(e.type==='adjust'&&w)g.adj+=a;
+    else if(e.type==='repay'&&w)g.flexi+=a;
+    else if(e.type==='debt'&&w)g.flexiIn+=a;
+    else if(e.type==='transfer'&&(w||t)&&!(w&&t)){if(w){if(e.to_wallet_id===fw)g.flexi+=a;else if(cr[e.to_wallet_id])g.card+=a;else g.moveOut+=a}else{if(e.wallet_id===fw)g.flexiIn+=a;else g.moveIn+=a}}});
+  var inn=g.salary+g.partner+g.otherIn+g.lendBack+g.flexiIn+g.moveIn+Math.max(0,g.adj),
+      out=g.ub+Object.keys(g.pos).reduce(function(s,k){return s+g.pos[k]},0)+g.noPos.reduce(function(s,e){return s+e.amount},0)+g.card+g.flexi+g.lend+g.moveOut+Math.max(0,-g.adj);
+  g.now=now;g.start=now-inn+out;g.inn=inn;g.out=out;return g}
+function openFlow(){var g=moneyFlow(),r=realMoney(),c=S.cycle,P=S.partnerName;var plan={};mySide().forEach(function(p){plan[p.id]=p});
+  var row=function(b,s,v,cls,rc){return '<div class="fr'+(rc?' '+rc:'')+'"><div class="fl1"><b>'+b+'</b>'+(s?'<small>'+s+'</small>':'')+'</div><em class="'+(cls||'')+'">'+v+'</em></div>'};
+  var plus=function(n){return '+Rp '+rp(n)},minus=function(n){return '−Rp '+rp(n)},tot=function(n){return (n<0?'−':'')+'Rp '+rp(Math.abs(n))};
+  var back=g.partnerN.filter(function(e){return e.category_id!=='reimbursement'}).reduce(function(s,e){return s+e.amount},0),reimb=g.partner-back;
+  var home=Math.max(0,g.ub-back),mine=g.salary-home;
+  var h='<div class="foot" style="margin-top:2px;padding-top:0">Siklus gaji '+dshort(c.from)+' – '+dshort(c.to)+' · semua uang di dompetmu (Total uangku), dijumlah sampai cocok.</div>';
+  if(g.salary&&g.ub)h+='<div class="split"><small style="font-size:13px;font-weight:600;color:var(--muted)">Gaji Rp '+short(g.salary)+' dibagi</small><div class="sb"><i class="h" style="width:'+(home/g.salary*100)+'%"></i><i class="m" style="width:'+(Math.max(0,mine)/g.salary*100)+'%"></i></div>'+
+    '<div class="sl"><span><i style="background:#FF9F0A"></i>Untuk rumah (dipegang '+esc(P)+')<b>Rp '+short(home)+'</b></span><span><i style="background:var(--accent)"></i>Untukku<b>Rp '+short(mine)+'</b></span></div></div>';
+  h+='<div class="dsec">Uang masuk</div><div class="flow">'+row('Di dompet awal siklus','perkiraan, dihitung mundur dari saldo sekarang',tot(g.start))+
+    (g.salary?row('Gaji','',plus(g.salary),'in'):'')+
+    (back?row('Kembali dari '+esc(P),'jatahku dari gaji',plus(back),'in'):'')+(reimb?row('Ganti dari '+esc(P),'bayar barang yang aku belikan dulu',plus(reimb),'in'):'')+
+    (g.otherIn?row('Pemasukan lain','',plus(g.otherIn),'in'):'')+(g.lendBack?row('Pinjaman dibayar balik','',plus(g.lendBack),'in'):'')+
+    (g.flexiIn?row('Pinjam dari Flexi','',plus(g.flexiIn),'in'):'')+(g.moveIn?row('Masuk dari dompet di luar total','',plus(g.moveIn),'in'):'')+(g.adj>0?row('Penyesuaian saldo','',plus(g.adj),'in'):'')+'</div>';
+  h+='<div class="dsec">Uang keluar</div><div class="flow">'+(g.ub?row('Uang belanja ke '+esc(P),'seluruh gaji dikirim, lalu jatahku kembali (di atas)',minus(g.ub)):'');
+  var ks=Object.keys(g.pos).sort(function(a,b){return g.pos[b]-g.pos[a]});
+  if(ks.length){var ps=ks.reduce(function(s,k){return s+g.pos[k]},0);h+=row('Belanja di pos','dari dompet, per pos',minus(ps));ks.forEach(function(k){h+=row(esc(plan[k].name),'',minus(g.pos[k]),'','sub')})}
+  if(g.noPos.length){var np=g.noPos.reduce(function(s,e){return s+e.amount},0);h+=row('Di luar rencana','tidak masuk pos mana pun',minus(np));
+    g.noPos.slice().sort(function(a,b){return b.amount-a.amount}).forEach(function(e){h+=row(esc(e.note||e.label),dshort(e.date),minus(e.amount),'','sub')})}
+  if(g.card){var inst=(S.card&&S.card.installments||[]).filter(function(i){return i.paid>0&&i.paid<=i.total}).reduce(function(s,i){return s+i.monthly},0);inst=Math.min(inst,g.card);
+    h+=row('Bayar kartu kredit','tagihan bulan lalu',minus(g.card))+(inst?row('Cicilan (iPhone, mesin cuci)','',minus(inst),'','sub')+row('Belanja pakai kartu','sebelum tagihan (mis. suplemen, Claude Pro, BPJS)',minus(g.card-inst),'','sub'):'')}
+  if(g.flexi)h+=row('Bayar Flexi','',minus(g.flexi));if(g.lend)h+=row('Dipinjamkan','',minus(g.lend));if(g.moveOut)h+=row('Pindah ke dompet di luar total','',minus(g.moveOut));if(g.adj<0)h+=row('Penyesuaian saldo','',minus(-g.adj));
+  h+=row('Sekarang di dompet','Total uangku hari ini',tot(g.now),'','tot')+'</div>';
+  if(r.items.length){h+='<div class="dsec">Yang masih harus dibayar</div><div class="flow">';r.items.forEach(function(x){h+=row(esc(x.label),x.sub,minus(x.amount))});
+    h+=row('Uang bebas','sisa yang benar-benar bisa dipakai',tot(r.free),r.free<0?'neg':'','tot')+'</div>'}
+  h+='<div class="foot">Transfer antar dompetmu sendiri tidak dihitung (uangnya cuma pindah). Belanja pakai kartu kredit baru dihitung saat kartunya dibayar.</div>';
+  dtOpen('Ke mana uangnya?',h)}
 function openTodayDetail(){var es=(S.recent||[]).concat(S.cycleEntries||[]).filter(function(e){return String(e.date)===S.today});var seen={};es=es.filter(function(e){if(seen[e.id])return false;seen[e.id]=1;return true});
   dtOpen('Hari ini','<div class="amount"><p>'+dshort(S.today)+'</p><div class="show">'+$('todayCard').querySelector('.th b').textContent+'</div><p>aman dipakai hari ini dari pos harian</p></div>'+
     '<div class="dsec">Catatan hari ini</div>'+(es.length?'<div class="list">'+es.map(txRow).join('')+'</div>':'<div class="empty">Belum ada catatan hari ini.</div>')+
@@ -2150,6 +2212,7 @@ document.addEventListener('click',function(e){
   if(t.closest('[data-review]')){openReview();return}
   if((g=t.closest('[data-rvt]'))){RV.type=g.dataset.rvt;RV.cat='';RV.day=null;if(RV.type==='income')RV.pos='';drawReview();return}
   if(t.closest('[data-rvhb]')){RV.hb=!RV.hb;drawReview();return}
+  if(t.closest('[data-flow]')){openFlow();return}
   if((g=t.closest('[data-rvcat]'))){RV.cat=RV.cat===g.dataset.rvcat?'':g.dataset.rvcat;drawReview();return}
   if((g=t.closest('[data-rvday]'))){RV.day=RV.day===g.dataset.rvday?null:g.dataset.rvday;drawReview();return}
   if(t.closest('[data-rvclear]')){RV.cat='';RV.day=null;drawReview();return}
@@ -2440,6 +2503,19 @@ var EN={
 };
 /* [pattern, replacement] for text built from pieces (amounts, dates, names) */
 var EN_RULES=[
+  /* 30 Oct: Ke mana uangnya? */
+  [/^💸 Ke mana uangnya\? ›$/,'💸 Where did the money go? ›'],[/^Ke mana uangnya\? ›$/,'Where did the money go? ›'],[/^Ke mana uangnya\?$/,'Where did the money go?'],
+  [/^Siklus gaji (.+) · semua uang di dompetmu \(Total uangku\), dijumlah sampai cocok\.$/,'Pay cycle $1 · all the money in your wallets (My total), adding up exactly.'],
+  [/^Gaji Rp (.+) dibagi$/,'Salary Rp $1 split'],[/^Untuk rumah \(dipegang (.+)\)$/,'For the house (held by $1)'],[/^Untukku$/,'For me'],
+  [/^Uang masuk$/,'Money in'],[/^Uang keluar$/,'Money out'],[/^Di dompet awal siklus$/,'In wallets at cycle start'],[/^perkiraan, dihitung mundur dari saldo sekarang$/,'estimate, worked back from today’s balance'],
+  [/^Gaji$/,'Salary'],[/^Kembali dari (.+)$/,'Back from $1'],[/^jatahku dari gaji$/,'my share of the salary'],[/^Ganti dari (.+)$/,'Paid back by $1'],[/^bayar barang yang aku belikan dulu$/,'for things I bought first'],
+  [/^Pemasukan lain$/,'Other income'],[/^Pinjaman dibayar balik$/,'Loans paid back'],[/^Pinjam dari Flexi$/,'Borrowed from Flexi'],[/^Masuk dari dompet di luar total$/,'From wallets outside the total'],[/^Penyesuaian saldo$/,'Balance adjustment'],
+  [/^Uang belanja ke (.+)$/,'Household money to $1'],[/^seluruh gaji dikirim, lalu jatahku kembali \(di atas\)$/,'whole salary sent, my share came back (above)'],
+  [/^Belanja di pos$/,'Spending in pots'],[/^dari dompet, per pos$/,'from wallets, per pot'],[/^Di luar rencana$/,'Outside the plan'],[/^tidak masuk pos mana pun$/,'not in any pot'],
+  [/^Bayar kartu kredit$/,'Credit card payment'],[/^tagihan bulan lalu$/,'last month’s bill'],[/^Cicilan \(iPhone, mesin cuci\)$/,'Instalments (iPhone, washer)'],[/^Belanja pakai kartu$/,'Card purchases'],
+  [/^sebelum tagihan \(mis\. suplemen, Claude Pro, BPJS\)$/,'before the bill (e.g. supplements, Claude Pro, BPJS)'],[/^Bayar Flexi$/,'Flexi payment'],[/^Dipinjamkan$/,'Lent out'],[/^Pindah ke dompet di luar total$/,'To wallets outside the total'],
+  [/^Sekarang di dompet$/,'In wallets now'],[/^Total uangku hari ini$/,'My total today'],[/^Yang masih harus dibayar$/,'Still to pay'],[/^sisa yang benar-benar bisa dipakai$/,'what you can really still use'],
+  [/^Transfer antar dompetmu sendiri tidak dihitung.*/,'Transfers between your own wallets aren’t counted (the money only moves). Card purchases count when the card is paid.'],
   /* 30 Oct: Uang bebas card + net Masuk */
   [/^Uang bebas$/,'Free money'],[/^Di dompet ?$/,'In wallets '],[/^ · masih harus dibayar $/,' · still to pay '],[/^Cukup untuk sisa jatahmu ✓$/,'Enough for what’s left of your budget ✓'],
   [/^Uangmu kurang Rp (.+) untuk yang harus dibayar\.$/,'You’re Rp $1 short for what must be paid.'],[/^Sisa jatah Rp (.+), tapi uang bebasmu cuma Rp (.+)\.$/,'Budget left Rp $1, but your free money is only Rp $2.'],
@@ -2714,7 +2790,7 @@ function drawReview(){
   var prevTot=null;if(RV.prev){var pc=RV.prev.cycle,lim=cycShift({from:pc.from,to:pc.from},dayN-1);
     prevTot=RV.prev.entries.filter(function(e){return rvKeep(e)&&(!H.is_current||bdate(e)<=lim)}).reduce(function(s,e){return s+e.amount-(e.friend_share||0)},0);
     if(RV.type==='income'&&me&&!RV.hb)prevTot=Math.max(0,prevTot-RV.prev.entries.filter(function(e){return e.type==='expense'&&e.category_id==='uang_belanja_istri'&&(!H.is_current||bdate(e)<=lim)}).reduce(function(s,e){return s+e.amount},0))}
-  var out='<div class="rvhero hero" style="margin-top:14px"><small>'+(RV.type==='expense'?'Terpakai':'Uang masuk')+(H.is_current?' sampai hari ini':' siklus ini')+'</small><div class="big">Rp '+rp(total)+'</div>';
+  var out=(me&&H.is_current?'<div class="btns" style="padding-top:12px"><button class="white" data-flow>💸 Ke mana uangnya? ›</button></div>':'')+'<div class="rvhero hero" style="margin-top:14px"><small>'+(RV.type==='expense'?'Terpakai':'Uang masuk')+(H.is_current?' sampai hari ini':' siklus ini')+'</small><div class="big">Rp '+rp(total)+'</div>';
   if(RV.type==='expense'&&budget){var bc=pct>1.001?'over':pct>dayPct+0.05?'warn':'';
     out+='<div class="bar"><i class="'+bc+'" style="width:'+Math.min(100,pct*100)+'%"></i>'+(H.is_current?'<em style="left:'+(dayPct*100)+'%"></em>':'')+'</div>'+
       '<div class="lines"><span><b style="color:var(--ink)">'+Math.round(pct*100)+'%</b> dari jatah Rp '+short(budget)+(Math.abs(bu-total)>=1000?' · terpakai di pos Rp '+short(bu):'')+'</span>'+(H.is_current?'<span>hari ke-'+dayN+' dari '+days+' ('+Math.round(dayPct*100)+'%)</span>':'')+'</div>';
@@ -2776,7 +2852,7 @@ document.addEventListener('change',function(e){var s=e.target.closest&&e.target.
 /* ======================= pull down to refresh + automatic update check =======================
    Pull down at the top of a main screen: fetches the newest numbers, and if a new version of the
    app was uploaded to GitHub it reloads into it. Opening the app also checks for a new version. */
-var BUILD='20261030-1028';
+var BUILD='20261030-1039';
 function checkUpdate(){
   if(IN_GOOGLE||LOCAL_DEV||!/^https:/.test(location.protocol))return Promise.resolve(false);
   return fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
