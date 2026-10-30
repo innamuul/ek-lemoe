@@ -1529,12 +1529,34 @@ function config_() { var c = {}; DB.all('Config').forEach(function (r) { c[r.key
 function partnerOf_(u) { return u === 'innamul' ? 'putri' : 'innamul'; }
 function addDays_(ymd, n) { var d = new Date(ymd + 'T00:00:00'); d.setDate(d.getDate() + n); return fmt_(d); }
 function fmt_(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
-/** Salary cycle containing ymd: from salary day to the day before next salary day. */
+/** Salary cycle containing ymd: from salary day to the day before next salary day.
+ *  Salary early or late: the cycle starts on the date of the salary income (category salary) closest to
+ *  that month's salary day, within 7 days. Config cycle_starts (JSON list, e.g. ["2026-10-23"]) overrides by hand. */
 function cycleOf_(ymd, salaryDay) {
+  var moved = cycleStarts_(salaryDay);
+  var start = function (y, m) { var n = fmt_(new Date(y, m, salaryDay)); return moved[n] || n; };
   var d = new Date(ymd + 'T00:00:00'); var y = d.getFullYear(), m = d.getMonth();
-  if (d.getDate() < salaryDay) m -= 1;
-  var from = new Date(y, m, salaryDay); var to = new Date(y, m + 1, salaryDay - 1);
-  return { from: fmt_(from), to: fmt_(to) };
+  if (ymd < start(y, m)) m -= 1;
+  else if (ymd >= start(y, m + 1)) m += 1;
+  return { from: start(y, m), to: addDays_(start(y, m + 1), -1) };
+}
+function cycleStarts_(salaryDay) {
+  var out = {}, gap = {}, list = [];
+  // the salary day (yyyy-mm-dd) a date belongs to, if it is within `days` of one
+  var near = function (s, days) { var d = new Date(s + 'T00:00:00'), best = null; if (isNaN(d)) return null;
+    [-1, 0, 1].forEach(function (k) { var n = fmt_(new Date(d.getFullYear(), d.getMonth() + k, salaryDay));
+      if (Math.abs(daysBetween_(s, n)) <= days && (!best || Math.abs(daysBetween_(s, n)) < Math.abs(daysBetween_(s, best)))) best = n; });
+    return best; };
+  var paid = {};
+  DB.all('Entries').forEach(function (e) { if (e.type === 'income' && e.category_id === 'salary' && !bool_(e.deleted)) paid[String(e.date)] = true; });
+  Object.keys(paid).forEach(function (s) {
+    var n = near(s, 7); if (!n || paid[n]) return; // a salary on the normal day itself wins (an extra one nearby is a bonus)
+    var g = Math.abs(daysBetween_(s, n));
+    if (!(n in gap) || g < gap[n] || (g === gap[n] && s < out[n])) { gap[n] = g; out[n] = s; }
+  });
+  try { list = JSON.parse(config_().cycle_starts || '[]'); } catch (err) {}
+  list.forEach(function (s) { var n = near(s, 10); if (n) out[n] = s; });
+  return out;
 }
 function daysBetween_(a, b) { return Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 864e5); }
 function monthsDiff_(ym1, ym2) { var a = ym1.split('-'), b = ym2.split('-'); return (+b[0] - +a[0]) * 12 + (+b[1] - +a[1]); }
@@ -2383,7 +2405,9 @@ function applyLocal(e,sign){
   if(e.type==='expense')(S.week||[]).forEach(function(d){if(d.date===e.date)d.total+=sign*(e.amount-(e.friend_share||0))});
 }
 function nextCycleStart(ymd){var sd=+S.salaryDay||24,d=new Date(ymd+'T00:00:00'),y=d.getFullYear(),m=d.getMonth();if(d.getDate()>=sd)m+=1;
-  var n=new Date(y,m,sd);return n.getFullYear()+'-'+('0'+(n.getMonth()+1)).slice(-2)+'-'+('0'+n.getDate()).slice(-2)}
+  var n=new Date(y,m,sd);
+  if(S.cycle&&ymd>=S.cycle.from&&ymd<=S.cycle.to){n=new Date(S.cycle.to+'T00:00:00');n.setDate(n.getDate()+1)} /* early/late salary: cycle comes from the server */
+  return n.getFullYear()+'-'+('0'+(n.getMonth()+1)).slice(-2)+'-'+('0'+n.getDate()).slice(-2)}
 function viewOf(id,p){var c=catById(p.category_id)||{},w=walletOf(p.wallet_id)||{},t=walletOf(p.to_wallet_id)||{};
   return {id:id,date:p.date,type:p.type,amount:+p.amount,wallet:w.name||'',wallet_id:p.wallet_id||'',to_wallet:t.name||'',to_wallet_id:p.to_wallet_id||'',
     category_id:p.category_id||'',label:c.label||typeLabel(p.type),icon:c.icon||{transfer:'⇄'}[p.type]||'•',plan_id:p.plan_id||'',note:p.note||'',
@@ -3627,7 +3651,7 @@ document.addEventListener('change',function(e){var s=e.target.closest&&e.target.
 /* ======================= pull down to refresh + automatic update check =======================
    Pull down at the top of a main screen: fetches the newest numbers, and if a new version of the
    app was uploaded to GitHub it reloads into it. Opening the app also checks for a new version. */
-var BUILD='demo-202610220523';
+var BUILD='demo-202610300253';
 function checkUpdate(){
   if(IN_GOOGLE||LOCAL_DEV||!/^https:/.test(location.protocol))return Promise.resolve(false);
   return fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
