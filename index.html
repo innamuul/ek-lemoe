@@ -1270,7 +1270,8 @@ input,textarea{caret-color:var(--accent)}
   <div class="grab"></div>
   <div class="sbar"><button class="round" data-back="potMove">Batal</button><b id="pmTitle"></b><button class="black" id="pmSave">Simpan</button></div>
   <div class="amount"><p id="pmFrom"></p><input id="pmAmt" inputmode="numeric" placeholder="Rp 0" aria-label="Jumlah"></div>
-  <div class="form"><label id="pmWRow"><span id="pmWLbl">Dari dompet</span><select id="pmWallet" aria-label="Dompet"></select></label><label><span>Catatan</span><input id="pmNote" placeholder="Misal: bayar sewa 2027"></label></div>
+  <div class="seg" id="pmUse" hidden style="margin:0 16px 10px"><button aria-pressed="true" data-pmuse="buy">Untuk belanja</button><button aria-pressed="false" data-pmuse="move">Pindah ke dompet</button></div>
+  <div class="form"><label id="pmWRow"><span id="pmWLbl">Dari dompet</span><select id="pmWallet" aria-label="Dompet"></select></label><label id="pmCatRow" hidden><span>Kategori</span><select id="pmCat" aria-label="Kategori"></select></label><label><span>Catatan</span><input id="pmNote" placeholder="Misal: bayar sewa 2027"></label></div>
   <div class="explain m" id="pmExplain"></div>
 </div>
 <div class="sheet short" id="newPot" role="dialog" aria-modal="true" aria-label="Tabungan baru">
@@ -1576,7 +1577,7 @@ var rg=function(r,pct,cls){var c=2*Math.PI*r,p=Math.max(0,pct);return '<circle c
       if(e.type==='expense'){tOut+=a;n++;if(hid[e.plan_id])tH+=a}else if(e.type==='income'&&!(e.friend_share>0)){tIn+=e.amount;n++}});
     var hLeft=0;side.forEach(function(p){if(p.kind==='harian')hLeft+=p.amount-p.used});
     var allow=Math.max(0,(hLeft+tH)/daysLeft),left=allow-tH,pc=allow?tH/allow*100:(tH?100:0);
-    $('heroToday').innerHTML='Hari ini '+(left<0?'<b class="over">lewat Rp '+rp(-left)+'</b>':'aman <b>Rp '+rp(left)+'</b>');
+    $('heroToday').innerHTML='Hari ini '+(left<0?'<b class="over">lewat Rp '+rp(Math.round(-left))+'</b>':'aman <b>Rp '+rp(Math.round(left))+'</b>');
     $('todayCard').innerHTML='<i class="chev" aria-hidden="true">›</i><div class="th"><small>Hari ini · aman dipakai</small><b class="'+(left<0?'over':'')+'">'+(left<0?'Lewat Rp '+rp(-left):'Rp '+rp(left))+'</b></div>'+
       '<div class="bar"><i class="'+(pc>100?'over':(pc>85?'warn':''))+'" style="width:'+Math.min(100,pc)+'%"></i></div>'+
       '<div class="tr"><span>Keluar <b>'+rp(tOut)+'</b></span><span>Masuk <b>'+rp(tIn)+'</b></span><span>Jatah hari ini <b>'+short(allow)+'</b></span></div>'})();
@@ -1893,7 +1894,9 @@ function titipOpen(name){var seen={},list=[],bal={};
   // oldest first; on the same day the money a friend gave comes before what it paid for
   list.sort(function(a,b){return String(a.date).localeCompare(String(b.date))||(a.type==='income'?0:1)-(b.type==='income'?0:1)});
   list.forEach(function(e){var pp=String(e.with_people||'').split(',').map(function(x){return x.trim()}).filter(String);if(!pp.length)return;
-    if(e.type==='income'){pp.forEach(function(n){bal[n]=(bal[n]||0)+e.friend_share/pp.length});return}
+    /* whole rupiah per person, the leftover rupiah go to the first names (6 Nov: 16.000 ÷ 3 used to show 5.333 ×3 = 15.999) */
+    if(e.type==='income'){var fs=Math.round(e.friend_share),base=Math.floor(fs/pp.length),extra=fs-base*pp.length;
+      pp.forEach(function(n,i){bal[n]=(bal[n]||0)+base+(i<extra?1:0)});return}
     var rem=e.friend_share;pp.forEach(function(n){var t=Math.min(bal[n]||0,rem);if(t>0){bal[n]-=t;rem-=t}})}); // only people with titipan left pay
   return Math.max(0,Math.round(bal[name]||0))}
 function fsHint(){var el=$('fsHint');if(!el)return;if(form.type!=='expense'){el.hidden=true;return}
@@ -2079,19 +2082,22 @@ function openRealDetail(){var r=realMoney(),rem=heroRem||0;
 function moneyFlow(){var ids={},now=0;(S.wallets||[]).forEach(function(w){if(w.include_total&&w.type!=='credit'&&!isFx(w)&&!w.inactive){ids[w.id]=1;now+=w.balance}});
   var cr={};(S.wallets||[]).forEach(function(w){if(w.type==='credit')cr[w.id]=w});var fw=S.flexi&&S.flexi.wallet_id;
   var plan={};mySide().forEach(function(p){plan[p.id]=p});
-  var g={salary:0,partner:0,partnerN:[],otherIn:0,lendBack:0,ub:0,pos:{},noPos:[],card:0,flexi:0,flexiIn:0,lend:0,adj:0,moveOut:0,moveIn:0};
+  var g={salary:0,partner:0,partnerN:[],otherIn:0,titipIn:0,titipOut:0,lendBack:0,ub:0,pos:{},noPos:[],card:0,flexi:0,flexiIn:0,lend:0,adj:0,moveOut:0,moveIn:0};
   var seen={},es=(S.cycleEntries||[]).filter(function(e){if(seen[e.id])return false;seen[e.id]=1;return e.date>=S.cycle.from&&e.date<=S.cycle.to});
   es.forEach(function(e){var a=e.amount,w=ids[e.wallet_id],t=ids[e.to_wallet_id];
-    if(e.type==='income'&&w){if(e.category_id==='salary')g.salary+=a;else if(e.link_id||e.category_id==='reimbursement'){g.partner+=a;g.partnerN.push(e)}else g.otherIn+=a}
+    /* friends' money (6 Nov): a titip income is not my income, and the friends' part of a bill is not my spending —
+       both get their own rows so the pos lines show only my part */
+    if(e.type==='income'&&w){if(e.friend_share>0)g.titipIn+=a;else if(e.category_id==='salary')g.salary+=a;else if(e.link_id||e.category_id==='reimbursement'){g.partner+=a;g.partnerN.push(e)}else g.otherIn+=a}
     else if(e.type==='collect'&&w)g.lendBack+=a;
-    else if(e.type==='expense'&&w){if(e.category_id==='uang_belanja_istri')g.ub+=a;else if(e.plan_id&&plan[e.plan_id]){g.pos[e.plan_id]=(g.pos[e.plan_id]||0)+a}else g.noPos.push(e)}
+    else if(e.type==='expense'&&w){var fs=Math.min(a,e.friend_share||0);g.titipOut+=fs;a-=fs;if(a<=0)return;
+      if(e.category_id==='uang_belanja_istri')g.ub+=a;else if(e.plan_id&&plan[e.plan_id]){g.pos[e.plan_id]=(g.pos[e.plan_id]||0)+a}else g.noPos.push(Object.assign({},e,{amount:a}))}
     else if(e.type==='lend'&&w)g.lend+=a;
     else if(e.type==='adjust'&&w)g.adj+=a;
     else if(e.type==='repay'&&w)g.flexi+=a;
     else if(e.type==='debt'&&w)g.flexiIn+=a;
     else if(e.type==='transfer'&&(w||t)&&!(w&&t)){if(w){if(e.to_wallet_id===fw)g.flexi+=a;else if(cr[e.to_wallet_id])g.card+=a;else g.moveOut+=a}else{if(e.wallet_id===fw)g.flexiIn+=a;else g.moveIn+=a}}});
-  var inn=g.salary+g.partner+g.otherIn+g.lendBack+g.flexiIn+g.moveIn+Math.max(0,g.adj),
-      out=g.ub+Object.keys(g.pos).reduce(function(s,k){return s+g.pos[k]},0)+g.noPos.reduce(function(s,e){return s+e.amount},0)+g.card+g.flexi+g.lend+g.moveOut+Math.max(0,-g.adj);
+  var inn=g.salary+g.partner+g.otherIn+g.titipIn+g.lendBack+g.flexiIn+g.moveIn+Math.max(0,g.adj),
+      out=g.ub+g.titipOut+Object.keys(g.pos).reduce(function(s,k){return s+g.pos[k]},0)+g.noPos.reduce(function(s,e){return s+e.amount},0)+g.card+g.flexi+g.lend+g.moveOut+Math.max(0,-g.adj);
   g.now=now;g.start=now-inn+out;g.inn=inn;g.out=out;return g}
 function openFlow(){var g=moneyFlow(),r=realMoney(),c=S.cycle,P=S.partnerName;var plan={};mySide().forEach(function(p){plan[p.id]=p});
   var row=function(b,s,v,cls,rc){return '<div class="fr'+(rc?' '+rc:'')+'"><div class="fl1"><b>'+b+'</b>'+(s?'<small>'+s+'</small>':'')+'</div><em class="'+(cls||'')+'">'+v+'</em></div>'};
@@ -2104,7 +2110,7 @@ function openFlow(){var g=moneyFlow(),r=realMoney(),c=S.cycle,P=S.partnerName;va
   h+='<div class="dsec">Uang masuk</div><div class="flow">'+row('Di dompet awal siklus','perkiraan, dihitung mundur dari saldo sekarang',tot(g.start))+
     (g.salary?row('Gaji','',plus(g.salary),'in'):'')+
     (back?row('Kembali dari '+esc(P),'jatahku dari gaji',plus(back),'in'):'')+(reimb?row('Ganti dari '+esc(P),'bayar barang yang aku belikan dulu',plus(reimb),'in'):'')+
-    (g.otherIn?row('Pemasukan lain','',plus(g.otherIn),'in'):'')+(g.lendBack?row('Pinjaman dibayar balik','',plus(g.lendBack),'in'):'')+
+    (g.otherIn?row('Pemasukan lain','',plus(g.otherIn),'in'):'')+(g.titipIn?row('Titipan teman','uang teman untuk bayar bagiannya, bukan pemasukanmu',plus(g.titipIn),'in'):'')+(g.lendBack?row('Pinjaman dibayar balik','',plus(g.lendBack),'in'):'')+
     (g.flexiIn?row('Pinjam dari Flexi','',plus(g.flexiIn),'in'):'')+(g.moveIn?row('Masuk dari dompet di luar total','',plus(g.moveIn),'in'):'')+(g.adj>0?row('Penyesuaian saldo','',plus(g.adj),'in'):'')+'</div>';
   h+='<div class="dsec">Uang keluar</div><div class="flow">'+(g.ub?row('Uang belanja ke '+esc(P),'seluruh gaji dikirim, lalu jatahku kembali (di atas)',minus(g.ub)):'');
   var ks=Object.keys(g.pos).sort(function(a,b){return g.pos[b]-g.pos[a]});
@@ -2113,6 +2119,7 @@ function openFlow(){var g=moneyFlow(),r=realMoney(),c=S.cycle,P=S.partnerName;va
     g.noPos.slice().sort(function(a,b){return b.amount-a.amount}).forEach(function(e){h+=row(esc(e.note||e.label),dshort(e.date),minus(e.amount),'','sub')})}
   if(g.card){var inst=(S.card&&S.card.installments||[]).filter(function(i){return i.paid>0&&i.paid<=i.total}).reduce(function(s,i){return s+i.monthly},0);inst=Math.min(inst,g.card);
     h+=row('Bayar kartu kredit','tagihan bulan lalu',minus(g.card))+(inst?row('Cicilan (iPhone, mesin cuci)','',minus(inst),'','sub')+row('Belanja pakai kartu','sebelum tagihan (mis. suplemen, Claude Pro, BPJS)',minus(g.card-inst),'','sub'):'')}
+  if(g.titipOut)h+=row('Bagian teman','kamu yang bayar, pakai titipan mereka',minus(g.titipOut));
   if(g.flexi)h+=row('Bayar Flexi','',minus(g.flexi));if(g.lend)h+=row('Dipinjamkan','',minus(g.lend));if(g.moveOut)h+=row('Pindah ke dompet di luar total','',minus(g.moveOut));if(g.adj<0)h+=row('Penyesuaian saldo','',minus(-g.adj));
   h+=row('Sekarang di dompet','Total uangku hari ini',tot(g.now),'','tot')+'</div>';
   if(r.items.length){h+='<div class="dsec">Yang masih harus dibayar</div><div class="flow">';r.items.forEach(function(x){h+=row(esc(x.label),x.sub,minus(x.amount))});
@@ -2312,13 +2319,36 @@ function openPot(id){var p=S.pots.filter(function(x){return x.id===id})[0];curPo
   openSheet('pot')}
 var pmMode='in';
 function openPotMove(m){if(m==='edit'){$('epName').value=curPot.name;$('epTarget').value=curPot.target?rpIn(curPot.target):'';potWalletOpts('epWallet',curPot.wallet_id||'');openSheet('editPot');return}
-  pmMode=m;$('pmWRow').hidden=!curPot.wallet_id;if(curPot.wallet_id){$('pmWLbl').textContent=m==='in'?'Dari dompet':'Pindah ke dompet';otherWalletOpts('pmWallet',curPot.wallet_id,S.default_wallet)}
+  pmMode=m;pmUse='buy';$('pmUse').hidden=m!=='out';
   $('pmTitle').textContent=m==='in'?'Tabung':'Pakai tabungan';$('pmFrom').textContent=(m==='in'?'Ke ':'Dari ')+curPot.name+' · sekarang Rp '+rp(curPot.total);$('pmAmt').value='';$('pmNote').value='';
-  $('pmExplain').innerHTML=m==='in'?'<b>Tabung di luar rencana</b>Misal ada uang lebih, atau untuk mengisi saldo awal (tulis "Saldo awal").':'<b>Tidak mengurangi pos bulan ini</b>Uangnya diambil dari tabungan, jadi jatah dapur dan jajan tetap aman.';
-  $('potMove').classList.add('on')}
+  pmDraw();$('potMove').classList.add('on')}
+/* Pakai (6 Nov, Putri): "Untuk belanja" = the pot goes down AND the purchase is recorded as an expense with no pos
+   (paid from savings, so Dapur/jajan stay untouched). Before, Pakai only moved money to another wallet and the
+   purchase itself was never recorded. "Pindah ke dompet" = the old move. */
+var pmUse='buy';
+function pmDraw(){var buy=pmMode==='out'&&pmUse==='buy';
+  [].forEach.call($('pmUse').querySelectorAll('button'),function(b){b.setAttribute('aria-pressed',b.dataset.pmuse===pmUse)});
+  $('pmCatRow').hidden=!buy;
+  if(buy){$('pmWRow').hidden=false;$('pmWLbl').textContent='Dibayar dari';
+    var ws=myIdrWallets(),cur=curPot.wallet_id&&walletOf(curPot.wallet_id)?curPot.wallet_id:S.default_wallet;
+    $('pmWallet').innerHTML=ws.map(function(w){return '<option value="'+w.id+'"'+(w.id===cur?' selected':'')+'>'+esc(w.name)+(w.id===curPot.wallet_id?' (tempat tabungan)':'')+'</option>'}).join('');
+    $('pmCat').innerHTML='<option value="">Pilih kategori</option>'+catsFor('expense').map(function(c){return '<option value="'+c.id+'">'+esc(c.label)+'</option>'}).join('');
+    $('pmNote').placeholder='Misal: kado ultah, servis motor';
+    $('pmExplain').innerHTML='<b>Dicatat sebagai pengeluaran dari tabungan</b>Tabungan berkurang dan belanjanya tercatat, tapi tidak masuk pos bulan ini, jadi jatah dapur dan jajan tetap aman.'+(curPot.wallet_id?' Kalau dibayar dari dompet lain, uangnya dipindah dulu dari '+esc(potWName(curPot))+'.':'');return}
+  $('pmWRow').hidden=!curPot.wallet_id;$('pmNote').placeholder='Misal: bayar sewa 2027';
+  if(curPot.wallet_id){$('pmWLbl').textContent=pmMode==='in'?'Dari dompet':'Pindah ke dompet';otherWalletOpts('pmWallet',curPot.wallet_id,S.default_wallet)}
+  $('pmExplain').innerHTML=pmMode==='in'?'<b>Tabung di luar rencana</b>Misal ada uang lebih, atau untuk mengisi saldo awal (tulis "Saldo awal").':'<b>Hanya memindahkan uang</b>Uang tabungan dipindah ke dompet lain, belum dibelanjakan. Belanjanya nanti dicatat biasa dari dompet itu (dan masuk pos). Untuk langsung mencatat belanja dari tabungan, pilih "Untuk belanja".'}
+$('pmUse').onclick=function(ev){var b=ev.target.closest('[data-pmuse]');if(!b)return;pmUse=b.dataset.pmuse;pmDraw()};
 $('pmSave').onclick=function(){var a=num($('pmAmt').value);if(!a){toast('Isi jumlahnya dulu',true);return}if(pmMode==='out'&&a>curPot.total){toast('Lebih besar dari isi tabungan',true);return}
-  var pl={cid:newId(),pot_id:curPot.id,amount:a,mode:pmMode,other_wallet:curPot.wallet_id?$('pmWallet').value:'',note:$('pmNote').value.trim()||(pmMode==='in'?'Tabung':'Dipakai')};
-  var pot=potOf(curPot.id);if(pot)potLocal(pot,a,pl.note,pl.other_wallet,pmMode==='out');enqueue('potMove',pl);render();closeAll();showTick(pmMode==='in'?'Ditabung':'Dipakai','Rp '+rp(a)+' · '+curPot.name)};
+  var buy=pmMode==='out'&&pmUse==='buy',payW=buy?$('pmWallet').value:'',cat=buy?$('pmCat').value:'';
+  if(buy&&!payW){toast('Pilih dompetnya dulu',true);return}
+  if(buy&&!cat){toast('Pilih kategori dulu',true);return}
+  var note=$('pmNote').value.trim();
+  var pl={cid:newId(),pot_id:curPot.id,amount:a,mode:pmMode,note:note||(pmMode==='in'?'Tabung':'Dipakai'),
+    other_wallet:buy?(curPot.wallet_id&&payW!==curPot.wallet_id?payW:''):(curPot.wallet_id?$('pmWallet').value:'')};
+  var pot=potOf(curPot.id);if(pot)potLocal(pot,a,pl.note,pl.other_wallet,pmMode==='out');enqueue('potMove',pl);
+  if(buy)quickAdd({type:'expense',amount:a,date:S.today,wallet_id:payW,category_id:cat,plan_id:'',note:(note||(catById(cat)||{}).label||'Belanja')+' (dari tabungan '+curPot.name+')',with_people:'',friend_share:0});
+  render();closeAll();showTick(pmMode==='in'?'Ditabung':'Dipakai','Rp '+rp(a)+' · '+curPot.name)};
 $('npSave').onclick=function(){if(!$('npName').value.trim()){toast('Isi nama tabungan',true);return}var w=walletOf($('npWallet').value);act('addPot',{name:$('npName').value.trim(),start:num($('npStart').value),target:num($('npTarget').value),wallet_id:w?w.id:'',kept_at:w?w.name:''},'Tabungan dibuat').then(closeAll)};
 $('epSave').onclick=function(){var w=walletOf($('epWallet').value);var pl={id:curPot.id,name:$('epName').value.trim()||curPot.name,target:num($('epTarget').value),wallet_id:w?w.id:'',kept_at:w?w.name:(curPot.wallet_id?'':curPot.kept_at||'')};
   /* instant like entries (17 Oct): change on screen now, queue for the Sheet */
@@ -2852,7 +2882,7 @@ document.addEventListener('change',function(e){var s=e.target.closest&&e.target.
 /* ======================= pull down to refresh + automatic update check =======================
    Pull down at the top of a main screen: fetches the newest numbers, and if a new version of the
    app was uploaded to GitHub it reloads into it. Opening the app also checks for a new version. */
-var BUILD='20261030-1039';
+var BUILD='20261106-1545';
 function checkUpdate(){
   if(IN_GOOGLE||LOCAL_DEV||!/^https:/.test(location.protocol))return Promise.resolve(false);
   return fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
