@@ -307,6 +307,8 @@ body.kp-open .sheet.on{padding-bottom:436px}
 .wdlogo{width:72px!important;height:72px!important;margin:6px auto 0;font-size:34px;display:grid;place-items:center;border-radius:50%;background:var(--card)}
 .toast{position:fixed;left:50%;bottom:calc(110px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--on-ink);padding:12px 18px;border-radius:20px;font-size:14px;font-weight:500;opacity:0;transition:.25s;pointer-events:none;z-index:40;max-width:88%;text-align:center}
 .toast.on{opacity:1;transform:translateX(-50%)}
+.toast.act{pointer-events:auto;display:flex;align-items:center;gap:14px;padding:8px 8px 8px 18px;white-space:nowrap}
+.toast .tundo{border:0;background:var(--accent);color:#fff;font:inherit;font-weight:600;padding:8px 14px;border-radius:14px;cursor:pointer;touch-action:manipulation}
 .toast.bad{background:var(--red);color:#fff}
 .busy{position:fixed;top:calc(10px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:var(--ink);color:var(--on-ink);font-size:12px;padding:6px 12px;border-radius:12px;z-index:41;opacity:0;transition:opacity .2s}
 .busy.on{opacity:.9}
@@ -1925,7 +1927,9 @@ var ACTIONS = {
   adjustBalance: function (me, p) {
     var st = buildState_(me); var w = st.wallets.filter(function (x) { return x.id === p.wallet_id; })[0];
     if (!w && !(me === 'innamul' && st.card)) throw new Error('Dompet tidak ditemukan');
-    var cur = w ? w.balance : st.card.balance; var target = num_(p.real) * (cur < 0 && num_(p.real) > 0 ? -1 : 1), diff = target - cur;
+    // only a credit wallet / the card reads a typed amount as debt; a normal wallet below 0 takes it as typed (6 Nov, v21)
+    var credit = !w || w.type === 'credit';
+    var cur = w ? w.balance : st.card.balance; var target = num_(p.real) * (credit && cur < 0 && num_(p.real) > 0 ? -1 : 1), diff = target - cur;
     if (Math.round(diff) === 0) return;
     // fresh wallet (nothing counted since its opening date): the first real balance becomes its starting balance, no adjustment line (18 Oct)
     if (w) {
@@ -2392,7 +2396,7 @@ function act(action,payload,okMsg){
   var key=action+JSON.stringify(payload||{});
   if(inflight[key])return inflight[key]; // double-tap guard: same action already saving
   if(payload&&!payload.cid&&(action==='saveMonthly'||action==='potMove'))payload.cid=newId();
-  $('busy').classList.add('on');
+  $('busy').classList.add('on');commitDel();
   var pr=flush().then(function(){return call(action,payload)}).then(function(st){$('busy').classList.remove('on');if(st&&st.me){S=st;cacheState();render();if($('all').classList.contains('on'))loadHist()}if(okMsg)toast(okMsg);return st})
     .catch(function(e){$('busy').classList.remove('on');toast(e,true);throw e});
   inflight[key]=pr;pr.then(done,done);function done(){delete inflight[key]}
@@ -2411,7 +2415,7 @@ function syncChip(){var c=$('syncChip');if(!c)return;
   if(!Q.length&&!flushing){c.hidden=true;return}
   c.hidden=false;c.className='syncchip'+(flushFail?' bad':'');
   c.textContent=flushFail?('⚠︎ Belum tersambung · '+Q.length+' menunggu'):(flushing?'Menyimpan…':'⏳ '+Q.length+' belum tersimpan')}
-function enqueue(action,payload){Q.push({qid:Date.now().toString(36)+Math.random().toString(36).slice(2,6),action:action,payload:payload});saveQ();cacheState();
+function enqueue(action,payload){commitDel();Q.push({qid:Date.now().toString(36)+Math.random().toString(36).slice(2,6),action:action,payload:payload});saveQ();cacheState();
   clearTimeout(flushT);flushT=setTimeout(flush,1200)}
 function flush(){
   if(!Q.length&&!flushing)return Promise.resolve();
@@ -2421,13 +2425,14 @@ function flush(){
   return call('batch',{ops:ops}).then(function(st){
     Q=Q.slice(ops.length);saveQ();
     if(st.batch_errors&&st.batch_errors.length)toast('Ada yang tidak tersimpan: '+st.batch_errors[0].error,true);
-    if(!Q.length){S=st;cacheState();render();if($('all').classList.contains('on'))loadHist()}
+    if(!Q.length){S=st;reHideDel();cacheState();render();if($('all').classList.contains('on'))loadHist()}
     finish(); if(Q.length){clearTimeout(flushT);flushT=setTimeout(flush,600)}
   }).catch(function(e){flushFail=true;finish();clearTimeout(flushT);flushT=setTimeout(flush,30000)});
 }
-document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')flush();else if(TOKEN&&S)refresh()});
+document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden'){commitDel();flush()}else if(TOKEN&&S)refresh()});
+window.addEventListener('pagehide',commitDel);
 window.addEventListener('online',function(){flush()});
-function refresh(){if(Q.length){flush();return}call('state').then(function(st){if(Q.length)return;S=st;cacheState();render()}).catch(function(){})}
+function refresh(){commitDel();if(Q.length){flush();return}call('state').then(function(st){if(Q.length)return;S=st;cacheState();render()}).catch(function(){})}
 
 /* --- what a change does on screen before the Sheet answers --- */
 function walletOf(id){return (S.wallets||[]).filter(function(w){return w.id===id})[0]}
@@ -2469,7 +2474,26 @@ function quickAdd(p){
 function quickEdit(p){var old=findEntry(p.id);
   if(old){applyLocal(old,-1);dropEntry(old.id);var v=viewOf(old.id,p);if(old.type==='transfer'&&!p.to_wallet_id)v.to_wallet_id=old.to_wallet_id;putEntry(v);applyLocal(v,1)}
   enqueue('editEntry',p);histForget();render()}
-function quickDelete(id){var old=findEntry(id);if(old){applyLocal(old,-1);dropEntry(id)}enqueue('deleteEntry',{id:id});render()}
+/* Delete with a 5 s "Urungkan" (6 Nov): the entry leaves the screen at once, but deleteEntry is only queued
+   when the toast runs out, the app goes to the background, or anything else is saved/refreshed (commitDel). */
+var PDEL=null;
+function quickDelete(id){commitDel();var old=findEntry(id),back=[];
+  if(old){applyLocal(old,-1);dropEntry(id)}
+  [HIST,RV.cur,RV.prev,CAL.cur].forEach(function(h){if(h&&h.entries){var i=h.entries.findIndex(function(e){return e.id===id});if(i>=0){back.push([h.entries,i,h.entries[i]]);h.entries.splice(i,1)}}});
+  histForget(id);
+  PDEL={id:id,old:old,back:back,t:setTimeout(commitDel,5000)};
+  render();redrawPages();
+  undoToast('Catatan dihapus',undoDel)}
+function commitDel(){if(!PDEL)return;var p=PDEL;PDEL=null;clearTimeout(p.t);enqueue('deleteEntry',{id:p.id})}
+function undoDel(){if(!PDEL)return;var p=PDEL;PDEL=null;clearTimeout(p.t);
+  if(p.old){putEntry(p.old);applyLocal(p.old,1)}
+  p.back.forEach(function(b){if(!b[0].some(function(e){return e.id===p.id}))b[0].splice(b[1],0,b[2])});
+  histForget();cacheState();render();redrawPages();showTick('Dikembalikan',p.old?entrySub(p.old):'')}
+/* server state that still has the entry (sent before the delete was queued) → hide it again */
+function reHideDel(){if(!PDEL)return;var o=findEntry(PDEL.id);if(o&&(S.recent||[]).concat(S.cycleEntries||[]).indexOf(o)>=0){applyLocal(o,-1);dropEntry(o.id)}}
+function redrawPages(){if($('all').classList.contains('on'))drawAll();if($('review').classList.contains('on')&&RV.cur)drawReview();if($('calendar').classList.contains('on')&&CAL.cur)drawCal()}
+function undoToast(msg,fn){var t=$('toast');t.innerHTML='';t.appendChild(document.createTextNode(msg+' '));var b=document.createElement('button');b.type='button';b.className='tundo';b.textContent='Urungkan';
+  b.onclick=function(){t.className='toast';fn()};t.appendChild(b);t.className='toast on act';clearTimeout(t._t);t._t=setTimeout(function(){t.className='toast'},5000)}
 function quickPaid(planId){var p=mySide().filter(function(x){return x.id===planId})[0];if(!p)return;p.paid=!p.paid;enqueue('togglePaid',{plan_id:planId,paid:p.paid});render()}
 function quickSettle(id){(S.shared||[]).forEach(function(x){if(x.id===id)x.settled=true});enqueue('settle',{id:id});render();toast('Ditandai impas')}
 
@@ -2919,7 +2943,7 @@ $('saveEntry').onclick=function(){
   if(editId){p.id=editId;quickEdit(p)}else quickAdd(p);
   closeAll();showTick(editId?'Diubah':'Tersimpan',entrySub(p));
 };
-$('delEntry').onclick=function(){if(!editId)return;quickDelete(editId);closeAll();toast('Catatan dihapus')};
+$('delEntry').onclick=function(){if(!editId)return;var id=editId;closeAll();quickDelete(id)};
 function drawCats(q){q=(q||'').toLowerCase();var kind=form.type==='income'?'income':'expense';var list=catsFor(kind);var groups={};
   list.forEach(function(c){var g=S.me==='innamul'?(c.ml_parent||'Lainnya'):groupName(c);(groups[g]=groups[g]||[]).push(c)});
   $('catList').innerHTML=Object.keys(groups).map(function(g){var f=groups[g].filter(function(c){return !q||(c.label+' '+(c.ml_name||'')+' '+g).toLowerCase().indexOf(q)>=0});
@@ -3254,10 +3278,7 @@ function typeLabel(t){return {transfer:'Transfer',adjust:'Adjustments',debt:'Deb
 $('txEdit').onclick=function(){openAdd({edit:curTx})};
 $('txMove').onclick=function(){openPickWallet(curTx)};
 $('txRecv').onclick=function(){openReceive(this.dataset.p)};
-$('txDel').onclick=function(){var id=curTx.id;quickDelete(id);histForget(id);
-  [HIST,RV.cur,RV.prev,CAL.cur].forEach(function(h){if(h&&h.entries)h.entries=h.entries.filter(function(e){return e.id!==id})});
-  closeAll();toast('Catatan dihapus');
-  if($('all').classList.contains('on'))drawAll();if($('review').classList.contains('on')&&RV.cur)drawReview();if($('calendar').classList.contains('on')&&CAL.cur)drawCal()};
+$('txDel').onclick=function(){var id=curTx.id;closeAll();quickDelete(id)};
 
 /* pots */
 function openPot(id){var p=S.pots.filter(function(x){return x.id===id})[0];curPot=p;$('potName').textContent=p.name;$('potAmt').textContent='Rp '+rp(p.total);
@@ -3335,12 +3356,13 @@ $('wdInact').addEventListener('click',function(){setTimeout(function(){var on=$(
 $('wdDefault').onclick=function(){act('setDefaultWallet',{wallet_id:curWallet.id},'Jadi dompet utama').then(closeAll)};
 var adjFor=null;
 function adjNum(v){return adjFor&&adjFor.cur?(parseFloat(String(v||'').replace(/[^\d,]/g,'').replace(',','.'))||0):num(v)}
-function openAdjust(id,name,bal){var w=walletOf(id);adjFor={id:id,bal:bal,cur:isFx(w)?w.currency:''};$('adjName').textContent=name;$('adjApp').textContent=adjFor.cur?fxAmt(bal,adjFor.cur):'Rp '+rp(bal);$('adjReal').value='';if(adjFor.cur)$('adjReal').dataset.dec='1';else delete $('adjReal').dataset.dec;$('adjReal').placeholder=adjFor.cur?adjFor.cur+' 0':'Rp 0';$('adjDiff').textContent='–';$('adjDiff').className='';openSheet('adjust')}
-$('adjReal').addEventListener('input',function(){if(!this.value){$('adjDiff').textContent='–';return}var real=adjNum(this.value)*(adjFor.bal<0?-1:1),d=real-adjFor.bal;$('adjDiff').textContent=adjFor.cur?(d>0?'+':'')+fxAmt(d,adjFor.cur):(d>0?'+':'')+rp(d);$('adjDiff').className=d<0?'red':d>0?'green':''});
+function openAdjust(id,name,bal){var w=walletOf(id);adjFor={id:id,bal:bal,cur:isFx(w)?w.currency:'',credit:!w||w.type==='credit'};$('adjName').textContent=name;$('adjApp').textContent=adjFor.cur?fxAmt(bal,adjFor.cur):'Rp '+rp(bal);$('adjReal').value='';if(adjFor.cur)$('adjReal').dataset.dec='1';else delete $('adjReal').dataset.dec;$('adjReal').placeholder=adjFor.cur?adjFor.cur+' 0':'Rp 0';$('adjDiff').textContent='–';$('adjDiff').className='';openSheet('adjust')}
+$('adjReal').addEventListener('input',function(){if(!this.value){$('adjDiff').textContent='–';return}var real=adjNum(this.value)*(adjFor.credit&&adjFor.bal<0?-1:1),d=real-adjFor.bal;$('adjDiff').textContent=adjFor.cur?(d>0?'+':'')+fxAmt(d,adjFor.cur):(d>0?'+':'')+rp(d);$('adjDiff').className=d<0?'red':d>0?'green':''});
 $('adjSave').onclick=function(){if(!$('adjReal').value){toast('Ketik saldo sebenarnya',true);return}
   /* instant like entries (18 Oct): same maths as the server's adjustBalance; re-sending is harmless (difference becomes 0) */
   var real=adjNum($('adjReal').value),w=walletOf(adjFor.id),isCard=!w&&S.card,cur=w?w.balance:(isCard?S.card.balance:adjFor.bal);
-  var target=real*(cur<0&&real>0?-1:1),diff=target-cur;
+  /* only a credit wallet / the card counts a typed amount as debt; a normal wallet below 0 takes the number as typed (6 Nov) */
+  var target=real*(adjFor.credit&&cur<0&&real>0?-1:1),diff=target-cur;
   /* a wallet with nothing recorded yet: the server makes this its starting balance, so no adjustment line (18 Oct) */
   var fresh=!!w&&!(S.recent||[]).concat(S.cycleEntries||[]).some(function(e){return e.wallet_id===adjFor.id||e.to_wallet_id===adjFor.id});
   if(Math.round(diff*100)!==0){if(w)w.balance=target;if(S.card&&(isCard||adjFor.id===cardWalletId()))S.card.balance=target;
@@ -3444,7 +3466,7 @@ var EN={
 'Tagihan kartu dibayar dari gaji bulan depan':'The card bill is paid from next month’s salary','Simpan':'Save','Hapus':'Delete','Hapus catatan ini':'Delete this entry',
 'Batal':'Cancel','Tutup':'Close','Kembali':'Back','‹ Kembali':'‹ Back','Detail':'Details','Lainnya':'Other','Buat':'Create','Tambah':'Add','Buka':'Open',
 'Salah kategori atau ternyata tidak perlu? Ubah kategori, pindahkan ke pos lain, atau hapus.':'Wrong category, or not needed after all? Change the category, move it to another pot, or delete it.',
-'Tersimpan':'Saved','Perubahan disimpan':'Changes saved','Catatan dihapus':'Entry deleted','Ditandai impas':'Marked as settled','Disimpan':'Saved',
+'Tersimpan':'Saved','Perubahan disimpan':'Changes saved','Catatan dihapus':'Entry deleted','Urungkan':'Undo','Dikembalikan':'Restored','Ditandai impas':'Marked as settled','Disimpan':'Saved',
 'Rencana disimpan':'Plan saved','Isi jumlahnya':'Enter the amount','Isi jumlahnya dulu':'Enter the amount first','Menyimpan…':'Saving…','Memuat…':'Loading…',
 'Gagal':'Failed','Tidak tersambung':'Not connected','Tidak ada catatan.':'No entries.','Tidak ditemukan.':'Nothing found.',
 'Belum ada catatan.':'No entries yet.','Belum ada catatan. Ketuk + untuk mulai.':'No entries yet. Tap + to start.','Belum ada pos. Buat di Rencana › Ubah.':'No pots yet. Create them in Plan › Edit.',
@@ -3830,7 +3852,7 @@ document.addEventListener('change',function(e){var s=e.target.closest&&e.target.
 /* ======================= pull down to refresh + automatic update check =======================
    Pull down at the top of a main screen: fetches the newest numbers, and if a new version of the
    app was uploaded to GitHub it reloads into it. Opening the app also checks for a new version. */
-var BUILD='demo-202611061545';
+var BUILD='demo-202611061607';
 function checkUpdate(){
   if(IN_GOOGLE||LOCAL_DEV||!/^https:/.test(location.protocol))return Promise.resolve(false);
   return fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
