@@ -1465,7 +1465,8 @@ function syncChip(){var c=$('syncChip');if(!c)return;
   if(!Q.length&&!flushing){c.hidden=true;return}
   c.hidden=false;c.className='syncchip'+(flushFail?' bad':'');
   c.textContent=flushFail?('⚠︎ Belum tersambung · '+Q.length+' menunggu'):(flushing?'Menyimpan…':'⏳ '+Q.length+' belum tersimpan')}
-function enqueue(action,payload){commitDel();Q.push({qid:Date.now().toString(36)+Math.random().toString(36).slice(2,6),action:action,payload:payload});saveQ();cacheState();
+var LGEN=0;
+function enqueue(action,payload){commitDel();LGEN++;Q.push({qid:Date.now().toString(36)+Math.random().toString(36).slice(2,6),action:action,payload:payload});saveQ();cacheState();
   clearTimeout(flushT);flushT=setTimeout(flush,1200)}
 function flush(){
   if(!Q.length&&!flushing)return Promise.resolve();
@@ -1522,12 +1523,12 @@ function quickAdd(p){
   enqueue('addEntry',p);histForget();render();
 }
 function quickEdit(p){var old=findEntry(p.id);
-  if(old){applyLocal(old,-1);dropEntry(old.id);var v=viewOf(old.id,p);if(old.type==='transfer'&&!p.to_wallet_id)v.to_wallet_id=old.to_wallet_id;putEntry(v);applyLocal(v,1)}
-  enqueue('editEntry',p);histForget();render()}
+  if(old){applyLocal(old,-1);dropEntry(old.id);var v=viewOf(old.id,p);if(old.type==='transfer'&&!p.to_wallet_id)v.to_wallet_id=old.to_wallet_id;putEntry(v);applyLocal(v,1);histSwap(old.id,v)}
+  enqueue('editEntry',p);histForget();render();redrawPages()}
 /* Delete with a 5 s "Urungkan" (6 Nov): the entry leaves the screen at once, but deleteEntry is only queued
    when the toast runs out, the app goes to the background, or anything else is saved/refreshed (commitDel). */
 var PDEL=null;
-function quickDelete(id){commitDel();var old=findEntry(id),back=[];
+function quickDelete(id){commitDel();LGEN++;var old=findEntry(id),back=[];
   if(old){applyLocal(old,-1);dropEntry(id)}
   [HIST,RV.cur,RV.prev,CAL.cur].forEach(function(h){if(h&&h.entries){var i=h.entries.findIndex(function(e){return e.id===id});if(i>=0){back.push([h.entries,i,h.entries[i]]);h.entries.splice(i,1)}}});
   histForget(id);
@@ -1535,7 +1536,7 @@ function quickDelete(id){commitDel();var old=findEntry(id),back=[];
   render();redrawPages();
   undoToast('Catatan dihapus',undoDel)}
 function commitDel(){if(!PDEL)return;var p=PDEL;PDEL=null;clearTimeout(p.t);enqueue('deleteEntry',{id:p.id})}
-function undoDel(){if(!PDEL)return;var p=PDEL;PDEL=null;clearTimeout(p.t);
+function undoDel(){if(!PDEL)return;var p=PDEL;PDEL=null;clearTimeout(p.t);LGEN++;
   if(p.old){putEntry(p.old);applyLocal(p.old,1)}
   p.back.forEach(function(b){if(!b[0].some(function(e){return e.id===p.id}))b[0].splice(b[1],0,b[2])});
   histForget();cacheState();render();redrawPages();showTick('Dikembalikan',p.old?entrySub(p.old):'')}
@@ -2274,10 +2275,21 @@ function cardWalletId(){var w=S.wallets.filter(function(x){return x.type==='cred
 var HC={};
 function histKey(date,budget){return (budget?'b:':'')+(date||'now')}
 function histLocal(){return {cycle:S.cycle,is_current:true,has_older:true,entries:(S.cycleEntries||[]).slice().sort(function(a,b){return String(b.date).localeCompare(String(a.date))})}}
-function histLoad(date,budget,show,fail){var k=histKey(date,budget),c=HC[k]||(!date&&!budget&&S&&S.cycle?histLocal():null);
-  if(c)show(c,true);
-  flush().then(function(){return call('history',budget?{date:date,budget:true}:{date:date})}).then(function(h){HC[k]=h;show(h,false)}).catch(function(e){if(!c)fail(e)});
+/* 13 Nov fix: a month copy asked for before a delete/edit reached the server could land after it and put the old
+   entry back on screen (deleted 10k back, edited 40k showing 20k). LGEN counts local changes; a reply is only used
+   if nothing changed and nothing was waiting to send while it was asked for — otherwise ask again (max 3×). */
+function histLoad(date,budget,show,fail){var k=histKey(date,budget),c=HC[k]||(!date&&!budget&&S&&S.cycle?histLocal():null),tries=0;
+  if(c)show(histFix(c),true);
+  (function get(){flush().then(function(){var g=LGEN,q=Q.length;
+    return call('history',budget?{date:date,budget:true}:{date:date}).then(function(h){
+      if(q||Q.length||g!==LGEN){if(++tries<3){setTimeout(get,700);return}if(c)return}
+      HC[k]=h;show(histFix(h),false)})}).catch(function(e){if(!c)fail(e)})})();
   return !!c}
+/* hide an entry whose delete is still waiting (Urungkan) */
+function histFix(h){if(PDEL&&h&&h.entries)h.entries=h.entries.filter(function(e){return e.id!==PDEL.id});return h}
+/* an edited entry: same change in every month list already on screen / remembered */
+function histSwap(id,v){var ls=[HIST,RV.cur,RV.prev,CAL.cur].concat(Object.keys(HC).map(function(k){return HC[k]}));
+  ls.forEach(function(h){if(!h||!h.entries)return;h.entries.forEach(function(e,i){if(e.id!==id)return;var n={};for(var a in e)n[a]=e[a];for(var b in v)n[b]=v[b];h.entries[i]=n})})}
 function histForget(id){Object.keys(HC).forEach(function(k){if(id){HC[k].entries=(HC[k].entries||[]).filter(function(e){return e.id!==id})}else if(/now$/.test(k))delete HC[k]})}
 
 /* all entries (one salary cycle at a time) */
@@ -2902,7 +2914,7 @@ document.addEventListener('change',function(e){var s=e.target.closest&&e.target.
 /* ======================= pull down to refresh + automatic update check =======================
    Pull down at the top of a main screen: fetches the newest numbers, and if a new version of the
    app was uploaded to GitHub it reloads into it. Opening the app also checks for a new version. */
-var BUILD='20261106-2308';
+var BUILD='20261113-0932';
 function checkUpdate(){
   if(IN_GOOGLE||LOCAL_DEV||!/^https:/.test(location.protocol))return Promise.resolve(false);
   return fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){
